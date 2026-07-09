@@ -1,5 +1,21 @@
 # SIGIZI Agent Configuration
 
+---
+
+## ⚠️ FIRST TIME SETUP (WAJIB DIBACA)
+
+**Sebelum memulai pekerjaan apapun, agent WAJIB:**
+
+1. Baca `docs/UNIVERSAL_SETUP.md` untuk instruksi setup lengkap
+2. Pastikan dependencies sudah terinstall (`pnpm install`)
+3. Pastikan `.env` sudah dikonfigurasi
+4. Pastikan database sudah running dan migrated
+5. Baca `docs/PROJECT_STATUS.md` untuk cek status project
+
+**Jika setup belum lengkap, guide user untuk menyelesaikan setup terlebih dahulu.**
+
+---
+
 ## Pilih Role
 
 ```
@@ -416,3 +432,58 @@ cd packages/shared
 - Last tool call: [nama tool]
 - Timestamp: [waktu]
 ```
+
+---
+
+## OpenCode Configuration
+
+### For OpenCode Users
+
+```bash
+# Install OpenCode
+curl -fsSL https://opencode.ai/install | bash
+
+# Start OpenCode in project root
+cd /path/to/sigizi
+opencode
+
+# Select agent: Tab key to switch between backend/frontend
+```
+
+### Configuration Files
+
+| File | Purpose |
+|------|---------|
+| `opencode.json` | Main OpenCode configuration |
+| `.opencode/agents/backend.md` | Backend agent prompt |
+| `.opencode/agents/frontend.md` | Frontend agent prompt |
+| `.opencode/commands/` | Custom commands |
+
+### MCP Servers
+
+All MCP servers are configured in `opencode.json`:
+- Git MCP - Version control
+- GitHub MCP - Repository API
+- Filesystem MCP - File operations
+- PostgreSQL MCP - Database queries
+- Context7 MCP - Documentation
+- Memory MCP - Project context
+
+### Skills
+
+Skills are located in:
+- `docs/backend/skills/` - Backend skills
+- `docs/frontend/skills/` - Frontend skills
+
+Load skills using the `skill` tool:
+```
+Use the skill tool to load: nestjs-module-scaffold
+```
+
+### Commands
+
+Available commands:
+- `/install` - Install all dependencies
+- `/migrate` - Run Prisma migrations
+- `/seed` - Seed database
+- `/dev` - Start development servers

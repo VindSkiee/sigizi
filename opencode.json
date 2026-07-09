@@ -1,0 +1,166 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  
+  "model": "opencode/mimo-v2.5-free",
+  
+  "compaction": {
+    "auto": true,
+    "prune": true,
+    "reserved": 10000
+  },
+  
+  "snapshot": true,
+  
+  "autoupdate": true,
+  
+  "formatter": {
+    "prettier": {
+      "disabled": false
+    }
+  },
+  
+  "lsp": {
+    "typescript": {
+      "disabled": false
+    }
+  },
+  
+  "watcher": {
+    "ignore": [
+      "node_modules/**",
+      "dist/**",
+      ".next/**",
+      "coverage/**",
+      ".git/**"
+    ]
+  },
+  
+  "mcp": {
+    "git": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-git"],
+      "enabled": true
+    },
+    "github": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
+      "enabled": true,
+      "environment": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:GITHUB_TOKEN}"
+      }
+    },
+    "filesystem": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", "/mnt/c/MYPROJECTS/HACKATHON/sigizi"],
+      "enabled": true
+    },
+    "postgres": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-postgres", "{env:DATABASE_URL}"],
+      "enabled": true,
+      "environment": {
+        "DATABASE_URL": "postgresql://postgres:postgres@localhost:5432/sigizi"
+      }
+    },
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "enabled": true
+    },
+    "memory": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-memory"],
+      "enabled": true
+    },
+    "sequential-thinking": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "enabled": true
+    }
+  },
+  
+  "tools": {
+    "git_*": false,
+    "github_*": false,
+    "postgres_*": false,
+    "filesystem_*": false,
+    "memory_*": false,
+    "context7_*": false,
+    "sequential-thinking_*": false
+  },
+  
+  "agent": {
+    "backend": {
+      "description": "Backend development agent for NestJS + Prisma + PostgreSQL. Use this for API development, database work, and server-side logic.",
+      "mode": "primary",
+      "model": "opencode/mimo-v2.5-free",
+      "prompt": "{file:.opencode/agents/backend.md}",
+      "tools": {
+        "git_*": true,
+        "github_*": true,
+        "filesystem_*": true,
+        "postgres_*": true,
+        "context7_*": true,
+        "memory_*": true,
+        "sequential-thinking_*": true
+      }
+    },
+    "frontend": {
+      "description": "Frontend development agent for Next.js + React + Tailwind. Use this for UI development, components, and client-side logic.",
+      "mode": "primary",
+      "model": "opencode/mimo-v2.5-free",
+      "prompt": "{file:.opencode/agents/frontend.md}",
+      "tools": {
+        "git_*": true,
+        "github_*": true,
+        "filesystem_*": true,
+        "postgres_*": false,
+        "context7_*": true,
+        "memory_*": true,
+        "sequential-thinking_*": true
+      }
+    },
+    "plan": {
+      "description": "Planning and analysis agent. Read-only mode for reviewing code and creating implementation plans.",
+      "mode": "primary",
+      "model": "opencode/mimo-v2.5-free",
+      "permission": {
+        "edit": "deny",
+        "bash": "ask"
+      }
+    }
+  },
+  
+  "permission": {
+    "edit": "allow",
+    "bash": {
+      "*": "ask",
+      "pnpm *": "allow",
+      "npm *": "allow",
+      "git status": "allow",
+      "git log*": "allow",
+      "git diff": "allow",
+      "git diff*": "allow",
+      "ls *": "allow",
+      "cat *": "allow",
+      "pwd": "allow",
+      "echo *": "allow",
+      "mkdir *": "allow",
+      "cp *": "allow",
+      "mv *": "allow"
+    },
+    "skill": {
+      "*": "allow"
+    }
+  },
+  
+  "instructions": [
+    "AGENTS.md",
+    "docs/UNIVERSAL_SETUP.md",
+    "docs/PROJECT_STATUS.md",
+    "docs/backend/GUIDE.md",
+    "docs/frontend/GUIDE.md"
+  ],
+  
+  "share": "manual"
+}
