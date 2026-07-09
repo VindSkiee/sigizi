@@ -1,31 +1,8 @@
 'use client';
 
+import { Package, Plus, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-
-function PackageIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-    </svg>
-  );
-}
-
-function PlusIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-    </svg>
-  );
-}
-
-function SearchIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-    </svg>
-  );
-}
 
 const products = [
   { id: '1', name: 'Beras Premium', category: 'Bahan Baku', price: 12000, unit: 'kg', stock: 500, status: 'active' },
@@ -44,14 +21,14 @@ export default function KatalogPage() {
           <p className="text-sm text-gray-500 mt-1">Kelola produk yang Anda jual</p>
         </div>
         <button className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-          <PlusIcon className="w-4 h-4" />
+          <Plus className="w-4 h-4" />
           Tambah Produk
         </button>
       </div>
 
       {/* Search */}
       <div className="relative">
-        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
         <input
           type="text"
           placeholder="Cari produk..."
@@ -77,7 +54,7 @@ export default function KatalogPage() {
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <PackageIcon className="w-5 h-5 text-blue-600" />
+                      <Package className="w-5 h-5 text-blue-600" />
                     </div>
                     <span className="text-sm font-medium text-gray-700">{product.name}</span>
                   </div>
