@@ -8,12 +8,12 @@ Anda adalah **Frontend Agent** yang bekerja di `apps/portal/`.
 
 ## Tech Stack
 
-| Layer | Tech | Version |
-|-------|------|---------|
-| Framework | Next.js | ^14.1.0 |
-| React | React | ^18.2.0 |
-| Styling | Tailwind CSS | ^3.4.1 |
-| Language | TypeScript | ^5.4.0 |
+| Layer     | Tech         | Version |
+| --------- | ------------ | ------- |
+| Framework | Next.js      | ^14.1.0 |
+| React     | React        | ^18.2.0 |
+| Styling   | Tailwind CSS | ^3.4.1  |
+| Language  | TypeScript   | ^5.4.0  |
 
 ---
 
@@ -23,15 +23,25 @@ Anda adalah **Frontend Agent** yang bekerja di `apps/portal/`.
 ┌─────────────────────────────────────────────────────────────┐
 │                    RENDERING MODE                           │
 ├─────────────────────────────────────────────────────────────┤
-│  CSR (Client-Side Rendering)                               │
-│  ├── / (Home page)                                         │
-│  ├── /dashboard (if any)                                   │
-│  └── Most pages                                            │
-│                                                             │
 │  SSR (Server-Side Rendering)                               │
-│  └── /batch (Public batch tracking)                        │
+│  └── / (Landing page / Homepage saja)                      │
+│                                                             │
+│  CSR (Client-Side Rendering)                               │
+│  ├── /dashboard                                             │
+│  ├── /supplier                                              │
+│  ├── /batch                                                 │
+│  ├── /complaint                                             │
+│  ├── /market                                                │
+│  ├── /reports                                               │
+│  └── Semua halaman lainnya                                  │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+**Aturan SSR:**
+
+- Hanya gunakan SSR untuk **landing page / homepage** (`/`) atau endpoint pertama
+- Alasan: SEO untuk public-facing page, social sharing meta tags
+- Semua halaman lainnya gunakan CSR dengan `'use client'`
 
 ---
 
@@ -62,21 +72,26 @@ apps/portal/
 ## Key Files to Know
 
 ### 1. API Client
+
 ```
 src/lib/api.ts
 ```
+
 - Semua API calls ke backend
 - Export functions: `getBatchByNumber`, `loginSso`, `getSuppliers`, dll
 
 ### 2. Utility Functions
+
 ```
 src/lib/utils.ts
 ```
+
 - `cn()` - Merge Tailwind classes
 - `formatCurrency()` - Format rupiah
 - `formatDate()` - Format tanggal
 
 ### 3. Pages
+
 ```
 src/app/page.tsx        - Home (CSR)
 src/app/batch/page.tsx  - Batch tracking (SSR)
@@ -91,17 +106,17 @@ src/app/batch/page.tsx  - Batch tracking (SSR)
 ```tsx
 // 1. Create page component
 // src/app/dashboard/page.tsx
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 export default function DashboardPage() {
   const [data, setData] = useState(null);
-  
+
   useEffect(() => {
     // Fetch data on client
-    fetch('/api/data')
-      .then(res => res.json())
+    fetch("/api/data")
+      .then((res) => res.json())
       .then(setData);
   }, []);
 
@@ -146,9 +161,9 @@ export async function getProduct(id: string) {
 }
 
 // 2. Use in component
-import { getProduct } from '@/lib/api';
+import { getProduct } from "@/lib/api";
 
-const product = await getProduct('123');
+const product = await getProduct("123");
 ```
 
 ### 4. Add Component
@@ -172,9 +187,9 @@ export function ProductCard({ name, price }: ProductCardProps) {
 }
 
 // 2. Use in page
-import { ProductCard } from '@/components/ProductCard';
+import { ProductCard } from "@/components/ProductCard";
 
-<ProductCard name="Beras" price={12000} />
+<ProductCard name="Beras" price={12000} />;
 ```
 
 ---
@@ -218,12 +233,12 @@ import { ProductCard } from '@/components/ProductCard';
 
 ## CSR vs SSR Decision
 
-| Use CSR When | Use SSR When |
-|--------------|--------------|
-| Dashboard | Public pages |
-| User-specific data | SEO important |
-| Interactive UI | Initial load performance |
-| Real-time updates | Social sharing |
+| Use CSR When       | Use SSR When             |
+| ------------------ | ------------------------ |
+| Dashboard          | Public pages             |
+| User-specific data | SEO important            |
+| Interactive UI     | Initial load performance |
+| Real-time updates  | Social sharing           |
 
 ---
 

@@ -96,14 +96,14 @@ Backend API docs available at: `http://localhost:3001/docs`
 
 ### Key Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/sso` | Login via SSO BGN |
-| GET | `/api/public/batch/:number` | Public: Cek resi batch |
-| POST | `/api/batches` | Create batch |
-| POST | `/api/complaints` | Submit complaint |
-| GET | `/api/market/prices` | Get market prices |
-| GET | `/api/reports/daily` | Get daily report |
+| Method | Endpoint                    | Description            |
+| ------ | --------------------------- | ---------------------- |
+| POST   | `/api/auth/sso`             | Login via SSO BGN      |
+| GET    | `/api/public/batch/:number` | Public: Cek resi batch |
+| POST   | `/api/batches`              | Create batch           |
+| POST   | `/api/complaints`           | Submit complaint       |
+| GET    | `/api/market/prices`        | Get market prices      |
+| GET    | `/api/reports/daily`        | Get daily report       |
 
 ## Development Workflow
 
@@ -126,7 +126,16 @@ pnpm build             # Build for production
 
 ## Environment Variables
 
-See `.env.example` for all required variables.
+**Single `.env` file at project root** — used by both backend and frontend.
+
+```bash
+# From project root
+cp .env.example .env
+# Edit .env with your settings
+```
+
+The backend loads `.env` from root via `envFilePath: "../../.env"` in `ConfigModule`.
+Frontend uses `NEXT_PUBLIC_*` variables from the same root `.env`.
 
 ## Contributing
 
@@ -144,6 +153,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for commit message convention and PR gu
 ### Auto Labeling
 
 GitHub Actions will auto-label PRs based on changed files:
+
 - `backend` - Changes in `apps/backend/`
 - `frontend` - Changes in `apps/portal/`
 - `shared` - Changes in `packages/`
