@@ -19,6 +19,24 @@
     }
   },
 
+  "linter": {
+    "eslint": {
+      "enabled": true,
+      "command": ["pnpm", "lint"]
+    }
+  },
+
+  "test": {
+    "backend": {
+      "command": "pnpm test",
+      "workdir": "apps/backend"
+    },
+    "frontend": {
+      "command": "pnpm test",
+      "workdir": "apps/portal"
+    }
+  },
+
   "lsp": {
     "typescript": {
       "disabled": false,
@@ -95,13 +113,13 @@
   },
 
   "tools": {
-    "git_*": false,
-    "github_*": false,
-    "postgres_*": false,
-    "filesystem_*": false,
-    "memory_*": false,
-    "context7_*": false,
-    "sequential-thinking_*": false
+    "git_*": true,
+    "github_*": true,
+    "postgres_*": true,
+    "filesystem_*": true,
+    "memory_*": true,
+    "context7_*": true,
+    "sequential-thinking_*": true
   },
 
   "agent": {
@@ -245,7 +263,10 @@
     "docs/UNIVERSAL_SETUP.md",
     "docs/PROJECT_STATUS.md",
     "docs/backend/GUIDE.md",
-    "docs/frontend/GUIDE.md"
+    "docs/frontend/GUIDE.md",
+    "docs/API.md",
+    "docs/DATABASE.md",
+    "docs/DEPLOYMENT.md"
   ],
 
   "share": "manual"

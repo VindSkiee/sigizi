@@ -6,7 +6,10 @@
     "build": "next build",
     "dev": "next dev --port 3000",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage"
   },
   "dependencies": {
     "@sigizi/shared": "workspace:*",
