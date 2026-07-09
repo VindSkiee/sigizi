@@ -15,13 +15,20 @@ async function fetchApi<T>(
 ): Promise<ApiResponse<T>> {
   const url = `${API_URL}${endpoint}`;
 
+  // Tambahkan AbortController untuk timeout 1 detik (agar cepat fallback ke mock)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 1500);
+
   const response = await fetch(url, {
     ...options,
+    signal: controller.signal,
     headers: {
       'Content-Type': 'application/json',
       ...options?.headers,
     },
   });
+
+  clearTimeout(timeoutId);
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({
@@ -39,6 +46,26 @@ export async function getBatchByNumber(batchNumber: string) {
 }
 
 // Auth API
+export async function loginEmail(email: string, password: string) {
+  return fetchApi('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function registerSupplier(data: {
+  name: string;
+  npwp: string;
+  email: string;
+  password: string;
+  npwpFileUrl?: string;
+}) {
+  return fetchApi('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
 export async function loginSso(code: string, state: string) {
   return fetchApi('/api/auth/sso', {
     method: 'POST',
@@ -52,6 +79,34 @@ export async function getCurrentUser(token: string) {
       Authorization: `Bearer ${token}`,
     },
   });
+}
+
+// File Upload API
+export async function uploadFile(file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const url = `${API_URL}/api/upload`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData,
+    signal: controller.signal,
+  });
+
+  clearTimeout(timeoutId);
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      message: 'Upload gagal',
+    }));
+    throw new Error(error.message || 'Upload failed');
+  }
+
+  return response.json();
 }
 
 // Supplier API
@@ -150,5 +205,64 @@ export async function getWeeklyReport(token: string, week: string) {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+  });
+}
+
+// Supplier Dashboard API
+export async function getSupplierDashboard(token: string) {
+  return fetchApi('/api/supplier/dashboard', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function getSupplierProducts(token: string) {
+  return fetchApi('/api/supplier/products', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function getSupplierOrders(token: string, status?: string) {
+  const params = status ? `?status=${status}` : '';
+  return fetchApi(`/api/supplier/orders${params}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function acceptOrder(token: string, orderId: string) {
+  return fetchApi(`/api/supplier/orders/${orderId}/accept`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function rejectOrder(token: string, orderId: string) {
+  return fetchApi(`/api/supplier/orders/${orderId}/reject`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function getSupplierMoUs(token: string) {
+  return fetchApi('/api/supplier/mou', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function getSupplierMaterials(token: string, period?: string) {
+  const params = period ? `?period=${period}` : '';
+  return fetchApi(`/api/supplier/materials${params}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function getSupplierNetwork(token: string) {
+  return fetchApi('/api/supplier/network', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function getWeeklyShipments(token: string) {
+  return fetchApi('/api/supplier/shipments/weekly', {
+    headers: { Authorization: `Bearer ${token}` },
   });
 }
