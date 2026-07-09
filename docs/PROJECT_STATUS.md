@@ -117,40 +117,42 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  CRITICAL PATH TO MVP                                       │
+│  CRITICAL PATH TO MVP (5 Days Sprint)                        │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
-│  Week 1: Setup & Backend                                    │
+│  Day 1: Setup & Backend Core                                 │
 │  ├── [ ] pnpm install                                      │
 │  ├── [ ] .env configuration                                 │
 │  ├── [ ] Prisma migration                                   │
 │  ├── [ ] Order module CRUD                                  │
-│  ├── [ ] Order workflow (status transitions)                │
-│  ├── [ ] Price validation endpoint                          │
-│  ├── [ ] Payment simulation logic                           │
 │  ├── [ ] SPPG module CRUD                                   │
-│  └── [ ] Beneficiary module CRUD                            │
+│  ├── [ ] Beneficiary module CRUD                            │
+│  └── [ ] Price validation endpoint                          │
 │                                                              │
-│  Week 2: Frontend Core                                      │
+│  Day 2: Backend Workflow & Frontend Auth                     │
+│  ├── [ ] Order workflow (status transitions)                │
+│  ├── [ ] Payment simulation logic                           │
 │  ├── [ ] Auth flow (Login + Context)                        │
-│  ├── [ ] Dashboard layout (Sidebar + Header)                │
+│  └── [ ] Dashboard layout (Sidebar + Header)                │
+│                                                              │
+│  Day 3: Frontend Core Pages                                  │
 │  ├── [ ] Supplier management page                           │
 │  ├── [ ] Batch management page                              │
 │  ├── [ ] Order management page (SPPG)                       │
 │  ├── [ ] Supplier orders page                               │
 │  └── [ ] Order tracking dashboard                           │
 │                                                              │
-│  Week 3: Frontend Features                                  │
+│  Day 4: Frontend Features                                    │
 │  ├── [ ] Complaint management page                          │
 │  ├── [ ] Market/Analytics page                              │
 │  ├── [ ] Reports page                                       │
 │  └── [ ] Fix batch complaint form                           │
 │                                                              │
-│  Week 4: Polish & Demo                                      │
+│  Day 5: Polish & Ready for Testing                           │
 │  ├── [ ] End-to-end testing                                 │
 │  ├── [ ] UI/UX polish                                       │
-│  ├── [ ] Demo preparation                                   │
-│  └── [ ] Deploy to demo environment                         │
+│  ├── [ ] Bug fixes                                          │
+│  └── [ ] Ready for user testing                             │
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -318,21 +320,26 @@
 3. [ ] Run `docker-compose up db` and test Postgres
 4. [ ] Run Prisma migrations
 
-### This Week
-1. [ ] Backend: Order module
-2. [ ] Backend: Order workflow (status transitions)
-3. [ ] Backend: Price validation endpoint
-4. [ ] Backend: SPPG module
-5. [ ] Frontend: Auth flow (login + context)
-6. [ ] Frontend: Dashboard layout
+### This Week (Sprint Day 1-2)
+1. [ ] Run `pnpm install`
+2. [ ] Create `.env` file
+3. [ ] Run Prisma migrations
+4. [ ] Backend: Order module
+5. [ ] Backend: Order workflow (status transitions)
+6. [ ] Backend: Price validation endpoint
+7. [ ] Backend: SPPG module
+8. [ ] Frontend: Auth flow (login + context)
+9. [ ] Frontend: Dashboard layout
 
-### Before Demo
+### Before Testing (Sprint Day 5)
 1. [ ] Frontend: All admin pages
 2. [ ] Frontend: Order management page
 3. [ ] Frontend: Supplier orders page
 4. [ ] Frontend: Order tracking dashboard
 5. [ ] End-to-end testing
-6. [ ] Deploy to demo environment
+6. [ ] UI/UX polish
+7. [ ] Bug fixes
+8. [ ] Ready for user testing
 
 ---
 
