@@ -1,6 +1,6 @@
 import { LoggerModule } from "nestjs-pino";
 import { Request } from "express";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -37,5 +37,5 @@ export const loggerConfig = LoggerModule.forRoot({
 });
 
 export function genRequestId(_req: Request): string {
-  return uuidv4();
+  return randomUUID();
 }
