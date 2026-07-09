@@ -34,6 +34,8 @@
 | Market | ✅ Done | 100% | Price stats + IQR anomaly detection |
 | Reports | ✅ Done | 100% | Daily/weekly aggregation |
 | Order | ⏳ In Progress | 0% | Schema exists, no API yet |
+| Order Workflow | ❌ Not Started | 0% | SPPG order → Supplier accept → Delivery → Payment |
+| Price Validation | ❌ Not Started | 0% | Supplier price guard against market |
 | SPPG | ❌ Not Started | 0% | Schema exists, no API yet |
 | Beneficiary | ❌ Not Started | 0% | Schema exists, no API yet |
 
@@ -50,6 +52,9 @@
 | Complaint Management | ❌ Not Started | 0% | Status tracking |
 | Market/Analytics | ❌ Not Started | 0% | Price charts |
 | Reports | ❌ Not Started | 0% | Daily/weekly views |
+| Order Management | ❌ Not Started | 0% | SPPG: Create/manage orders |
+| Supplier Orders | ❌ Not Started | 0% | Supplier: View/accept incoming orders |
+| Order Tracking | ❌ Not Started | 0% | Status tracking dashboard |
 
 ### Frontend Components
 
@@ -60,6 +65,17 @@
 | Reusable UI Components | ❌ Not Started | 0% | Button, Card, Table, etc. |
 | Loading Skeletons | ❌ Not Started | 0% | |
 | Error Boundaries | ❌ Not Started | 0% | |
+
+### Order Workflow Features
+
+| Feature | Status | Progress | Notes |
+|---------|--------|----------|-------|
+| SPPG Order Creation | ❌ Not Started | 0% | Select supplier + items |
+| Supplier Order Acceptance | ❌ Not Started | 0% | Accept/reject workflow |
+| Payment Simulation | ❌ Not Started | 0% | Simple payment flow |
+| Status Tracking | ❌ Not Started | 0% | Real-time status updates |
+| Price Validation | ❌ Not Started | 0% | Algorithm-based validation |
+| Curated Market Data | ❌ Not Started | 0% | Validated prices for SPPG |
 
 ### Infrastructure
 
@@ -109,6 +125,9 @@
 │  ├── [ ] .env configuration                                 │
 │  ├── [ ] Prisma migration                                   │
 │  ├── [ ] Order module CRUD                                  │
+│  ├── [ ] Order workflow (status transitions)                │
+│  ├── [ ] Price validation endpoint                          │
+│  ├── [ ] Payment simulation logic                           │
 │  ├── [ ] SPPG module CRUD                                   │
 │  └── [ ] Beneficiary module CRUD                            │
 │                                                              │
@@ -116,7 +135,10 @@
 │  ├── [ ] Auth flow (Login + Context)                        │
 │  ├── [ ] Dashboard layout (Sidebar + Header)                │
 │  ├── [ ] Supplier management page                           │
-│  └── [ ] Batch management page                              │
+│  ├── [ ] Batch management page                              │
+│  ├── [ ] Order management page (SPPG)                       │
+│  ├── [ ] Supplier orders page                               │
+│  └── [ ] Order tracking dashboard                           │
 │                                                              │
 │  Week 3: Frontend Features                                  │
 │  ├── [ ] Complaint management page                          │
@@ -247,6 +269,9 @@
 - [ ] Run Prisma migrations
 - [ ] Seed database
 - [ ] Backend: Order module CRUD
+- [ ] Backend: Order workflow (status transitions)
+- [ ] Backend: Price validation endpoint
+- [ ] Backend: Payment simulation logic
 - [ ] Backend: SPPG module CRUD
 - [ ] Backend: Beneficiary module CRUD
 - [ ] Frontend: Login page
@@ -254,6 +279,9 @@
 - [ ] Frontend: Dashboard layout (sidebar + header)
 - [ ] Frontend: Supplier management page
 - [ ] Frontend: Batch management page
+- [ ] Frontend: Order management page
+- [ ] Frontend: Supplier orders page
+- [ ] Frontend: Order tracking dashboard
 - [ ] Frontend: Complaint management page
 - [ ] Frontend: Market/Analytics page
 - [ ] Frontend: Reports page
@@ -292,14 +320,19 @@
 
 ### This Week
 1. [ ] Backend: Order module
-2. [ ] Backend: SPPG module
-3. [ ] Frontend: Auth flow (login + context)
-4. [ ] Frontend: Dashboard layout
+2. [ ] Backend: Order workflow (status transitions)
+3. [ ] Backend: Price validation endpoint
+4. [ ] Backend: SPPG module
+5. [ ] Frontend: Auth flow (login + context)
+6. [ ] Frontend: Dashboard layout
 
 ### Before Demo
 1. [ ] Frontend: All admin pages
-2. [ ] End-to-end testing
-3. [ ] Deploy to demo environment
+2. [ ] Frontend: Order management page
+3. [ ] Frontend: Supplier orders page
+4. [ ] Frontend: Order tracking dashboard
+5. [ ] End-to-end testing
+6. [ ] Deploy to demo environment
 
 ---
 
