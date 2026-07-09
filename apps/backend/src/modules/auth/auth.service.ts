@@ -1,7 +1,6 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from '../../database/prisma.service';
-import { Role } from '@prisma/client';
+import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { PrismaService } from "../../database/prisma.service";
 
 @Injectable()
 export class AuthService {
@@ -26,7 +25,7 @@ export class AuthService {
 
   private async findOrCreateMockUser() {
     // Mock data for MVP - replace with real SSO integration
-    const email = 'admin@sppg-purwakarta.go.id';
+    const email = "admin@sppg-purwakarta.go.id";
 
     let user = await this.prisma.user.findUnique({
       where: { email },
@@ -36,16 +35,16 @@ export class AuthService {
       // Create SPPG first
       const sppg = await this.prisma.sppg.create({
         data: {
-          name: 'SPPG Purwakarta',
-          address: 'Jl. Nasional III, Purwakarta',
+          name: "SPPG Purwakarta",
+          address: "Jl. Nasional III, Purwakarta",
         },
       });
 
       user = await this.prisma.user.create({
         data: {
           email,
-          name: 'Budi Santoso',
-          role: Role.SPPG_ADMIN,
+          name: "Budi Santoso",
+          role: "SPPG_ADMIN" as const,
           sppgId: sppg.id,
         },
       });

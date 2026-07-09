@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../database/prisma.service';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../../database/prisma.service";
 
 @Injectable()
 export class MarketService {
@@ -9,7 +9,7 @@ export class MarketService {
     // Get all suppliers with this item
     const suppliers = await this.prisma.supplierItem.findMany({
       where: {
-        name: { contains: item, mode: 'insensitive' },
+        name: { contains: item, mode: "insensitive" },
       },
       include: {
         supplier: true,
@@ -19,7 +19,7 @@ export class MarketService {
     if (suppliers.length === 0) {
       return {
         item,
-        region: region || 'Nasional',
+        region: region || "Nasional",
         statistics: {
           min: 0,
           max: 0,
@@ -43,7 +43,7 @@ export class MarketService {
 
     return {
       item,
-      region: region || 'Nasional',
+      region: region || "Nasional",
       statistics,
       suppliers: suppliers.map((s) => ({
         id: s.supplier.id,
@@ -58,10 +58,18 @@ export class MarketService {
     // Get all items
     const items = await this.prisma.supplierItem.findMany({
       select: { name: true },
-      distinct: ['name'],
+      distinct: ["name"],
     });
 
-    const anomalies = [];
+    const anomalies: Array<{
+      item: string;
+      anomalies: Array<{
+        id: string;
+        name: string;
+        price: number;
+        isAnomaly: boolean;
+      }>;
+    }> = [];
     for (const item of items) {
       const marketData = await this.getMarketPrices(item.name, region);
       const itemAnomalies = marketData.suppliers.filter((s) => s.isAnomaly);
@@ -84,12 +92,13 @@ export class MarketService {
 
     return {
       item,
-      region: region || 'Nasional',
+      region: region || "Nasional",
       currentStatistics: marketData.statistics,
       hetSuggestion: Math.round(hetSuggestion),
-      recommendation: hetSuggestion > marketData.statistics.median
-        ? 'HET disarankan 10% di atas median untuk akomodasi fluktuasi harga'
-        : 'HET mengikuti median pasar',
+      recommendation:
+        hetSuggestion > marketData.statistics.median
+          ? "HET disarankan 10% di atas median untuk akomodasi fluktuasi harga"
+          : "HET mengikuti median pasar",
     };
   }
 

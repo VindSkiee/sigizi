@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../database/prisma.service';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../../database/prisma.service";
 
 @Injectable()
 export class ReportsService {
@@ -22,14 +22,16 @@ export class ReportsService {
       }),
       this.prisma.complaint.findMany({
         where: {
-          batch: { sppgId },
-          batch: { date: { gte: start, lte: end } },
+          batch: {
+            sppgId,
+            date: { gte: start, lte: end },
+          },
         },
       }),
     ]);
 
     if (!sppg) {
-      throw new NotFoundException('SPPG tidak ditemukan');
+      throw new NotFoundException("SPPG tidak ditemukan");
     }
 
     const totalCost = batches.reduce((sum, b) => sum + b.totalCost, 0);
@@ -50,15 +52,15 @@ export class ReportsService {
       batches,
       complaints: {
         total: complaints.length,
-        pending: complaints.filter((c) => c.status === 'PENDING').length,
-        resolved: complaints.filter((c) => c.status === 'RESOLVED').length,
+        pending: complaints.filter((c) => c.status === "PENDING").length,
+        resolved: complaints.filter((c) => c.status === "RESOLVED").length,
       },
     };
   }
 
   async getWeeklyReport(sppgId: string, week: string) {
     // Parse week string (e.g., "2026-W28")
-    const [year, weekNum] = week.split('-W').map(Number);
+    const [year, weekNum] = week.split("-W").map(Number);
 
     // Calculate date range for the week
     const startOfYear = new Date(year, 0, 1);
@@ -82,7 +84,7 @@ export class ReportsService {
     ]);
 
     if (!sppg) {
-      throw new NotFoundException('SPPG tidak ditemukan');
+      throw new NotFoundException("SPPG tidak ditemukan");
     }
 
     const totalCost = batches.reduce((sum, b) => sum + b.totalCost, 0);
@@ -92,14 +94,17 @@ export class ReportsService {
     );
 
     // Group by date
-    const dailyReports = batches.reduce((acc, batch) => {
-      const dateKey = batch.date.toISOString().slice(0, 10);
-      if (!acc[dateKey]) {
-        acc[dateKey] = [];
-      }
-      acc[dateKey].push(batch);
-      return acc;
-    }, {} as Record<string, any[]>);
+    const dailyReports: Record<string, any[]> = batches.reduce(
+      (acc: Record<string, any[]>, batch: any) => {
+        const dateKey = batch.date.toISOString().slice(0, 10);
+        if (!acc[dateKey]) {
+          acc[dateKey] = [];
+        }
+        acc[dateKey].push(batch);
+        return acc;
+      },
+      {} as Record<string, any[]>,
+    );
 
     return {
       week,

@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../database/prisma.service';
-import { CreateBatchRequest } from '@sigizi/shared';
-import { randomBytes } from 'crypto';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../../database/prisma.service";
+import { CreateBatchRequest } from "@sigizi/shared";
+import { randomBytes } from "crypto";
 
 @Injectable()
 export class BatchService {
@@ -23,7 +23,7 @@ export class BatchService {
     return this.prisma.batch.findMany({
       where,
       include: { sppg: true, complaints: true },
-      orderBy: { date: 'desc' },
+      orderBy: { date: "desc" },
     });
   }
 
@@ -34,7 +34,7 @@ export class BatchService {
     });
 
     if (!batch) {
-      throw new NotFoundException('Batch tidak ditemukan');
+      throw new NotFoundException("Batch tidak ditemukan");
     }
 
     return batch;
@@ -47,7 +47,7 @@ export class BatchService {
     });
 
     if (!batch) {
-      throw new NotFoundException('Batch tidak ditemukan');
+      throw new NotFoundException("Batch tidak ditemukan");
     }
 
     // Return public data only
@@ -73,7 +73,7 @@ export class BatchService {
         batchNumber,
         reportKey,
         menu: data.menu,
-        nutrition: data.nutrition || undefined,
+        nutrition: (data.nutrition as any) || undefined,
         allergens: data.allergens || [],
         costPerPortion: data.costPerPortion,
         totalCost: data.totalCost,
@@ -90,7 +90,7 @@ export class BatchService {
     });
 
     if (!batch) {
-      throw new NotFoundException('Batch tidak ditemukan');
+      throw new NotFoundException("Batch tidak ditemukan");
     }
 
     return batch.reportKey;
@@ -98,7 +98,7 @@ export class BatchService {
 
   private async generateBatchNumber(): Promise<string> {
     const today = new Date();
-    const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
+    const dateStr = today.toISOString().slice(0, 10).replace(/-/g, "");
 
     // Count existing batches today
     const start = new Date(today);
@@ -112,15 +112,15 @@ export class BatchService {
       },
     });
 
-    const seq = String(count + 1).padStart(3, '0');
+    const seq = String(count + 1).padStart(3, "0");
     return `BATCH-${dateStr}-${seq}`;
   }
 
   private generateReportKey(): string {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     const bytes = randomBytes(8);
     return Array.from(bytes)
       .map((byte) => chars[byte % chars.length])
-      .join('');
+      .join("");
   }
 }
