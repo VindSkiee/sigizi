@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum Role {
+  SPPG_ADMIN
+  SUPPLIER
+  PUBLIC
+}
+
+enum BatchStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum ComplaintStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  DELIVERED
+}
+
+// Models
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      Role
+  password  String?
+  sppgId    String?
+  sppg      Sppg?    @relation(fields: [sppgId], references: [id])
+  supplierId String?
+  supplier  Supplier? @relation(fields: [supplierId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sppgId])
+  @@index([supplierId])
+}
+
+model Sppg {
+  id           String        @id @default(cuid())
+  name         String
+  mitraId      String?       @unique
+  address      String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  users        User[]
+  beneficiaries Beneficiary[]
+  batches      Batch[]
+  orders       Order[]
+}
+
+model Supplier {
+  id        String         @id @default(cuid())
+  name      String
+  npwp      String         @unique
+  phone     String?
+  address   String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  users     User[]
+  items     SupplierItem[]
+  orders    Order[]
+}
+
+model SupplierItem {
+  id         String   @id @default(cuid())
+  name       String
+  unit       String
+  basePrice  Float
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+  supplierId String
+  createdAt  DateTime @default(now())
+  orderItems OrderItem[]
+
+  @@index([supplierId])
+}
+
+model Beneficiary {
+  id        String   @id @default(cuid())
+  name      String
+  school    String
+  sppg      Sppg     @relation(fields: [sppgId], references: [id])
+  sppgId    String
+  createdAt DateTime @default(now())
+
+  @@index([sppgId])
+}
+
+model Batch {
+  id             String          @id @default(cuid())
+  batchNumber    String          @unique
+  reportKey      String          @unique
+  date           DateTime        @default(now())
+  menu           String
+  nutrition      Json?
+  allergens      String[]
+  costPerPortion Float
+  totalCost      Float
+  sppg           Sppg            @relation(fields: [sppgId], references: [id])
+  sppgId         String
+  status         BatchStatus     @default(ACTIVE)
+  createdAt      DateTime        @default(now())
+  complaints     Complaint[]
+
+  @@index([sppgId])
+  @@index([batchNumber])
+  @@index([date])
+}
+
+model Complaint {
+  id          String          @id @default(cuid())
+  reportKey   String
+  description String
+  evidence    String?
+  status      ComplaintStatus @default(PENDING)
+  batch       Batch           @relation(fields: [batchId], references: [id])
+  batchId     String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([batchId])
+  @@index([status])
+}
+
+model Order {
+  id         String      @id @default(cuid())
+  status     OrderStatus @default(PENDING)
+  total      Float
+  sppg       Sppg        @relation(fields: [sppgId], references: [id])
+  sppgId     String
+  supplier   Supplier    @relation(fields: [supplierId], references: [id])
+  supplierId String
+  items      OrderItem[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([sppgId])
+  @@index([supplierId])
+}
+
+model OrderItem {
+  id         String       @id @default(cuid())
+  order      Order        @relation(fields: [orderId], references: [id])
+  orderId    String
+  item       SupplierItem @relation(fields: [itemId], references: [id])
+  itemId     String
+  quantity   Float
+  unitPrice  Float
+  subtotal   Float
+
+  @@index([orderId])
+}

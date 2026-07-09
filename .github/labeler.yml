@@ -1,0 +1,39 @@
+# Labeler configuration
+# Docs: https://github.com/actions/labeler
+
+backend:
+  - changed-files:
+    - any-glob-to-any-file:
+      - apps/backend/**
+
+frontend:
+  - changed-files:
+    - any-glob-to-any-file:
+      - apps/portal/**
+
+shared:
+  - changed-files:
+    - any-glob-to-any-file:
+      - packages/**
+
+docs:
+  - changed-files:
+    - any-glob-to-any-file:
+      - docs/**
+      - '*.md'
+
+config:
+  - changed-files:
+    - any-glob-to-any-file:
+      - docker-compose.yml
+      - turbo.json
+      - pnpm-workspace.yaml
+      - package.json
+      - .github/**
+      - .gitignore
+      - .env.example
+
+database:
+  - changed-files:
+    - any-glob-to-any-file:
+      - apps/backend/prisma/**

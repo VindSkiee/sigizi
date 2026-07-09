@@ -1,0 +1,24 @@
+# CODEOWNERS - SIGIZI
+# File: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Backend team
+/apps/backend/          @tracebite/backend-team
+
+# Frontend team
+/apps/portal/           @tracebite/frontend-team
+
+# Shared packages
+/packages/              @tracebite/backend-team @tracebite/frontend-team
+
+# Documentation
+/docs/                  @tracebite/lead
+
+# Root config files (monorepo setup)
+/*                      @tracebite/lead
+/.github/               @tracebite/lead
+/docker-compose.yml     @tracebite/lead
+/turbo.json             @tracebite/lead
+/pnpm-workspace.yaml    @tracebite/lead
+/package.json           @tracebite/lead
+/.gitignore             @tracebite/lead
+/.env.example           @tracebite/lead

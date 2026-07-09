@@ -1,0 +1,30 @@
+{
+  "name": "sigizi",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Platform GovTech untuk digitalisasi perizinan dan pengawasan vendor MBG",
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:backend": "turbo run dev --filter=@sigizi/backend",
+    "dev:portal": "turbo run dev --filter=@sigizi/portal",
+    "build": "turbo run build",
+    "build:backend": "turbo run build --filter=@sigizi/backend",
+    "build:portal": "turbo run build --filter=@sigizi/portal",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "db:migrate": "cd apps/backend && pnpm prisma migrate dev",
+    "db:seed": "cd apps/backend && pnpm prisma db seed",
+    "db:studio": "cd apps/backend && pnpm prisma studio",
+    "db:generate": "cd apps/backend && pnpm prisma generate"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "prettier": "^3.2.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@9.0.0"
+}
