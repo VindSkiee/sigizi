@@ -19,24 +19,6 @@
     }
   },
 
-  "linter": {
-    "eslint": {
-      "enabled": true,
-      "command": ["pnpm", "lint"]
-    }
-  },
-
-  "test": {
-    "backend": {
-      "command": "pnpm test",
-      "workdir": "apps/backend"
-    },
-    "frontend": {
-      "command": "pnpm test",
-      "workdir": "apps/portal"
-    }
-  },
-
   "lsp": {
     "typescript": {
       "disabled": false,
