@@ -1,37 +1,31 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  
+
   "model": "opencode/mimo-v2.5-free",
-  
+
   "compaction": {
     "auto": true,
     "prune": true,
     "reserved": 10000
   },
-  
+
   "snapshot": true,
-  
+
   "autoupdate": true,
-  
+
   "formatter": {
     "prettier": {
       "disabled": false
     }
   },
-  
-  "lsp": {
-  "typescript": {
-    "disabled": false,
-    "command": [
-      "npx",
-      "-y",
-      "typescript-language-server",
-      "--stdio"
-    ]
-  }
 
+  "lsp": {
+    "typescript": {
+      "disabled": false,
+      "command": ["npx", "-y", "typescript-language-server", "--stdio"]
+    }
   },
-  
+
   "watcher": {
     "ignore": [
       "node_modules/**",
@@ -41,7 +35,7 @@
       ".git/**"
     ]
   },
-  
+
   "mcp": {
     "git": {
       "type": "local",
@@ -58,12 +52,22 @@
     },
     "filesystem": {
       "type": "local",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", "/mnt/c/MYPROJECTS/HACKATHON/sigizi"],
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/mnt/c/MYPROJECTS/HACKATHON/sigizi"
+      ],
       "enabled": true
     },
     "postgres": {
       "type": "local",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-postgres", "{env:DATABASE_URL}"],
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "{env:DATABASE_URL}"
+      ],
       "enabled": true,
       "environment": {
         "DATABASE_URL": "postgresql://postgres:postgres@localhost:5432/sigizi"
@@ -81,11 +85,15 @@
     },
     "sequential-thinking": {
       "type": "local",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
       "enabled": true
     }
   },
-  
+
   "tools": {
     "git_*": false,
     "github_*": false,
@@ -95,49 +103,120 @@
     "context7_*": false,
     "sequential-thinking_*": false
   },
-  
+
   "agent": {
-    "backend": {
-      "description": "Backend development agent for NestJS + Prisma + PostgreSQL. Use this for API development, database work, and server-side logic.",
-      "mode": "primary",
+    "backend(plan)": {
+      "description": "Backend planning agent - read-only mode for analyzing code and creating implementation plans",
+      "mode": "subagent",
       "model": "opencode/mimo-v2.5-free",
-      "prompt": "{file:.opencode/agents/backend.md}",
-      "tools": {
-        "git_*": true,
-        "github_*": true,
-        "filesystem_*": true,
-        "postgres_*": true,
-        "context7_*": true,
-        "memory_*": true,
-        "sequential-thinking_*": true
-      }
-    },
-    "frontend": {
-      "description": "Frontend development agent for Next.js + React + Tailwind. Use this for UI development, components, and client-side logic.",
-      "mode": "primary",
-      "model": "opencode/mimo-v2.5-free",
-      "prompt": "{file:.opencode/agents/frontend.md}",
-      "tools": {
-        "git_*": true,
-        "github_*": true,
-        "filesystem_*": true,
-        "postgres_*": false,
-        "context7_*": true,
-        "memory_*": true,
-        "sequential-thinking_*": true
-      }
-    },
-    "plan": {
-      "description": "Planning and analysis agent. Read-only mode for reviewing code and creating implementation plans.",
-      "mode": "primary",
-      "model": "opencode/mimo-v2.5-free",
+      "prompt": "{file:.opencode/agents/backend-plan.md}",
       "permission": {
         "edit": "deny",
-        "bash": "ask"
+        "bash": {
+          "git *": "allow",
+          "git status": "allow",
+          "git log*": "allow",
+          "git diff": "allow",
+          "git diff*": "allow",
+          "ls *": "allow",
+          "cat *": "allow",
+          "find *": "allow",
+          "grep *": "allow",
+          "pwd": "allow",
+          "*": "deny"
+        }
+      }
+    },
+    "backend(build)": {
+      "description": "Backend build agent - implements code from plans or prompts for NestJS + Prisma",
+      "mode": "primary",
+      "model": "opencode/mimo-v2.5-free",
+      "prompt": "{file:.opencode/agents/backend-build.md}",
+      "permission": {
+        "edit": "allow",
+        "bash": {
+          "git *": "allow",
+          "git status": "allow",
+          "git log*": "allow",
+          "git diff": "allow",
+          "git diff*": "allow",
+          "git add *": "allow",
+          "git commit *": "allow",
+          "git push*": "allow",
+          "pnpm *": "allow",
+          "npm *": "allow",
+          "npx *": "allow",
+          "node *": "allow",
+          "ls *": "allow",
+          "cat *": "allow",
+          "find *": "allow",
+          "grep *": "allow",
+          "pwd": "allow",
+          "mkdir *": "allow",
+          "cp *": "allow",
+          "mv *": "allow",
+          "echo *": "allow",
+          "*": "ask"
+        }
+      }
+    },
+    "frontend(plan)": {
+      "description": "Frontend planning agent - read-only mode for analyzing UI code and creating implementation plans",
+      "mode": "subagent",
+      "model": "opencode/mimo-v2.5-free",
+      "prompt": "{file:.opencode/agents/frontend-plan.md}",
+      "permission": {
+        "edit": "deny",
+        "bash": {
+          "git *": "allow",
+          "git status": "allow",
+          "git log*": "allow",
+          "git diff": "allow",
+          "git diff*": "allow",
+          "ls *": "allow",
+          "cat *": "allow",
+          "find *": "allow",
+          "grep *": "allow",
+          "pwd": "allow",
+          "*": "deny"
+        }
+      }
+    },
+    "frontend(build)": {
+      "description": "Frontend build agent - implements UI code from plans or prompts for Next.js + React + Tailwind",
+      "mode": "primary",
+      "model": "opencode/mimo-v2.5-free",
+      "prompt": "{file:.opencode/agents/frontend-build.md}",
+      "permission": {
+        "edit": "allow",
+        "bash": {
+          "git *": "allow",
+          "git status": "allow",
+          "git log*": "allow",
+          "git diff": "allow",
+          "git diff*": "allow",
+          "git add *": "allow",
+          "git commit *": "allow",
+          "git push*": "allow",
+          "pnpm *": "allow",
+          "npm *": "allow",
+          "npx *": "allow",
+          "node *": "allow",
+          "ls *": "allow",
+          "cat *": "allow",
+          "find *": "allow",
+          "grep *": "allow",
+          "pwd": "allow",
+          "mkdir *": "allow",
+          "cp *": "allow",
+          "mv *": "allow",
+          "echo *": "allow",
+          "*": "ask"
+        }
       }
     }
   },
-  
+
   "permission": {
     "edit": "allow",
     "bash": {
@@ -160,7 +239,7 @@
       "*": "allow"
     }
   },
-  
+
   "instructions": [
     "AGENTS.md",
     "docs/UNIVERSAL_SETUP.md",
@@ -168,6 +247,6 @@
     "docs/backend/GUIDE.md",
     "docs/frontend/GUIDE.md"
   ],
-  
+
   "share": "manual"
 }
