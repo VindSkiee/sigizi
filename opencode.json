@@ -20,9 +20,16 @@
   },
   
   "lsp": {
-    "typescript": {
-      "disabled": false
-    }
+  "typescript": {
+    "disabled": false,
+    "command": [
+      "npx",
+      "-y",
+      "typescript-language-server",
+      "--stdio"
+    ]
+  }
+
   },
   
   "watcher": {
