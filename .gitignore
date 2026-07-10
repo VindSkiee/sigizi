@@ -24,6 +24,9 @@ out/
 .DS_Store
 Thumbs.db
 
+# Windows pnpm store symlink leak
+C:\\*
+
 # Turbo
 .turbo/
 

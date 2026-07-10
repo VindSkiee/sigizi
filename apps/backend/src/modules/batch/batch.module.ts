@@ -1,9 +1,9 @@
-import { Module } from '@nestjs/common';
-import { BatchController, PublicBatchController } from './batch.controller';
-import { BatchService } from './batch.service';
+import { Module } from "@nestjs/common";
+import { BatchService } from "./services/batch.service";
+import { BatchController } from "./controllers/batch.controller";
 
 @Module({
-  controllers: [BatchController, PublicBatchController],
+  controllers: [BatchController],
   providers: [BatchService],
   exports: [BatchService],
 })
