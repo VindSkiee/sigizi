@@ -19,7 +19,7 @@ interface BatchData {
   costPerPortion: number;
   totalCost: number;
   status: string;
-  reportKey?: string;
+  reportKey: string;
 }
 
 export default function BatchPage() {
