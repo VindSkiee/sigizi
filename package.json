@@ -12,14 +12,16 @@
     "build:portal": "turbo run build --filter=@sigizi/portal",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "db:migrate": "cd apps/backend && pnpm prisma migrate dev",
-    "db:seed": "cd apps/backend && pnpm prisma db seed",
-    "db:studio": "cd apps/backend && pnpm prisma studio",
-    "db:generate": "cd apps/backend && pnpm prisma generate"
+    "db:migrate": "cd apps/backend && pnpm prisma:migrate",
+    "db:seed": "cd apps/backend && pnpm prisma:seed",
+    "db:studio": "cd apps/backend && pnpm prisma:studio",
+    "db:generate": "cd apps/backend && pnpm prisma:generate",
+    "db:fresh": "cd apps/backend && pnpm prisma:fresh"
   },
   "devDependencies": {
-    "turbo": "^2.0.0",
+    "dotenv-cli": "^7.4.0",
     "prettier": "^3.2.0",
+    "turbo": "^2.0.0",
     "typescript": "^5.4.0"
   },
   "engines": {
