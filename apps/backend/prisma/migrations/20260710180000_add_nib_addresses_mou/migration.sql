@@ -11,7 +11,7 @@ CREATE TYPE "ComplaintStatus" AS ENUM ('PENDING', 'REVIEWED', 'RESOLVED');
 CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'CONFIRMED', 'DELIVERED', 'COMPLETED');
 
 -- CreateEnum
-CREATE TYPE "InventoryTransactionType" AS ENUM ('IN', 'OUT');
+CREATE TYPE "MouStatus" AS ENUM ('DRAFT', 'ACTIVE', 'EXPIRED', 'TERMINATED');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -33,9 +33,20 @@ CREATE TABLE "Sppg" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "mitraId" TEXT,
-    "address" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    -- Alamat terstruktur
+    "address" TEXT,
+    "province" TEXT NOT NULL,
+    "regency" TEXT NOT NULL,
+    "district" TEXT NOT NULL,
+    "village" TEXT,
+    "postalCode" TEXT,
+
+    -- Koordinat GPS
+    "latitude" DOUBLE PRECISION,
+    "longitude" DOUBLE PRECISION,
 
     CONSTRAINT "Sppg_pkey" PRIMARY KEY ("id")
 );
@@ -44,11 +55,22 @@ CREATE TABLE "Sppg" (
 CREATE TABLE "Supplier" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "npwp" TEXT NOT NULL,
     "phone" TEXT,
-    "address" TEXT,
+    "nib" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    -- Alamat terstruktur
+    "address" TEXT,
+    "province" TEXT NOT NULL,
+    "regency" TEXT NOT NULL,
+    "district" TEXT NOT NULL,
+    "village" TEXT,
+    "postalCode" TEXT,
+
+    -- Koordinat GPS
+    "latitude" DOUBLE PRECISION,
+    "longitude" DOUBLE PRECISION,
 
     CONSTRAINT "Supplier_pkey" PRIMARY KEY ("id")
 );
@@ -85,6 +107,50 @@ CREATE TABLE "Beneficiary" (
 );
 
 -- CreateTable
+CREATE TABLE "Mou" (
+    "id" TEXT NOT NULL,
+    "mouNumber" TEXT NOT NULL,
+
+    -- Pihak-pihak
+    "sppgId" TEXT NOT NULL,
+    "supplierId" TEXT NOT NULL,
+
+    -- Masa kontrak
+    "startDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3) NOT NULL,
+
+    -- Status
+    "status" "MouStatus" NOT NULL DEFAULT 'DRAFT',
+
+    -- Dokumen & ketentuan
+    "title" TEXT NOT NULL,
+    "nibSnapshot" TEXT,
+    "terms" JSONB,
+    "documentUrl" TEXT,
+    "notes" TEXT,
+
+    -- Audit
+    "createdById" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Mou_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "MouItem" (
+    "id" TEXT NOT NULL,
+    "mouId" TEXT NOT NULL,
+    "itemId" TEXT NOT NULL,
+    "agreedPrice" DOUBLE PRECISION NOT NULL,
+    "minOrderQty" DOUBLE PRECISION,
+    "maxOrderQty" DOUBLE PRECISION,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "MouItem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Order" (
     "id" TEXT NOT NULL,
     "status" "OrderStatus" NOT NULL DEFAULT 'PENDING',
@@ -92,6 +158,7 @@ CREATE TABLE "Order" (
     "notes" TEXT,
     "sppgId" TEXT NOT NULL,
     "supplierId" TEXT NOT NULL,
+    "mouId" TEXT,
     "createdById" TEXT NOT NULL,
     "updatedById" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -107,24 +174,9 @@ CREATE TABLE "OrderItem" (
     "itemId" TEXT NOT NULL,
     "quantity" DOUBLE PRECISION NOT NULL,
     "unitPrice" DOUBLE PRECISION NOT NULL,
-    "purchasePrice" DOUBLE PRECISION NOT NULL,
     "subtotal" DOUBLE PRECISION NOT NULL,
 
     CONSTRAINT "OrderItem_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "OrderStatusHistory" (
-    "id" TEXT NOT NULL,
-    "orderId" TEXT NOT NULL,
-    "fromStatus" "OrderStatus" NOT NULL,
-    "toStatus" "OrderStatus" NOT NULL,
-    "notes" TEXT,
-    "evidenceUrl" TEXT,
-    "changedById" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "OrderStatusHistory_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -143,7 +195,6 @@ CREATE TABLE "Batch" (
     "status" "BatchStatus" NOT NULL DEFAULT 'ACTIVE',
     "createdById" TEXT NOT NULL,
     "updatedById" TEXT,
-    "dataHash" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -154,7 +205,6 @@ CREATE TABLE "Batch" (
 CREATE TABLE "BatchItem" (
     "id" TEXT NOT NULL,
     "batchId" TEXT NOT NULL,
-    "stockLotId" TEXT NOT NULL,
     "itemId" TEXT NOT NULL,
     "quantity" DOUBLE PRECISION NOT NULL,
     "unitPrice" DOUBLE PRECISION NOT NULL,
@@ -163,39 +213,6 @@ CREATE TABLE "BatchItem" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "BatchItem_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "StockLot" (
-    "id" TEXT NOT NULL,
-    "supplierId" TEXT NOT NULL,
-    "itemId" TEXT NOT NULL,
-    "orderId" TEXT NOT NULL,
-    "orderItemId" TEXT NOT NULL,
-    "purchasePrice" DOUBLE PRECISION NOT NULL,
-    "unit" TEXT NOT NULL,
-    "originalQty" DOUBLE PRECISION NOT NULL,
-    "remainingQty" DOUBLE PRECISION NOT NULL,
-    "receivedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createdById" TEXT NOT NULL,
-
-    CONSTRAINT "StockLot_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "InventoryTransaction" (
-    "id" TEXT NOT NULL,
-    "type" "InventoryTransactionType" NOT NULL,
-    "stockLotId" TEXT NOT NULL,
-    "batchItemId" TEXT,
-    "quantity" DOUBLE PRECISION NOT NULL,
-    "referenceType" TEXT NOT NULL,
-    "referenceId" TEXT NOT NULL,
-    "notes" TEXT,
-    "createdById" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "InventoryTransaction_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -215,201 +232,144 @@ CREATE TABLE "Complaint" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
-
--- CreateIndex
 CREATE INDEX "User_sppgId_idx" ON "User"("sppgId");
-
--- CreateIndex
 CREATE INDEX "User_supplierId_idx" ON "User"("supplierId");
-
--- CreateIndex
 CREATE INDEX "User_role_idx" ON "User"("role");
 
--- CreateIndex
 CREATE UNIQUE INDEX "Sppg_mitraId_key" ON "Sppg"("mitraId");
+CREATE INDEX "Sppg_province_idx" ON "Sppg"("province");
+CREATE INDEX "Sppg_regency_idx" ON "Sppg"("regency");
 
--- CreateIndex
-CREATE UNIQUE INDEX "Supplier_npwp_key" ON "Supplier"("npwp");
+CREATE UNIQUE INDEX "Supplier_nib_key" ON "Supplier"("nib");
+CREATE INDEX "Supplier_province_idx" ON "Supplier"("province");
+CREATE INDEX "Supplier_regency_idx" ON "Supplier"("regency");
+CREATE INDEX "Supplier_district_idx" ON "Supplier"("district");
 
--- CreateIndex
 CREATE INDEX "SupplierItem_supplierId_idx" ON "SupplierItem"("supplierId");
-
--- CreateIndex
 CREATE INDEX "SupplierItem_name_idx" ON "SupplierItem"("name");
 
--- CreateIndex
 CREATE INDEX "Beneficiary_sppgId_idx" ON "Beneficiary"("sppgId");
-
--- CreateIndex
 CREATE INDEX "Beneficiary_institution_idx" ON "Beneficiary"("institution");
 
--- CreateIndex
+CREATE UNIQUE INDEX "Mou_mouNumber_key" ON "Mou"("mouNumber");
+CREATE INDEX "Mou_sppgId_idx" ON "Mou"("sppgId");
+CREATE INDEX "Mou_supplierId_idx" ON "Mou"("supplierId");
+CREATE INDEX "Mou_status_idx" ON "Mou"("status");
+CREATE INDEX "Mou_startDate_idx" ON "Mou"("startDate");
+CREATE INDEX "Mou_endDate_idx" ON "Mou"("endDate");
+
+CREATE UNIQUE INDEX "MouItem_mouId_itemId_key" ON "MouItem"("mouId", "itemId");
+
 CREATE INDEX "Order_sppgId_idx" ON "Order"("sppgId");
-
--- CreateIndex
 CREATE INDEX "Order_supplierId_idx" ON "Order"("supplierId");
-
--- CreateIndex
 CREATE INDEX "Order_status_idx" ON "Order"("status");
-
--- CreateIndex
 CREATE INDEX "Order_createdById_idx" ON "Order"("createdById");
+CREATE INDEX "Order_mouId_idx" ON "Order"("mouId");
 
--- CreateIndex
 CREATE INDEX "OrderItem_orderId_idx" ON "OrderItem"("orderId");
 
--- CreateIndex
-CREATE INDEX "OrderStatusHistory_orderId_idx" ON "OrderStatusHistory"("orderId");
-
--- CreateIndex
-CREATE INDEX "OrderStatusHistory_changedById_idx" ON "OrderStatusHistory"("changedById");
-
--- CreateIndex
-CREATE INDEX "OrderStatusHistory_createdAt_idx" ON "OrderStatusHistory"("createdAt");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Batch_batchNumber_key" ON "Batch"("batchNumber");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Batch_reportKey_key" ON "Batch"("reportKey");
-
--- CreateIndex
 CREATE INDEX "Batch_sppgId_idx" ON "Batch"("sppgId");
-
--- CreateIndex
 CREATE INDEX "Batch_batchNumber_idx" ON "Batch"("batchNumber");
-
--- CreateIndex
 CREATE INDEX "Batch_date_idx" ON "Batch"("date");
-
--- CreateIndex
 CREATE INDEX "Batch_status_idx" ON "Batch"("status");
-
--- CreateIndex
 CREATE INDEX "Batch_createdById_idx" ON "Batch"("createdById");
 
--- CreateIndex
 CREATE INDEX "BatchItem_batchId_idx" ON "BatchItem"("batchId");
-
--- CreateIndex
-CREATE INDEX "BatchItem_stockLotId_idx" ON "BatchItem"("stockLotId");
-
--- CreateIndex
 CREATE INDEX "BatchItem_itemId_idx" ON "BatchItem"("itemId");
 
--- CreateIndex
-CREATE INDEX "StockLot_supplierId_itemId_idx" ON "StockLot"("supplierId", "itemId");
-
--- CreateIndex
-CREATE INDEX "StockLot_orderId_idx" ON "StockLot"("orderId");
-
--- CreateIndex
-CREATE INDEX "StockLot_remainingQty_idx" ON "StockLot"("remainingQty");
-
--- CreateIndex
-CREATE UNIQUE INDEX "StockLot_supplierId_itemId_orderId_key" ON "StockLot"("supplierId", "itemId", "orderId");
-
--- CreateIndex
-CREATE INDEX "InventoryTransaction_stockLotId_idx" ON "InventoryTransaction"("stockLotId");
-
--- CreateIndex
-CREATE INDEX "InventoryTransaction_referenceType_referenceId_idx" ON "InventoryTransaction"("referenceType", "referenceId");
-
--- CreateIndex
-CREATE INDEX "InventoryTransaction_type_idx" ON "InventoryTransaction"("type");
-
--- CreateIndex
-CREATE INDEX "InventoryTransaction_createdAt_idx" ON "InventoryTransaction"("createdAt");
-
--- CreateIndex
 CREATE INDEX "Complaint_batchId_idx" ON "Complaint"("batchId");
-
--- CreateIndex
 CREATE INDEX "Complaint_status_idx" ON "Complaint"("status");
-
--- CreateIndex
 CREATE INDEX "Complaint_reportKey_idx" ON "Complaint"("reportKey");
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_sppgId_fkey" FOREIGN KEY ("sppgId") REFERENCES "Sppg"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES "Supplier"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "SupplierItem" ADD CONSTRAINT "SupplierItem_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES "Supplier"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Beneficiary" ADD CONSTRAINT "Beneficiary_sppgId_fkey" FOREIGN KEY ("sppgId") REFERENCES "Sppg"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
--- AddForeignKey
+ALTER TABLE "Mou" ADD CONSTRAINT "Mou_sppgId_fkey" FOREIGN KEY ("sppgId") REFERENCES "Sppg"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Mou" ADD CONSTRAINT "Mou_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES "Supplier"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Mou" ADD CONSTRAINT "Mou_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE "MouItem" ADD CONSTRAINT "MouItem_mouId_fkey" FOREIGN KEY ("mouId") REFERENCES "Mou"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "MouItem" ADD CONSTRAINT "MouItem_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "SupplierItem"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
 ALTER TABLE "Order" ADD CONSTRAINT "Order_sppgId_fkey" FOREIGN KEY ("sppgId") REFERENCES "Sppg"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Order" ADD CONSTRAINT "Order_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES "Supplier"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
+ALTER TABLE "Order" ADD CONSTRAINT "Order_mouId_fkey" FOREIGN KEY ("mouId") REFERENCES "Mou"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "Order" ADD CONSTRAINT "Order_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Order" ADD CONSTRAINT "Order_updatedById_fkey" FOREIGN KEY ("updatedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
--- AddForeignKey
 ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "SupplierItem"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
--- AddForeignKey
-ALTER TABLE "OrderStatusHistory" ADD CONSTRAINT "OrderStatusHistory_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "OrderStatusHistory" ADD CONSTRAINT "OrderStatusHistory_changedById_fkey" FOREIGN KEY ("changedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Batch" ADD CONSTRAINT "Batch_sppgId_fkey" FOREIGN KEY ("sppgId") REFERENCES "Sppg"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Batch" ADD CONSTRAINT "Batch_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Batch" ADD CONSTRAINT "Batch_updatedById_fkey" FOREIGN KEY ("updatedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
--- AddForeignKey
 ALTER TABLE "BatchItem" ADD CONSTRAINT "BatchItem_batchId_fkey" FOREIGN KEY ("batchId") REFERENCES "Batch"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "BatchItem" ADD CONSTRAINT "BatchItem_stockLotId_fkey" FOREIGN KEY ("stockLotId") REFERENCES "StockLot"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "BatchItem" ADD CONSTRAINT "BatchItem_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "SupplierItem"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "BatchItem" ADD CONSTRAINT "BatchItem_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
--- AddForeignKey
-ALTER TABLE "StockLot" ADD CONSTRAINT "StockLot_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES "Supplier"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "StockLot" ADD CONSTRAINT "StockLot_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "SupplierItem"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "StockLot" ADD CONSTRAINT "StockLot_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "StockLot" ADD CONSTRAINT "StockLot_orderItemId_fkey" FOREIGN KEY ("orderItemId") REFERENCES "OrderItem"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "StockLot" ADD CONSTRAINT "StockLot_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "InventoryTransaction" ADD CONSTRAINT "InventoryTransaction_stockLotId_fkey" FOREIGN KEY ("stockLotId") REFERENCES "StockLot"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "InventoryTransaction" ADD CONSTRAINT "InventoryTransaction_batchItemId_fkey" FOREIGN KEY ("batchItemId") REFERENCES "BatchItem"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "InventoryTransaction" ADD CONSTRAINT "InventoryTransaction_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Complaint" ADD CONSTRAINT "Complaint_batchId_fkey" FOREIGN KEY ("batchId") REFERENCES "Batch"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- ============================================================================
+-- CHECK CONSTRAINTS
+-- ============================================================================
+
+-- Supplier
+ALTER TABLE "Supplier" ADD CONSTRAINT "supplier_nib_not_empty" CHECK (LENGTH("nib") > 0);
+ALTER TABLE "Supplier" ADD CONSTRAINT "supplier_province_not_empty" CHECK (LENGTH("province") > 0);
+ALTER TABLE "Supplier" ADD CONSTRAINT "supplier_regency_not_empty" CHECK (LENGTH("regency") > 0);
+ALTER TABLE "Supplier" ADD CONSTRAINT "supplier_district_not_empty" CHECK (LENGTH("district") > 0);
+ALTER TABLE "Supplier" ADD CONSTRAINT "supplier_latitude_range" CHECK ("latitude" IS NULL OR ("latitude" >= -90 AND "latitude" <= 90));
+ALTER TABLE "Supplier" ADD CONSTRAINT "supplier_longitude_range" CHECK ("longitude" IS NULL OR ("longitude" >= -180 AND "longitude" <= 180));
+
+-- Sppg
+ALTER TABLE "Sppg" ADD CONSTRAINT "sppg_province_not_empty" CHECK (LENGTH("province") > 0);
+ALTER TABLE "Sppg" ADD CONSTRAINT "sppg_regency_not_empty" CHECK (LENGTH("regency") > 0);
+ALTER TABLE "Sppg" ADD CONSTRAINT "sppg_district_not_empty" CHECK (LENGTH("district") > 0);
+ALTER TABLE "Sppg" ADD CONSTRAINT "sppg_latitude_range" CHECK ("latitude" IS NULL OR ("latitude" >= -90 AND "latitude" <= 90));
+ALTER TABLE "Sppg" ADD CONSTRAINT "sppg_longitude_range" CHECK ("longitude" IS NULL OR ("longitude" >= -180 AND "longitude" <= 180));
+
+-- SupplierItem
+ALTER TABLE "SupplierItem" ADD CONSTRAINT "supplieritem_baseprice_positive" CHECK ("basePrice" > 0);
+ALTER TABLE "SupplierItem" ADD CONSTRAINT "supplieritem_minorderqty_positive" CHECK ("minOrderQty" IS NULL OR "minOrderQty" > 0);
+ALTER TABLE "SupplierItem" ADD CONSTRAINT "supplieritem_orderstep_positive" CHECK ("orderStep" IS NULL OR "orderStep" > 0);
+
+-- Beneficiary
+ALTER TABLE "Beneficiary" ADD CONSTRAINT "beneficiary_totalpositive" CHECK ("totalBeneficiary" > 0);
+
+-- Order
+ALTER TABLE "Order" ADD CONSTRAINT "order_total_positive" CHECK ("total" >= 0);
+
+-- OrderItem
+ALTER TABLE "OrderItem" ADD CONSTRAINT "orderitem_quantity_positive" CHECK ("quantity" > 0);
+ALTER TABLE "OrderItem" ADD CONSTRAINT "orderitem_unitprice_positive" CHECK ("unitPrice" > 0);
+ALTER TABLE "OrderItem" ADD CONSTRAINT "orderitem_subtotal_positive" CHECK ("subtotal" > 0);
+ALTER TABLE "OrderItem" ADD CONSTRAINT "orderitem_subtotal_formula" CHECK (ABS("subtotal" - ("quantity" * "unitPrice")) < 0.01);
+
+-- MoU
+ALTER TABLE "Mou" ADD CONSTRAINT "mou_start_before_end" CHECK ("startDate" < "endDate");
+ALTER TABLE "Mou" ADD CONSTRAINT "mou_number_format" CHECK ("mouNumber" ~ '^MOU-[0-9]{8}-[0-9]{3}$');
+
+-- MouItem
+ALTER TABLE "MouItem" ADD CONSTRAINT "mouitem_agreedprice_positive" CHECK ("agreedPrice" > 0);
+ALTER TABLE "MouItem" ADD CONSTRAINT "mouitem_minorderqty_positive" CHECK ("minOrderQty" IS NULL OR "minOrderQty" > 0);
+ALTER TABLE "MouItem" ADD CONSTRAINT "mouitem_maxorderqty_positive" CHECK ("maxOrderQty" IS NULL OR "maxOrderQty" > 0);
+
+-- Batch
+ALTER TABLE "Batch" ADD CONSTRAINT "batch_totalcost_positive" CHECK ("totalCost" >= 0);
+ALTER TABLE "Batch" ADD CONSTRAINT "batch_costperportion_positive" CHECK ("costPerPortion" >= 0);
+ALTER TABLE "Batch" ADD CONSTRAINT "batch_beneficiarycount_positive" CHECK ("beneficiaryCount" IS NULL OR "beneficiaryCount" > 0);
+
+-- BatchItem
+ALTER TABLE "BatchItem" ADD CONSTRAINT "batchitem_quantity_positive" CHECK ("quantity" > 0);
+ALTER TABLE "BatchItem" ADD CONSTRAINT "batchitem_unitprice_positive" CHECK ("unitPrice" > 0);
+ALTER TABLE "BatchItem" ADD CONSTRAINT "batchitem_subtotal_positive" CHECK ("subtotal" > 0);
+ALTER TABLE "BatchItem" ADD CONSTRAINT "batchitem_subtotal_formula" CHECK (ABS("subtotal" - ("quantity" * "unitPrice")) < 0.01);
+
+-- Complaint
+ALTER TABLE "Complaint" ADD CONSTRAINT "complaint_reportkey_format" CHECK ("reportKey" ~ '^[A-Z0-9]{6,8}$');

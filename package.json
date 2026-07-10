@@ -16,7 +16,9 @@
     "db:seed": "cd apps/backend && pnpm prisma:seed",
     "db:studio": "cd apps/backend && pnpm prisma:studio",
     "db:generate": "cd apps/backend && pnpm prisma:generate",
-    "db:fresh": "cd apps/backend && pnpm prisma:fresh"
+    "db:reset": "cd apps/backend && pnpm prisma:reset",
+    "db:fresh": "cd apps/backend && pnpm prisma:fresh",
+    "db:reseed": "cd apps/backend && pnpm prisma:reseed"
   },
   "devDependencies": {
     "dotenv-cli": "^7.4.0",

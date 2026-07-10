@@ -1,4 +1,10 @@
-import { Role, BatchStatus, ComplaintStatus, OrderStatus, InventoryTransactionType } from "../types";
+import {
+  Role,
+  BatchStatus,
+  ComplaintStatus,
+  OrderStatus,
+  MouStatus,
+} from "../types";
 
 // ============================================================================
 // API
@@ -25,11 +31,30 @@ export const REPORT_KEY_LENGTH = 8;
 export const REPORT_KEY_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // No I, O, 0, 1
 
 // ============================================================================
+// MoU
+// ============================================================================
+
+export const MOU_NUMBER_FORMAT = "MOU-{DATE}-{SEQ}";
+export const MOU_DATE_FORMAT = "YYYYMMDD";
+
+// ============================================================================
 // Supplier
 // ============================================================================
 
-export const NPWP_MIN_LENGTH = 10;
-export const NPWP_MAX_LENGTH = 15;
+export const NIB_MIN_LENGTH = 10;
+export const NIB_MAX_LENGTH = 50;
+export const NIB_MAX_FILE_SIZE_MB = 10;
+
+// ============================================================================
+// Address / Geolocation
+// ============================================================================
+
+export const LATITUDE_MIN = -90;
+export const LATITUDE_MAX = 90;
+export const LONGITUDE_MIN = -180;
+export const LONGITUDE_MAX = 180;
+
+export const DEFAULT_SEARCH_RADIUS_KM = 25; // Default radius pencarian supplier
 
 // ============================================================================
 // Complaint
@@ -62,9 +87,10 @@ export const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "report:download",
     "order:read",
     "order:write",
-    "inventory:read",
     "beneficiary:read",
     "beneficiary:write",
+    "mou:read",
+    "mou:write",
   ],
   [Role.SUPPLIER]: [
     "supplier:read:own",
@@ -73,9 +99,8 @@ export const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "item:write:own",
     "order:read:own",
     "order:write:own",
-    "stocklot:read:own",
+    "mou:read:own",
   ],
-  // PUBLIC dihapus — public endpoint tidak memerlukan role
 };
 
 // ============================================================================
@@ -85,7 +110,8 @@ export const ROLE_PERMISSIONS: Record<Role, string[]> = {
 export const VALIDATION_MESSAGES = {
   REQUIRED: "Field ini wajib diisi",
   INVALID_EMAIL: "Format email tidak valid",
-  INVALID_NPWP: "NPWP harus 10-15 digit",
+  INVALID_NIB: "NIB tidak valid",
+  NIB_FILE_TOO_LARGE: `Ukuran file NIB maksimal ${NIB_MAX_FILE_SIZE_MB}MB`,
   INVALID_REPORT_KEY: "Report Key tidak valid",
   BATCH_NOT_FOUND: "Batch tidak ditemukan",
   REPORT_KEY_MISMATCH: "Report Key tidak cocok dengan batch",
@@ -96,12 +122,18 @@ export const VALIDATION_MESSAGES = {
   DESCRIPTION_TOO_SHORT: "Deskripsi minimal 10 karakter",
   QUANTITY_MUST_POSITIVE: "Jumlah harus lebih dari 0",
   PRICE_MUST_POSITIVE: "Harga tidak boleh negatif",
-  STOCK_INSUFFICIENT: "Stok tidak mencukupi",
-  STOCK_LOT_NOT_FOUND: "Stock lot tidak ditemukan",
   ORDER_NOT_FOUND: "Order tidak ditemukan",
   ORDER_STATUS_INVALID: "Transisi status tidak valid",
   SUPPLIER_NOT_FOUND: "Supplier tidak ditemukan",
   BENEFICIARY_NOT_FOUND: "Penerima manfaat tidak ditemukan",
+  PROVINCE_REQUIRED: "Provinsi wajib diisi",
+  REGENCY_REQUIRED: "Kabupaten/Kota wajib diisi",
+  DISTRICT_REQUIRED: "Kecamatan wajib diisi",
+  MOU_NOT_FOUND: "MoU tidak ditemukan",
+  MOU_EXPIRED: "MoU sudah tidak berlaku",
+  MOU_STATUS_INVALID: "Transisi status MoU tidak valid",
+  MOU_DATES_INVALID: "Tanggal sebelum harus sebelum tanggal berakhir",
+  MOU_OVERLAP: "MoU aktif sudah ada untuk pasangan SPPG-Supplier ini",
 } as const;
 
 // ============================================================================
@@ -147,20 +179,6 @@ export const UNIT_OPTIONS = [
 ] as const;
 
 // ============================================================================
-// Inventory Transaction Types
-// ============================================================================
-
-export const INVENTORY_TRANSACTION_TYPES: Record<InventoryTransactionType, string> = {
-  [InventoryTransactionType.IN]: "Penerimaan dari supplier",
-  [InventoryTransactionType.OUT]: "Pengeluaran untuk batch",
-};
-
-export const INVENTORY_REFERENCE_TYPES = {
-  ORDER_DELIVERY: "ORDER_DELIVERY",
-  BATCH_CONSUMPTION: "BATCH_CONSUMPTION",
-} as const;
-
-// ============================================================================
 // Order Status Transitions — Valid flow
 // ============================================================================
 
@@ -182,9 +200,45 @@ export const VALID_BATCH_TRANSITIONS: Record<BatchStatus, BatchStatus[]> = {
 };
 
 // ============================================================================
-// Anti-Fraud Constants
+// MoU Status Transitions — Valid flow
 // ============================================================================
 
-export const HASH_ALGORITHM = "sha256";
-export const HASH_SEPARATOR = "|";
-export const HASH_FIELDS_FOR_BATCH = ["id", "totalCost", "sppgId", "date", "createdById"] as const;
+export const VALID_MOU_TRANSITIONS: Record<MouStatus, MouStatus[]> = {
+  [MouStatus.DRAFT]: [MouStatus.ACTIVE, MouStatus.TERMINATED],
+  [MouStatus.ACTIVE]: [MouStatus.EXPIRED, MouStatus.TERMINATED],
+  [MouStatus.EXPIRED]: [],
+  [MouStatus.TERMINATED]: [],
+};
+
+// ============================================================================
+// Province Options (Indonesia — Jawa Barat & sekitarnya)
+// ============================================================================
+
+export const PROVINCE_OPTIONS = [
+  { value: "ACEH", label: "Aceh" },
+  { value: "SUMATERA_UTARA", label: "Sumatera Utara" },
+  { value: "SUMATERA_BARAT", label: "Sumatera Barat" },
+  { value: "RIAU", label: "Riau" },
+  { value: "JAMBI", label: "Jambi" },
+  { value: "SUMATERA_SELATAN", label: "Sumatera Selatan" },
+  { value: "BENGKULU", label: "Bengkulu" },
+  { value: "LAMPUNG", label: "Lampung" },
+  { value: "DKI_JAKARTA", label: "DKI Jakarta" },
+  { value: "JAWA_BARAT", label: "Jawa Barat" },
+  { value: "JAWA_TENGAH", label: "Jawa Tengah" },
+  { value: "DI_YOGYAKARTA", label: "DI Yogyakarta" },
+  { value: "JAWA_TIMUR", label: "Jawa Timur" },
+  { value: "BANTEN", label: "Banten" },
+  { value: "BALI", label: "Bali" },
+  { value: "NUSA_TENGGARA_BARAT", label: "Nusa Tenggara Barat" },
+  { value: "NUSA_TENGGARA_TIMUR", label: "Nusa Tenggara Timur" },
+  { value: "KALIMANTAN_BARAT", label: "Kalimantan Barat" },
+  { value: "KALIMANTAN_TENGAH", label: "Kalimantan Tengah" },
+  { value: "KALIMANTAN_TIMUR", label: "Kalimantan Timur" },
+  { value: "KALIMANTAN_SELATAN", label: "Kalimantan Selatan" },
+  { value: "SULAWESI_UTARA", label: "Sulawesi Utara" },
+  { value: "SULAWESI_TENGAH", label: "Sulawesi Tengah" },
+  { value: "SULAWESI_SELATAN", label: "Sulawesi Selatan" },
+  { value: "SULAWESI_TENGGARA", label: "Sulawesi Tenggara" },
+  { value: "PAPUA", label: "Papua" },
+] as const;

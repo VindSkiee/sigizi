@@ -14,8 +14,6 @@ datasource db {
 enum Role {
   SPPG_ADMIN
   SUPPLIER
-  // PUBLIC dihapus — user tidak login tidak memiliki User record.
-  // Public endpoint (batch lookup, complaint) cukup tanpa auth guard.
 }
 
 enum BatchStatus {
@@ -37,9 +35,11 @@ enum OrderStatus {
   COMPLETED
 }
 
-enum InventoryTransactionType {
-  IN   // Penerimaan barang dari supplier (saat delivery)
-  OUT  // Pengeluaran barang untuk batch production
+enum MouStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  TERMINATED
 }
 
 // ============================================================================
@@ -63,83 +63,117 @@ model User {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  // Audit relationships — created/updated tracking
-  createdOrders        Order[]                @relation("OrderCreatedBy")
-  updatedOrders        Order[]                @relation("OrderUpdatedBy")
-  createdBatches       Batch[]                @relation("BatchCreatedBy")
-  updatedBatches       Batch[]                @relation("BatchUpdatedBy")
-  createdStockLots     StockLot[]
-  createdInventoryTxns InventoryTransaction[]
-  createdBatchItems    BatchItem[]
-  orderStatusChanges   OrderStatusHistory[]
+  // Audit relationships
+  createdOrders     Order[]     @relation("OrderCreatedBy")
+  updatedOrders     Order[]     @relation("OrderUpdatedBy")
+  createdBatches    Batch[]     @relation("BatchCreatedBy")
+  updatedBatches    Batch[]     @relation("BatchUpdatedBy")
+  createdBatchItems BatchItem[]
+  createdMous       Mou[]       @relation("MouCreatedBy")
 
   @@index([sppgId])
   @@index([supplierId])
   @@index([role])
 }
 
+// ----------------------------------------------------------------------------
+// 2. SPPG — Satuan Pelaksana Pemberian Makanan Gratis
+// Alamat terstruktur + GPS untuk proximity-based supplier filtering
+// ----------------------------------------------------------------------------
+
 model Sppg {
-  id           String        @id @default(cuid())
-  name         String
-  mitraId      String?       @unique
-  address      String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id          String   @id @default(cuid())
+  name        String
+  mitraId     String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // --- Alamat Terstruktur (wajib untuk filtering lokasi) ---
+  address     String?  // Alamat bebas teks
+  province    String   // Provinsi
+  regency     String   // Kabupaten/Kota
+  district    String   // Kecamatan
+  village     String?  // Kelurahan/Desa
+  postalCode  String?  // Kode Pos
+
+  // --- Koordinat GPS (untuk perhitungan jarak) ---
+  latitude    Float?   // -90 to 90
+  longitude   Float?   // -180 to 180
+
   users        User[]
   beneficiaries Beneficiary[]
   batches      Batch[]
   orders       Order[]
-}
-
-model Supplier {
-  id        String         @id @default(cuid())
-  name      String
-  npwp      String         @unique
-  phone     String?
-  address   String?
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  users     User[]
-  items     SupplierItem[]
-  orders    Order[]
-  stockLots StockLot[]
+  mous         Mou[]
 }
 
 // ----------------------------------------------------------------------------
-// 2. SUPPLIER ITEM — Catalogue harga terkini (BISA BERUBAH)
+// 3. SUPPLIER — Pemasok bahan baku
+// NIB: Nomor Induk Berusaha (dokumen scan)
+// Alamat terstruktur + GPS untuk proximity-based discovery oleh SPPG
+// ----------------------------------------------------------------------------
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  nib       String   @unique // File URL/path ke scan NIB
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // --- Alamat Terstruktur ---
+  address     String?  // Alamat bebas teks
+  province    String   // Provinsi
+  regency     String   // Kabupaten/Kota
+  district    String   // Kecamatan
+  village     String?  // Kelurahan/Desa
+  postalCode  String?  // Kode Pos
+
+  // --- Koordinat GPS ---
+  latitude    Float?   // -90 to 90
+  longitude   Float?   // -180 to 180
+
+  users     User[]
+  items     SupplierItem[]
+  orders    Order[]
+  mous      Mou[]
+}
+
+// ----------------------------------------------------------------------------
+// 4. SUPPLIER ITEM — Catalogue harga terkini (BISA BERUBAH)
 // Harga di sini adalah "list price" / "catalogue price".
-// Harga transaksi dibekukan di OrderItem.unitPrice dan StockLot.purchasePrice.
+// Harga transaksi dibekukan di OrderItem.unitPrice / MouItem.agreedPrice.
 // ----------------------------------------------------------------------------
 
 model SupplierItem {
   id           String   @id @default(cuid())
-  name         String   // Nama item: "Beras Premium", "Ayam Potong"
-  unit         String   // Satuan jual: "kg", "liter", "pcs"
-  basePrice    Float    // Harga catalogue terkini (bisa berubah oleh supplier)
-  description  String?  // Deskripsi: "Beras premium kualitas terbaik"
-  minOrderQty  Float?   // Minimum order: 5 (kg)
-  orderStep    Float?   // Kelipatan order: 0.5 (kg) — harus kelipatan dari ini
+  name         String
+  unit         String
+  basePrice    Float
+  description  String?
+  minOrderQty  Float?
+  orderStep    Float?
   supplier     Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
   supplierId   String
   createdAt    DateTime @default(now())
   orderItems   OrderItem[]
-  stockLots    StockLot[]
   batchItems   BatchItem[]
+  mouItems     MouItem[]
 
   @@index([supplierId])
   @@index([name])
 }
 
 // ----------------------------------------------------------------------------
-// 3. BENEFICIARY — Penerima manfaat (bukan hanya sekolah)
+// 5. BENEFICIARY — Penerima manfaat (bukan hanya sekolah)
 // ----------------------------------------------------------------------------
 
 model Beneficiary {
   id                 String   @id @default(cuid())
-  name               String   // Nama kelompok/cabang: "Penerima Manfaat SDN 1"
-  institution        String   // Nama institusi: "SDN 1 Purwakarta" / "Panti Asuhan Harapan"
-  institutionType    String?  // Jenis institusi: "SEKOLAH", "PANTI_ASUHAN", "PESANTREN", "RUMAH_SAKIT"
-  totalBeneficiary   Int      // Jumlah total orang penerima manfaat
+  name               String
+  institution        String
+  institutionType    String?
+  totalBeneficiary   Int
   address            String?
   contactPhone       String?
   contactEmail       String?
@@ -152,30 +186,99 @@ model Beneficiary {
 }
 
 // ----------------------------------------------------------------------------
-// 4. ORDER — Pemesanan dari SPPG ke Supplier
+// 6. MoU — Memorandum of Understanding / Kontrak Kerjasama
+// Status flow: DRAFT → ACTIVE → EXPIRED / TERMINATED
+// ----------------------------------------------------------------------------
+
+model Mou {
+  id             String    @id @default(cuid())
+  mouNumber      String    @unique
+
+  // --- Pihak-pihak ---
+  sppg           Sppg      @relation(fields: [sppgId], references: [id], onDelete: Restrict)
+  sppgId         String
+  supplier       Supplier  @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  supplierId     String
+
+  // --- Masa Kontrak ---
+  startDate      DateTime
+  endDate        DateTime
+
+  // --- Status ---
+  status         MouStatus @default(DRAFT)
+
+  // --- Dokumen & Ketentuan ---
+  title          String
+  nibSnapshot    String?   // NIB supplier saat kontrak dibuat (snapshot historis)
+  terms          Json?     // { paymentTerms, deliverySchedule, penalties, dll }
+  documentUrl    String?   // URL file MoU signed
+  notes          String?
+
+  // --- Audit ---
+  createdBy      User      @relation("MouCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById    String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // --- Relationships ---
+  items          MouItem[]
+  orders         Order[]
+
+  @@index([sppgId])
+  @@index([supplierId])
+  @@index([status])
+  @@index([startDate])
+  @@index([endDate])
+}
+
+// ----------------------------------------------------------------------------
+// 7. MoU ITEM — Item dengan harga khusus dalam MoU
+// Harga agreedPrice bisa beda dari SupplierItem.basePrice
+// ----------------------------------------------------------------------------
+
+model MouItem {
+  id             String        @id @default(cuid())
+  mou            Mou           @relation(fields: [mouId], references: [id], onDelete: Restrict)
+  mouId          String
+  item           SupplierItem  @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  itemId         String
+
+  agreedPrice    Float
+  minOrderQty    Float?
+  maxOrderQty    Float?
+
+  createdAt      DateTime      @default(now())
+
+  @@unique([mouId, itemId])
+}
+
+// ----------------------------------------------------------------------------
+// 8. ORDER — Pemesanan dari SPPG ke Supplier
 // Status flow: PENDING → CONFIRMED → DELIVERED → COMPLETED
+// opsional link ke MoU jika order berdasarkan kontrak
 // ----------------------------------------------------------------------------
 
 model Order {
   id         String      @id @default(cuid())
   status     OrderStatus @default(PENDING)
-  total      Float       // Total yang disepakati (computed dari OrderItem.subtotal)
+  total      Float
   notes      String?
+
   sppg       Sppg        @relation(fields: [sppgId], references: [id], onDelete: Restrict)
   sppgId     String
   supplier   Supplier    @relation(fields: [supplierId], references: [id], onDelete: Restrict)
   supplierId String
   items      OrderItem[]
-  stockLots  StockLot[]
+
+  // --- Link ke MoU (opsional) ---
+  mou        Mou?        @relation(fields: [mouId], references: [id], onDelete: Restrict)
+  mouId      String?
 
   // Audit trail
   createdBy  User     @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   createdById String
   updatedBy  User?    @relation("OrderUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
   updatedById String?
-
-  // History
-  statusHistory OrderStatusHistory[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -184,11 +287,12 @@ model Order {
   @@index([supplierId])
   @@index([status])
   @@index([createdById])
+  @@index([mouId])
 }
 
 // ----------------------------------------------------------------------------
-// 5. ORDER ITEM — Detail item dalam order
-// HARGA DIBEKUKAN SAAT ORDER DIBUAT (Data Freezing Layer 1)
+// 9. ORDER ITEM — Detail item dalam order
+// Harga dibekukan saat order dibuat (snapshot dari SupplierItem.basePrice atau MouItem.agreedPrice)
 // ----------------------------------------------------------------------------
 
 model OrderItem {
@@ -198,56 +302,30 @@ model OrderItem {
   item     SupplierItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
   itemId   String
 
-  // --- SNAPSHOT HARGA (tidak berubah meski SupplierItem.basePrice berubah) ---
-  quantity    Float  // Jumlah yang dipesan
-  unitPrice   Float  // Harga per unit saat order dibuat (snapshot dari SupplierItem.basePrice)
-  purchasePrice Float // Harga final yang disepakati (bisa berbeda dari unitPrice setelah negosiasi)
-  subtotal    Float  // quantity × purchasePrice
-
-  stockLots StockLot[]
+  quantity    Float
+  unitPrice   Float
+  subtotal    Float
 
   @@index([orderId])
 }
 
 // ----------------------------------------------------------------------------
-// 6. ORDER STATUS HISTORY — Audit trail perubahan status order
-// Append-only. Setiap perubahan status MENCATAT: siapa, kapan, dari status apa, ke status apa.
-// ----------------------------------------------------------------------------
-
-model OrderStatusHistory {
-  id         String      @id @default(cuid())
-  order      Order       @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  orderId    String
-  fromStatus OrderStatus
-  toStatus   OrderStatus
-  notes      String?     // Catatan perubahan
-  evidenceUrl String?    // Bukti pendukung (URL file)
-  changedBy  User        @relation(fields: [changedById], references: [id], onDelete: Restrict)
-  changedById String
-  createdAt  DateTime    @default(now())
-
-  @@index([orderId])
-  @@index([changedById])
-  @@index([createdAt])
-}
-
-// ----------------------------------------------------------------------------
-// 7. BATCH — Satu kali produksi makanan
+// 10. BATCH — Satu kali produksi makanan
+// costPerPortion dan totalCost dihitung otomatis dari BatchItems
 // ----------------------------------------------------------------------------
 
 model Batch {
   id               String      @id @default(cuid())
-  batchNumber      String      @unique // Format: BATCH-YYYYMMDD-XXX
-  reportKey        String      @unique // 8-char untuk public complaint
+  batchNumber      String      @unique
+  reportKey        String      @unique
   date             DateTime    @default(now())
-  menu             String      // Deskripsi menu
-  nutrition        Json?       // { calories, protein, fat, carbs }
+  menu             String
+  nutrition        Json?
   allergens        String[]
-  beneficiaryCount Int?        // Jumlah orang yang mendapat manfaat
+  beneficiaryCount Int?
 
-  // --- HARGA COMPUTED (dihitung otomatis dari BatchItem, bukan input manual) ---
-  costPerPortion   Float       // = totalCost / beneficiaryCount (computed & cached)
-  totalCost        Float       // = SUM(BatchItem.subtotal) (computed & cached)
+  costPerPortion   Float
+  totalCost        Float
 
   sppg             Sppg        @relation(fields: [sppgId], references: [id], onDelete: Restrict)
   sppgId           String
@@ -262,12 +340,6 @@ model Batch {
   updatedBy        User?    @relation("BatchUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
   updatedById      String?
 
-  // --- HASH INTEGRITY (Anti-Tampering) ---
-  // SHA-256 hash dari gabungan: id + totalCost + sppgId + date + createdById
-  // Mendeteksi manipulasi jika ada yang bypass aplikasi dan edit langsung ke DB
-  // Dihitung oleh backend setelah batch disimpan. Phase 2: full verification logic.
-  dataHash         String?
-
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -279,122 +351,40 @@ model Batch {
 }
 
 // ----------------------------------------------------------------------------
-// 8. BATCH ITEM — Bahan baku yang digunakan dalam batch
-// HARGA DARI STOCK LOT (Data Freezing Layer 3 — anti-fraud chain)
-// Tidak ada yang input manual — semua dari StockLot.purchasePrice
+// 11. BATCH ITEM — Bahan baku yang digunakan dalam batch
+// Harga diambil dari SupplierItem.basePrice saat batch dibuat
 // ----------------------------------------------------------------------------
 
 model BatchItem {
   id          String    @id @default(cuid())
   batch       Batch     @relation(fields: [batchId], references: [id], onDelete: Restrict)
   batchId     String
-  stockLot    StockLot  @relation(fields: [stockLotId], references: [id], onDelete: Restrict)
-  stockLotId  String    // Traceability: batch ini pakai stok dari lot mana
   item        SupplierItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
   itemId      String
 
-  // --- SNAPSHOT HARGA (diambil dari StockLot.purchasePrice, TIDAK BISA DIUBAH) ---
-  quantity    Float     // Jumlah yang dipakai dari lot ini
-  unitPrice   Float     // = StockLot.purchasePrice (frozen, copied saat pembuatan batch)
-  subtotal    Float     // = quantity × unitPrice
+  quantity    Float
+  unitPrice   Float
+  subtotal    Float
 
-  // Audit trail
   createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Restrict)
   createdById String
   createdAt   DateTime @default(now())
 
   @@index([batchId])
-  @@index([stockLotId])
   @@index([itemId])
-  inventoryTransactions InventoryTransaction[]
 }
 
 // ----------------------------------------------------------------------------
-// 9. STOCK LOT — Buku Besar Stok (Append-Only Ledger)
-// Setiap baris = Satu penerimaan barang dari supplier.
-// remainingQty DIUPDATE saat dipakai batch, tapi perubahan DICATAT di InventoryTransaction.
-// Balance = SUM(remainingQty) — bukan field terpisah.
-// ----------------------------------------------------------------------------
-
-model StockLot {
-  id            String   @id @default(cuid())
-  supplier      Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
-  supplierId    String
-  item          SupplierItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
-  itemId        String
-  order         Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  orderId       String   // Lot ini berasal dari order mana
-  orderItem     OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
-  orderItemId   String   // Lot ini berasal dari order item mana
-
-  // --- SNAPSHOT HARGA (Data Freezing Layer 2) ---
-  purchasePrice Float    // Harga per unit saat diterima (= OrderItem.purchasePrice, frozen)
-  unit          String   // Satuan: "kg", "liter", "pcs"
-
-  originalQty   Float    // Jumlah awal saat diterima dari supplier
-  remainingQty  Float    // Sisa stok (dikurangi saat batch consumed). CHECK: >= 0
-
-  receivedAt    DateTime @default(now()) // Kapan barang diterima
-
-  // Audit trail
-  createdBy     User     @relation(fields: [createdById], references: [id], onDelete: Restrict)
-  createdById   String   // Siapa yang menerima/memasukkan stok
-
-  // Relations
-  batchItems    BatchItem[]
-  transactions  InventoryTransaction[]
-
-  @@unique([supplierId, itemId, orderId]) // 1 order + 1 item = 1 lot
-  @@index([supplierId, itemId])
-  @@index([orderId])
-  @@index([remainingQty])
-}
-
-// ----------------------------------------------------------------------------
-// 10. INVENTORY TRANSACTION — Append-Only Ledger (BENAR-BENAR INSERT ONLY)
-// Tidak pernah di-UPDATE atau di-DELETE.
-// Setiap baris = Satu pergerakan stok (IN atau OUT).
-// Balance stok = hasil kalkulasi agregat dari StockLot, bukan dari tabel ini.
-// ----------------------------------------------------------------------------
-
-model InventoryTransaction {
-  id            String                  @id @default(cuid())
-  type          InventoryTransactionType
-
-  // --- Referensi ke lot dan batch ---
-  stockLot      StockLot                @relation(fields: [stockLotId], references: [id], onDelete: Restrict)
-  stockLotId    String                  // Lot yang terpengaruh
-  batchItem     BatchItem?              @relation(fields: [batchItemId], references: [id], onDelete: Restrict)
-  batchItemId   String?                 // Hanya diisi untuk type OUT
-
-  // --- Data transaksi ---
-  quantity      Float                   // Qty yang bergerak (selalu positif)
-  referenceType String                  // "ORDER_DELIVERY" | "BATCH_CONSUMPTION"
-  referenceId   String                  // ID Order atau Batch
-  notes         String?
-
-  // Audit trail
-  createdBy     User?                   @relation(fields: [createdById], references: [id], onDelete: Restrict)
-  createdById   String?
-  createdAt     DateTime                @default(now())
-
-  @@index([stockLotId])
-  @@index([referenceType, referenceId])
-  @@index([type])
-  @@index([createdAt])
-}
-
-// ----------------------------------------------------------------------------
-// 11. COMPLAINT — Keluhan masyarakat
+// 12. COMPLAINT — Keluhan masyarakat
 // ----------------------------------------------------------------------------
 
 model Complaint {
   id          String          @id @default(cuid())
-  reportKey   String          // Harus cocok dengan batch reportKey
+  reportKey   String
   description String
-  evidence    String?         // URL file bukti
+  evidence    String?
   status      ComplaintStatus @default(PENDING)
-  notes       String?         // Catatan internal SPPG
+  notes       String?
   batch       Batch           @relation(fields: [batchId], references: [id], onDelete: Restrict)
   batchId     String
   createdAt   DateTime        @default(now())

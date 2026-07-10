@@ -5,7 +5,6 @@
 export enum Role {
   SPPG_ADMIN = "SPPG_ADMIN",
   SUPPLIER = "SUPPLIER",
-  // PUBLIC dihapus — user tidak login tidak memiliki User record
 }
 
 export enum BatchStatus {
@@ -27,9 +26,11 @@ export enum OrderStatus {
   COMPLETED = "COMPLETED",
 }
 
-export enum InventoryTransactionType {
-  IN = "IN",     // Penerimaan barang dari supplier
-  OUT = "OUT",   // Pengeluaran barang untuk batch
+export enum MouStatus {
+  DRAFT = "DRAFT",
+  ACTIVE = "ACTIVE",
+  EXPIRED = "EXPIRED",
+  TERMINATED = "TERMINATED",
 }
 
 // ============================================================================
@@ -55,25 +56,47 @@ export interface AuthResponse {
   };
 }
 
+// ============================================================================
+// Sppg — Alamat terstruktur + GPS
+// ============================================================================
+
 export interface Sppg {
   id: string;
   name: string;
   mitraId?: string;
+  // Alamat
   address?: string;
+  province: string;
+  regency: string;
+  district: string;
+  village?: string;
+  postalCode?: string;
+  // GPS
+  latitude?: number;
+  longitude?: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
 // ============================================================================
-// Supplier & Items
+// Supplier — NIB + Alamat terstruktur + GPS
 // ============================================================================
 
 export interface Supplier {
   id: string;
   name: string;
-  npwp: string;
+  nib: string; // File URL/path ke scan NIB
   phone?: string;
+  // Alamat
   address?: string;
+  province: string;
+  regency: string;
+  district: string;
+  village?: string;
+  postalCode?: string;
+  // GPS
+  latitude?: number;
+  longitude?: number;
   items?: SupplierItem[];
   createdAt: Date;
   updatedAt: Date;
@@ -83,10 +106,10 @@ export interface SupplierItem {
   id: string;
   name: string;
   unit: string;
-  basePrice: number;        // Harga catalogue (bisa berubah)
-  description?: string;     // Deskripsi item
-  minOrderQty?: number;     // Minimum order
-  orderStep?: number;       // Kelipatan order
+  basePrice: number;
+  description?: string;
+  minOrderQty?: number;
+  orderStep?: number;
   supplierId: string;
   createdAt: Date;
 }
@@ -97,14 +120,62 @@ export interface SupplierItem {
 
 export interface Beneficiary {
   id: string;
-  name: string;               // Nama kelompok/cabang
-  institution: string;        // Nama institusi (bukan hanya sekolah)
-  institutionType?: string;   // SEKOLAH, PANTI_ASUHAN, PESANTREN, dll
-  totalBeneficiary: number;   // Jumlah orang penerima manfaat
+  name: string;
+  institution: string;
+  institutionType?: string;
+  totalBeneficiary: number;
   address?: string;
   contactPhone?: string;
   contactEmail?: string;
   sppgId: string;
+  createdAt: Date;
+}
+
+// ============================================================================
+// MoU — Memorandum of Understanding / Kontrak Kerjasama
+// ============================================================================
+
+export interface Mou {
+  id: string;
+  mouNumber: string;
+  sppgId: string;
+  supplierId: string;
+  // Masa kontrak
+  startDate: Date;
+  endDate: Date;
+  // Status
+  status: MouStatus;
+  // Dokumen & ketentuan
+  title: string;
+  nibSnapshot?: string;
+  terms?: MouTerms;
+  documentUrl?: string;
+  notes?: string;
+  // Audit
+  createdById: string;
+  createdAt: Date;
+  updatedAt: Date;
+  // Relations
+  items?: MouItem[];
+}
+
+export interface MouTerms {
+  paymentTerms?: string; // "NET-30", "COD", "NET-14"
+  deliverySchedule?: string; // "Setiap Senin & Kamis"
+  penaltyLateDelivery?: string; // "5% per hari keterlambatan"
+  penaltyDefect?: string; // "Penggantian 2x lipat"
+  minOrderAmount?: number; // Minimum nilai order per transaksi
+  maxOrderAmount?: number; // Maksimum nilai order per bulan
+  customTerms?: string; // Ketentuan lainnya
+}
+
+export interface MouItem {
+  id: string;
+  mouId: string;
+  itemId: string;
+  agreedPrice: number;
+  minOrderQty?: number;
+  maxOrderQty?: number;
   createdAt: Date;
 }
 
@@ -121,6 +192,10 @@ export interface Order {
   supplierId: string;
   supplier?: Supplier;
   items?: OrderItem[];
+  // Link ke MoU (opsional)
+  mouId?: string;
+  mou?: Mou;
+  // Audit
   createdById: string;
   updatedById?: string;
   createdAt: Date;
@@ -133,25 +208,8 @@ export interface OrderItem {
   itemId: string;
   item?: SupplierItem;
   quantity: number;
-  unitPrice: number;       // Harga saat order (snapshot)
-  purchasePrice: number;   // Harga final yang disepakati (frozen)
+  unitPrice: number;
   subtotal: number;
-}
-
-// ============================================================================
-// Order Status History — Audit trail
-// ============================================================================
-
-export interface OrderStatusHistory {
-  id: string;
-  orderId: string;
-  fromStatus: OrderStatus;
-  toStatus: OrderStatus;
-  notes?: string;
-  evidenceUrl?: string;
-  changedById: string;
-  changedBy?: User;
-  createdAt: Date;
 }
 
 // ============================================================================
@@ -167,13 +225,12 @@ export interface Batch {
   nutrition?: NutritionInfo;
   allergens: string[];
   beneficiaryCount?: number;
-  costPerPortion: number;   // Computed: totalCost / beneficiaryCount
-  totalCost: number;        // Computed: SUM(BatchItem.subtotal)
+  costPerPortion: number;
+  totalCost: number;
   sppgId: string;
   status: BatchStatus;
   createdById: string;
   updatedById?: string;
-  dataHash?: string;        // SHA-256 anti-tampering (Phase 2)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -204,58 +261,12 @@ export interface BatchPublic {
 export interface BatchItem {
   id: string;
   batchId: string;
-  stockLotId: string;
-  stockLot?: StockLot;
   itemId: string;
   item?: SupplierItem;
   quantity: number;
-  unitPrice: number;       // Frozen dari StockLot.purchasePrice
+  unitPrice: number;
   subtotal: number;
   createdById: string;
-  createdAt: Date;
-}
-
-// ============================================================================
-// Stock Lot — Buku Besar Stok (Append-Only)
-// ============================================================================
-
-export interface StockLot {
-  id: string;
-  supplierId: string;
-  supplier?: Supplier;
-  itemId: string;
-  item?: SupplierItem;
-  orderId: string;
-  order?: Order;
-  orderItemId: string;
-  orderItem?: OrderItem;
-  purchasePrice: number;   // Harga frozen dari OrderItem
-  unit: string;
-  originalQty: number;     // Qty awal saat diterima
-  remainingQty: number;    // Sisa stok
-  receivedAt: Date;
-  createdById: string;
-  createdBy?: User;
-  createdAt: Date;
-}
-
-// ============================================================================
-// Inventory Transaction — Append-Only Ledger
-// ============================================================================
-
-export interface InventoryTransaction {
-  id: string;
-  type: InventoryTransactionType;
-  stockLotId: string;
-  stockLot?: StockLot;
-  batchItemId?: string;
-  batchItem?: BatchItem;
-  quantity: number;
-  referenceType: string;   // ORDER_DELIVERY | BATCH_CONSUMPTION
-  referenceId: string;
-  notes?: string;
-  createdById?: string;
-  createdBy?: User;
   createdAt: Date;
 }
 
@@ -382,9 +393,18 @@ export interface LoginSsoRequest {
 
 export interface CreateSupplierRequest {
   name: string;
-  npwp: string;
+  nib: string;
   phone?: string;
+  // Alamat
   address?: string;
+  province: string;
+  regency: string;
+  district: string;
+  village?: string;
+  postalCode?: string;
+  // GPS
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface UpdateSupplierRequest extends Partial<CreateSupplierRequest> {}
@@ -421,13 +441,12 @@ export interface CreateBatchRequest {
   nutrition?: NutritionInfo;
   allergens?: string[];
   beneficiaryCount?: number;
-  items: BatchItemRequest[];   // Bahan baku yang digunakan
+  items: BatchItemRequest[];
 }
 
 export interface BatchItemRequest {
   itemId: string;
   quantity: number;
-  // unitPrice diambil otomatis dari StockLot (FIFO)
 }
 
 // ============================================================================
@@ -451,6 +470,7 @@ export interface UpdateComplaintRequest {
 
 export interface CreateOrderRequest {
   supplierId: string;
+  mouId?: string; // Opsional: jika order berdasarkan MoU
   notes?: string;
   items: OrderItemRequest[];
 }
@@ -461,15 +481,28 @@ export interface OrderItemRequest {
 }
 
 // ============================================================================
-// Request Types — Inventory
+// Request Types — MoU
 // ============================================================================
 
-export interface ReceiveDeliveryRequest {
-  orderId: string;
-  items: ReceiveDeliveryItemRequest[];
+export interface CreateMouRequest {
+  sppgId: string;
+  supplierId: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  terms?: MouTerms;
+  documentUrl?: string;
+  notes?: string;
+  items: MouItemRequest[];
 }
 
-export interface ReceiveDeliveryItemRequest {
-  orderItemId: string;
-  quantity: number;
+export interface UpdateMouRequest extends Partial<
+  Omit<CreateMouRequest, "items">
+> {}
+
+export interface MouItemRequest {
+  itemId: string;
+  agreedPrice: number;
+  minOrderQty?: number;
+  maxOrderQty?: number;
 }

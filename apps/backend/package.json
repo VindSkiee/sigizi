@@ -16,7 +16,9 @@
     "prisma:migrate": "pnpm exec dotenv -e ../../.env -- prisma migrate dev",
     "prisma:studio": "pnpm exec dotenv -e ../../.env -- prisma studio",
     "prisma:seed": "pnpm exec dotenv -e ../../.env -- pnpm exec ts-node prisma/seed.ts",
-    "prisma:fresh": "pnpm exec dotenv -e ../../.env -- prisma migrate reset --force && pnpm prisma:generate"
+    "prisma:reset": "pnpm exec dotenv -e ../../.env -- prisma migrate reset --force && pnpm prisma:generate",
+    "prisma:fresh": "pnpm prisma:reset && pnpm prisma:seed",
+    "prisma:reseed": "pnpm prisma:seed"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",
