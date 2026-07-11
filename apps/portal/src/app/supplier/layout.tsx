@@ -1,12 +1,5 @@
-'use client';
+import SupplierLayout from '@/components/layout/SupplierLayout';
 
-import { AuthProvider } from '@/contexts/AuthContext';
-import { SupplierLayout } from '@/components/layout/SupplierLayout';
-
-export default function SupplierRootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <AuthProvider>
-      <SupplierLayout>{children}</SupplierLayout>
-    </AuthProvider>
-  );
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return <SupplierLayout>{children}</SupplierLayout>;
 }

@@ -1,6 +1,6 @@
 # SIGIZI Project Status
 
-**Last Updated**: 2026-07-09
+**Last Updated**: 2026-07-11
 **Current Phase**: 🚀 Phase 1: MVP (Hackathon Demo)
 
 ---
@@ -11,7 +11,7 @@
 |------|-------|
 | **Project** | SIGIZI - Sistem Informasi Gizi Terintegrasi |
 | **Phase** | MVP (Hackathon) |
-| **Progress** | ~35-40% |
+| **Progress** | ~40-45% |
 | **Team** | TraceBite (4 members) |
 | **Tech Stack** | NestJS + Prisma + PostgreSQL + Next.js + Tailwind |
 
@@ -20,7 +20,7 @@
 ## 🚀 Phase 1: MVP (Hackathon Demo)
 
 **Target**: Hackathon Demo
-**Status**: 🟡 IN PROGRESS (~35-40%)
+**Status**: 🟡 IN PROGRESS (~40-45%)
 **Deadline**: [TBD]
 
 ### Backend Modules
@@ -43,10 +43,11 @@
 
 | Page | Status | Progress | Notes |
 |------|--------|----------|-------|
-| Home (Batch Lookup) | ✅ Done | 100% | Public batch search form |
-| Batch Detail | ✅ Done | 100% | Nutrition, allergen, cost breakdown |
-| Login | ❌ Not Started | 0% | |
-| Dashboard | ❌ Not Started | 0% | Admin overview |
+| Home (Batch Lookup) | ✅ Done | 100% | Public batch search form (SSR) |
+| Batch Detail | ⚠️ Partial | 80% | Nutrition, allergen, cost breakdown. Complaint form broken (uses raw HTML instead of API client) |
+| Login | ✅ Done | 100% | Email/password with mock fallback, role-based redirect |
+| Register | ✅ Done | 100% | Supplier registration with validation, NPWP upload |
+| Dashboard (Admin) | ❌ Not Started | 0% | Admin overview |
 | Supplier Management | ❌ Not Started | 0% | CRUD table |
 | Batch Management | ❌ Not Started | 0% | SPPG admin workflow |
 | Complaint Management | ❌ Not Started | 0% | Status tracking |
@@ -60,9 +61,9 @@
 
 | Component | Status | Progress | Notes |
 |-----------|--------|----------|-------|
-| Layout (Sidebar + Header) | ❌ Not Started | 0% | Authenticated layout |
-| Auth Provider/Context | ❌ Not Started | 0% | JWT token management |
-| Reusable UI Components | ❌ Not Started | 0% | Button, Card, Table, etc. |
+| Layout (Sidebar + Header) | ✅ Done | 100% | SupplierLayout, SupplierSidebar, SupplierHeader |
+| Auth Provider/Context | ⚠️ Partial | 70% | AuthContext exists but NOT wrapped in root layout |
+| Reusable UI Components | ✅ Done | 100% | Button (4 variants), Card, Badge (5 variants), Input, Pagination, FileUpload |
 | Loading Skeletons | ❌ Not Started | 0% | |
 | Error Boundaries | ❌ Not Started | 0% | |
 
