@@ -20,6 +20,7 @@ enum BatchStatus {
   ACTIVE
   COMPLETED
   CANCELLED
+  FAILED
 }
 
 enum ComplaintStatus {
@@ -327,6 +328,16 @@ model Batch {
   costPerPortion   Float
   totalCost        Float
 
+  // --- Regulasi MBG (Rp 10.000/porsi) ---
+  costPerPortionStandard Int      @default(10000)
+  totalBudget            Float    @default(0)
+  budgetVariance         Float?   // actual - budget (negatif = under budget)
+
+  // --- Failure tracking ---
+  failedReason   String?
+  failedEvidence String?   // URL foto bukti
+  failedAt       DateTime?
+
   sppg             Sppg        @relation(fields: [sppgId], references: [id], onDelete: Restrict)
   sppgId           String
   status           BatchStatus @default(ACTIVE)
@@ -362,6 +373,8 @@ model BatchItem {
   item        SupplierItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
   itemId      String
 
+  name        String?   // Nama item (e.g., "Nasi 100g", "Ayam Paha 100g")
+  unit        String?   // Satuan (e.g., "kg", "pcs", "liter")
   quantity    Float
   unitPrice   Float
   subtotal    Float

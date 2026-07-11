@@ -11,6 +11,7 @@ export enum BatchStatus {
   ACTIVE = "ACTIVE",
   COMPLETED = "COMPLETED",
   CANCELLED = "CANCELLED",
+  FAILED = "FAILED",
 }
 
 export enum ComplaintStatus {
@@ -216,6 +217,14 @@ export interface Batch {
   beneficiaryCount?: number;
   costPerPortion: number;
   totalCost: number;
+  // Regulasi MBG (Rp 10.000/porsi)
+  costPerPortionStandard: number;
+  totalBudget: number;
+  budgetVariance?: number;
+  // Failure tracking
+  failedReason?: string;
+  failedEvidence?: string;
+  failedAt?: Date;
   sppgId: string;
   status: BatchStatus;
   createdById: string;
@@ -252,6 +261,8 @@ export interface BatchItem {
   batchId: string;
   itemId: string;
   item?: SupplierItem;
+  name?: string;
+  unit?: string;
   quantity: number;
   unitPrice: number;
   subtotal: number;
@@ -439,6 +450,9 @@ export interface CreateBatchRequest {
 export interface BatchItemRequest {
   itemId: string;
   quantity: number;
+  unitPrice: number;
+  name?: string;
+  unit?: string;
 }
 
 // ============================================================================
@@ -525,6 +539,7 @@ export const BATCH_NUMBER_FORMAT = "BATCH-{DATE}-{SEQ}";
 export const BATCH_DATE_FORMAT = "YYYYMMDD";
 export const REPORT_KEY_LENGTH = 8;
 export const REPORT_KEY_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+export const COST_PER_PORTION_STANDARD = 10000;
 
 // ============================================================================
 // MoU
@@ -692,9 +707,14 @@ export const VALID_ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 // ============================================================================
 
 export const VALID_BATCH_TRANSITIONS: Record<BatchStatus, BatchStatus[]> = {
-  [BatchStatus.ACTIVE]: [BatchStatus.COMPLETED, BatchStatus.CANCELLED],
+  [BatchStatus.ACTIVE]: [
+    BatchStatus.COMPLETED,
+    BatchStatus.CANCELLED,
+    BatchStatus.FAILED,
+  ],
   [BatchStatus.COMPLETED]: [],
   [BatchStatus.CANCELLED]: [],
+  [BatchStatus.FAILED]: [],
 };
 
 // ============================================================================

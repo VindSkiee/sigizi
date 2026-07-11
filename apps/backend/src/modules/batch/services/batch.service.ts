@@ -9,7 +9,8 @@ import {
   PaginatedResult,
 } from "../../../core/dto/pagination.dto";
 import { CreateBatchDto } from "../dto/create-batch.dto";
-import { BatchStatus } from "@sigizi/shared";
+import { UpdateBatchStatusDto } from "../dto/update-batch-status.dto";
+import { BatchStatus, COST_PER_PORTION_STANDARD } from "@sigizi/shared";
 
 const BS = BatchStatus;
 
@@ -18,9 +19,10 @@ export class BatchService {
   constructor(private readonly prisma: PrismaService) {}
 
   private readonly VALID_TRANSITIONS: Record<BatchStatus, BatchStatus[]> = {
-    [BS.ACTIVE]: [BS.COMPLETED, BS.CANCELLED],
+    [BS.ACTIVE]: [BS.COMPLETED, BS.CANCELLED, BS.FAILED],
     [BS.COMPLETED]: [],
     [BS.CANCELLED]: [],
+    [BS.FAILED]: [],
   };
 
   async findAll(
@@ -96,6 +98,8 @@ export class BatchService {
       totalCost += subtotal;
       return {
         item: { connect: { id: item.itemId } },
+        name: item.name,
+        unit: item.unit,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         subtotal,
@@ -105,6 +109,8 @@ export class BatchService {
 
     const beneficiaryCount = dto.beneficiaryCount ?? 1;
     const costPerPortion = totalCost / beneficiaryCount;
+    const totalBudget = COST_PER_PORTION_STANDARD * beneficiaryCount;
+    const budgetVariance = totalCost - totalBudget;
 
     const batchNumber = await this.generateBatchNumber();
 
@@ -118,6 +124,9 @@ export class BatchService {
         beneficiaryCount,
         costPerPortion,
         totalCost,
+        costPerPortionStandard: COST_PER_PORTION_STANDARD,
+        totalBudget,
+        budgetVariance,
         sppgId,
         status: BS.ACTIVE,
         createdById,
@@ -127,17 +136,39 @@ export class BatchService {
     });
   }
 
-  async updateStatus(id: string, newStatus: BatchStatus) {
+  async updateStatus(id: string, dto: UpdateBatchStatusDto) {
     const batch = await this.findOne(id);
     const allowed = this.VALID_TRANSITIONS[batch.status as BatchStatus] ?? [];
-    if (!allowed.includes(newStatus)) {
+    if (!allowed.includes(dto.status)) {
       throw new BadRequestException(
-        `Cannot transition from ${batch.status} to ${newStatus}`,
+        `Cannot transition from ${batch.status} to ${dto.status}`,
       );
     }
+
+    if (dto.status === BS.FAILED) {
+      if (!dto.failedReason) {
+        throw new BadRequestException(
+          "failedReason is required when marking batch as FAILED",
+        );
+      }
+      if (!dto.failedEvidence) {
+        throw new BadRequestException(
+          "failedEvidence is required when marking batch as FAILED",
+        );
+      }
+    }
+
+    const updateData: any = { status: dto.status };
+
+    if (dto.status === BS.FAILED) {
+      updateData.failedReason = dto.failedReason;
+      updateData.failedEvidence = dto.failedEvidence;
+      updateData.failedAt = new Date();
+    }
+
     return this.prisma.batch.update({
       where: { id },
-      data: { status: newStatus },
+      data: updateData,
     });
   }
 

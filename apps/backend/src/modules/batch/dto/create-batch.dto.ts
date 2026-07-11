@@ -14,6 +14,16 @@ class BatchItemRequestDto {
   @IsString()
   itemId!: string;
 
+  @ApiPropertyOptional({ example: "Nasi 100g" })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional({ example: "kg" })
+  @IsOptional()
+  @IsString()
+  unit?: string;
+
   @ApiProperty({ example: 10 })
   @IsNumber()
   @Min(0.01)

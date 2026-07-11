@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Body, Param, Query } from "@nestjs/common";
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { BatchService } from "../services/batch.service";
 import { CreateBatchDto } from "../dto/create-batch.dto";
+import { UpdateBatchStatusDto } from "../dto/update-batch-status.dto";
 import { BatchStatus } from "@sigizi/shared";
 import { PaginationDto } from "../../../core/dto/pagination.dto";
 
@@ -50,7 +51,7 @@ export class BatchController {
 
   @Put(":id/status")
   @ApiOperation({ summary: "Update batch status" })
-  updateStatus(@Param("id") id: string, @Body("status") status: BatchStatus) {
-    return this.batchService.updateStatus(id, status);
+  updateStatus(@Param("id") id: string, @Body() dto: UpdateBatchStatusDto) {
+    return this.batchService.updateStatus(id, dto);
   }
 }

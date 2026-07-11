@@ -409,12 +409,17 @@ async function main() {
       beneficiaryCount: 150,
       costPerPortion: 0,
       totalCost: 0,
+      costPerPortionStandard: 10000,
+      totalBudget: 1500000, // 10000 * 150
+      budgetVariance: 0, // Will be computed after creation
       sppgId: sppg.id,
       createdById: admin.id,
       batchItems: {
         create: [
           {
             itemId: createdItems[0].id, // Beras Premium
+            name: "Beras Premium 15kg",
+            unit: "kg",
             quantity: 15,
             unitPrice: 11500,
             subtotal: 172500,
@@ -422,6 +427,8 @@ async function main() {
           },
           {
             itemId: createdItems[1].id, // Ayam Potong
+            name: "Ayam Potong 3kg",
+            unit: "kg",
             quantity: 3,
             unitPrice: 34000,
             subtotal: 102000,
@@ -429,6 +436,8 @@ async function main() {
           },
           {
             itemId: createdItems[2].id, // Sayur Bayam
+            name: "Sayur Bayam 15kg",
+            unit: "kg",
             quantity: 15,
             unitPrice: 7500,
             subtotal: 112500,
@@ -456,7 +465,7 @@ async function main() {
 
   await prisma.batch.update({
     where: { id: batch1.id },
-    data: { totalCost, costPerPortion },
+    data: { totalCost, costPerPortion, budgetVariance: totalCost - 1500000 },
   });
   console.log("✅ Batch 1 upserted:", batch1.batchNumber, "Total:", totalCost);
 
