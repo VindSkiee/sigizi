@@ -153,10 +153,10 @@ export function LoginForm() {
               size="lg"
               onClick={handleSsoLogin}
               isLoading={isLoading}
-              className="flex-1 py-2 md:py-3 text-sm md:text-base"
+              className="flex-1 py-2 md:py-3 text-sm md:text-base gap-1.5"
             >
               <svg
-                className="w-4 h-4 md:w-5 md:h-5 text-green-600 shrink-0"
+                className="w-4 h-4 md:w-4 md:h-4 text-green-600 shrink-0"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
