@@ -22,7 +22,10 @@ export function LoginForm() {
 
     try {
       await login(email, password);
-      window.location.href = "/admin";
+      // Get user from localStorage to determine redirect path
+      const savedUser = localStorage.getItem("user");
+      const user = savedUser ? JSON.parse(savedUser) : null;
+      window.location.href = user?.role === "SUPPLIER" ? "/supplier" : "/admin";
     } catch (err: any) {
       setError(err.message || "Email atau password salah. Silakan coba lagi.");
       setIsLoading(false);
