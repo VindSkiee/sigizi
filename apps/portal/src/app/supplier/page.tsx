@@ -2,8 +2,6 @@
 
 import { Package, Truck, ClipboardList, FileText } from 'lucide-react';
 import { StatsCard } from '@/components/features/supplier/StatsCard';
-import { MaterialSection } from '@/components/features/supplier/MaterialSection';
-import { NetworkSection } from '@/components/features/supplier/NetworkSection';
 import { ShipmentChart } from '@/components/features/supplier/ShipmentChart';
 
 export default function SupplierDashboardPage() {
@@ -40,12 +38,6 @@ export default function SupplierDashboardPage() {
           value={3}
           icon={<FileText className="w-6 h-6" />}
         />
-      </div>
-
-      {/* Material + Network */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <MaterialSection />
-        <NetworkSection />
       </div>
 
       {/* Shipment Chart */}
