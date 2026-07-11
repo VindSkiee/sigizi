@@ -376,6 +376,11 @@ export interface LoginSsoRequest {
   state: string;
 }
 
+export interface LoginEmailRequest {
+  email: string;
+  password: string;
+}
+
 // ============================================================================
 // Request Types — Supplier
 // ============================================================================
@@ -508,6 +513,9 @@ export const MAX_PAGE_LIMIT = 100;
 
 export const JWT_EXPIRES_IN = "7d";
 export const SSO_STATE_EXPIRY = 600000;
+export const PASSWORD_MIN_LENGTH = 8;
+export const PASSWORD_MAX_LENGTH = 128;
+export const BCRYPT_ROUNDS = 10;
 
 // ============================================================================
 // Batch
@@ -621,6 +629,9 @@ export const VALIDATION_MESSAGES = {
   MOU_STATUS_INVALID: "Transisi status MoU tidak valid",
   MOU_DATES_INVALID: "Tanggal sebelum harus sebelum tanggal berakhir",
   MOU_OVERLAP: "MoU aktif sudah ada untuk pasangan SPPG-Supplier ini",
+  PASSWORD_TOO_SHORT: `Password minimal ${PASSWORD_MIN_LENGTH} karakter`,
+  EMAIL_ALREADY_REGISTERED: "Email sudah terdaftar",
+  INVALID_CREDENTIALS: "Email atau password salah",
 } as const;
 
 // ============================================================================

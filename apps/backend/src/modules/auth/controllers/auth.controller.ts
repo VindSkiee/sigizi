@@ -11,6 +11,8 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { AuthService } from "../services/auth.service";
 import { SsoLoginDto } from "../dto/sso-login.dto";
 import { SsoCallbackDto } from "../dto/sso-callback.dto";
+import { RegisterSupplierDto } from "../dto/register-supplier.dto";
+import { LoginDto } from "../dto/login.dto";
 import { JwtAuthGuard } from "../jwt-auth.guard";
 
 @ApiTags("Auth")
@@ -28,6 +30,18 @@ export class AuthController {
   @ApiOperation({ summary: "SSO callback" })
   async callback(@Query() dto: SsoCallbackDto) {
     return this.authService.handleSsoCallback(dto);
+  }
+
+  @Post("register")
+  @ApiOperation({ summary: "Register supplier account" })
+  async register(@Body() dto: RegisterSupplierDto) {
+    return this.authService.register(dto);
+  }
+
+  @Post("login")
+  @ApiOperation({ summary: "Login with email & password" })
+  async login(@Body() dto: LoginDto) {
+    return this.authService.login(dto);
   }
 
   @Get("me")

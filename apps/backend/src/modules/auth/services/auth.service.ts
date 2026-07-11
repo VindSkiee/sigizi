@@ -1,9 +1,18 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
+import { hash, compare } from "bcrypt";
 import { PrismaService } from "../../../database/prisma.service";
 import { SsoLoginDto } from "../dto/sso-login.dto";
 import { SsoCallbackDto } from "../dto/sso-callback.dto";
+import { RegisterSupplierDto } from "../dto/register-supplier.dto";
+import { LoginDto } from "../dto/login.dto";
 import { AuthResponse, Role } from "@sigizi/shared";
+
+const BCRYPT_ROUNDS = 10;
 
 function stripNulls<T extends Record<string, any> | null>(obj: T): any {
   if (!obj) return undefined;
@@ -31,26 +40,69 @@ export class AuthService {
 
   async handleSsoCallback(dto: SsoCallbackDto): Promise<AuthResponse> {
     const mockUser = await this.getOrCreateMockUser();
+    return this.buildAuthResponse(mockUser);
+  }
 
-    const token = this.jwtService.sign({
-      sub: mockUser.id,
-      email: mockUser.email,
-      role: mockUser.role,
+  async register(dto: RegisterSupplierDto): Promise<AuthResponse> {
+    const existing = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+    if (existing) {
+      throw new ConflictException("Email sudah terdaftar");
+    }
+
+    const hashedPassword = await hash(dto.password, BCRYPT_ROUNDS);
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const supplier = await tx.supplier.create({
+        data: {
+          name: dto.name,
+          nib: dto.nib,
+          phone: dto.phone,
+          address: dto.address,
+          province: dto.province,
+          regency: dto.regency,
+          district: dto.district,
+          village: dto.village,
+          postalCode: dto.postalCode,
+          latitude: dto.latitude,
+          longitude: dto.longitude,
+        },
+      });
+
+      const user = await tx.user.create({
+        data: {
+          email: dto.email,
+          name: dto.name,
+          role: "SUPPLIER",
+          password: hashedPassword,
+          supplierId: supplier.id,
+        },
+        include: { sppg: true, supplier: true },
+      });
+
+      return user;
     });
 
-    return {
-      token,
-      user: {
-        id: mockUser.id,
-        email: mockUser.email,
-        name: mockUser.name,
-        role: mockUser.role as Role,
-        sppgId: mockUser.sppgId ?? undefined,
-        supplierId: mockUser.supplierId ?? undefined,
-        sppg: stripNulls(mockUser.sppg),
-        supplier: stripNulls(mockUser.supplier),
-      },
-    };
+    return this.buildAuthResponse(result);
+  }
+
+  async login(dto: LoginDto): Promise<AuthResponse> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+      include: { sppg: true, supplier: true },
+    });
+
+    if (!user || !user.password) {
+      throw new UnauthorizedException("Email atau password salah");
+    }
+
+    const isPasswordValid = await compare(dto.password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException("Email atau password salah");
+    }
+
+    return this.buildAuthResponse(user);
   }
 
   async validateToken(payload: any) {
@@ -62,6 +114,28 @@ export class AuthService {
       throw new UnauthorizedException("User not found");
     }
     return user;
+  }
+
+  private buildAuthResponse(user: any): AuthResponse {
+    const token = this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    return {
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role as Role,
+        sppgId: user.sppgId ?? undefined,
+        supplierId: user.supplierId ?? undefined,
+        sppg: stripNulls(user.sppg),
+        supplier: stripNulls(user.supplier),
+      },
+    };
   }
 
   private async getOrCreateMockUser() {

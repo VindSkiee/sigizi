@@ -1,23 +1,36 @@
 import {
+  IsEmail,
   IsString,
   IsNotEmpty,
   IsOptional,
   IsNumber,
   Min,
   Max,
+  MinLength,
+  MaxLength,
 } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
-export class CreateSupplierDto {
+export class RegisterSupplierDto {
+  @ApiProperty({ example: "supplier@sumberrejeki.go.id" })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ example: "password123", minLength: 8 })
+  @IsString()
+  @MinLength(8)
+  @MaxLength(128)
+  password: string;
+
   @ApiProperty({ example: "UD. Sumber Rejeki" })
   @IsString()
   @IsNotEmpty()
-  name!: string;
+  name: string;
 
   @ApiProperty({ description: "NIB file URL/path" })
   @IsString()
   @IsNotEmpty()
-  nib!: string;
+  nib: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -32,17 +45,17 @@ export class CreateSupplierDto {
   @ApiProperty({ example: "Jawa Barat" })
   @IsString()
   @IsNotEmpty()
-  province!: string;
+  province: string;
 
   @ApiProperty({ example: "Purwakarta" })
   @IsString()
   @IsNotEmpty()
-  regency!: string;
+  regency: string;
 
-  @ApiProperty({ example: "Purwakarta" })
+  @ApiProperty({ example: "Wanayasa" })
   @IsString()
   @IsNotEmpty()
-  district!: string;
+  district: string;
 
   @ApiPropertyOptional()
   @IsOptional()

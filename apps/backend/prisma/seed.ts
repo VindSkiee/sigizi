@@ -1,6 +1,8 @@
 import { PrismaClient } from "@prisma/client";
+import { hashSync } from "bcrypt";
 
 const prisma = new PrismaClient();
+const DEFAULT_PASSWORD = hashSync("password123", 10);
 
 async function main() {
   console.log("🌱 Seeding database...");
@@ -38,6 +40,7 @@ async function main() {
       email: "admin@sppg-purwakarta.go.id",
       name: "Budi Santoso",
       role: "SPPG_ADMIN",
+      password: DEFAULT_PASSWORD,
       sppgId: sppg.id,
     },
   });
@@ -50,6 +53,7 @@ async function main() {
       email: "supplier@sumberrejeki.go.id",
       name: "UD. Sumber Rejeki",
       role: "SUPPLIER",
+      password: DEFAULT_PASSWORD,
     },
   });
   console.log("✅ Supplier user upserted:", supplierUser.email);
