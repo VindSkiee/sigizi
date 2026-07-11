@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 interface ApiResponse<T> {
   success: boolean;
@@ -11,7 +11,7 @@ interface ApiResponse<T> {
 
 async function fetchApi<T>(
   endpoint: string,
-  options?: RequestInit
+  options?: RequestInit,
 ): Promise<ApiResponse<T>> {
   const url = `${API_URL}${endpoint}`;
 
@@ -22,7 +22,7 @@ async function fetchApi<T>(
     ...options,
     signal: controller.signal,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...options?.headers,
     },
   });
@@ -31,9 +31,9 @@ async function fetchApi<T>(
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({
-      message: 'Terjadi kesalahan',
+      message: "Terjadi kesalahan",
     }));
-    throw new Error(error.message || 'Request failed');
+    throw new Error(error.message || "Request failed");
   }
 
   return response.json();
@@ -50,34 +50,44 @@ export async function getBatchByNumber(batchNumber: string) {
 // Auth API
 // ============================================================================
 export async function loginEmail(email: string, password: string) {
-  return fetchApi('/api/auth/login', {
-    method: 'POST',
+  return fetchApi("/api/auth/login", {
+    method: "POST",
     body: JSON.stringify({ email, password }),
   });
 }
 
 export async function registerSupplier(data: {
   name: string;
-  npwp: string;
+  nib: string;
   email: string;
   password: string;
-  npwpFileUrl?: string;
+  nibFileUrl?: string;
 }) {
-  return fetchApi('/api/auth/register', {
-    method: 'POST',
+  return fetchApi("/api/auth/register", {
+    method: "POST",
     body: JSON.stringify(data),
   });
 }
 
 export async function loginSso(code: string, state: string) {
-  return fetchApi('/api/auth/sso', {
-    method: 'POST',
+  return fetchApi("/api/auth/sso", {
+    method: "POST",
     body: JSON.stringify({ code, state }),
   });
 }
 
+export async function handleSsoCallback(code: string, state: string) {
+  return fetchApi(
+    `/api/auth/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`,
+  );
+}
+
+export async function devLogin(role: string) {
+  return fetchApi(`/api/auth/dev-login?role=${encodeURIComponent(role)}`);
+}
+
 export async function getCurrentUser(token: string) {
-  return fetchApi('/api/auth/me', {
+  return fetchApi("/api/auth/me", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -89,7 +99,7 @@ export async function getCurrentUser(token: string) {
 // ============================================================================
 export async function uploadFile(file: File) {
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append("file", file);
 
   const url = `${API_URL}/api/upload`;
 
@@ -97,7 +107,7 @@ export async function uploadFile(file: File) {
   const timeoutId = setTimeout(() => controller.abort(), 10000);
 
   const response = await fetch(url, {
-    method: 'POST',
+    method: "POST",
     body: formData,
     signal: controller.signal,
   });
@@ -106,9 +116,9 @@ export async function uploadFile(file: File) {
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({
-      message: 'Upload gagal',
+      message: "Upload gagal",
     }));
-    throw new Error(error.message || 'Upload failed');
+    throw new Error(error.message || "Upload failed");
   }
 
   return response.json();
@@ -118,7 +128,7 @@ export async function uploadFile(file: File) {
 // Supplier API (Admin)
 // ============================================================================
 export async function getSuppliers(token: string, search?: string) {
-  const params = search ? `?search=${encodeURIComponent(search)}` : '';
+  const params = search ? `?search=${encodeURIComponent(search)}` : "";
   return fetchApi(`/api/suppliers${params}`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -135,8 +145,8 @@ export async function getSupplierById(token: string, id: string) {
 }
 
 export async function createSupplier(token: string, data: any) {
-  return fetchApi('/api/suppliers', {
-    method: 'POST',
+  return fetchApi("/api/suppliers", {
+    method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -146,7 +156,7 @@ export async function createSupplier(token: string, data: any) {
 
 export async function updateSupplier(token: string, id: string, data: any) {
   return fetchApi(`/api/suppliers/${id}`, {
-    method: 'PUT',
+    method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -156,7 +166,7 @@ export async function updateSupplier(token: string, id: string, data: any) {
 
 export async function deleteSupplier(token: string, id: string) {
   return fetchApi(`/api/suppliers/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -172,9 +182,13 @@ export async function getSupplierItems(token: string, supplierId: string) {
   });
 }
 
-export async function addSupplierItem(token: string, supplierId: string, data: any) {
+export async function addSupplierItem(
+  token: string,
+  supplierId: string,
+  data: any,
+) {
   return fetchApi(`/api/suppliers/${supplierId}/items`, {
-    method: 'POST',
+    method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -184,7 +198,7 @@ export async function addSupplierItem(token: string, supplierId: string, data: a
 
 export async function removeSupplierItem(token: string, itemId: string) {
   return fetchApi(`/api/suppliers/items/${itemId}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -194,11 +208,15 @@ export async function removeSupplierItem(token: string, itemId: string) {
 // ============================================================================
 // Batch API
 // ============================================================================
-export async function getBatches(token: string, sppgId?: string, status?: string) {
+export async function getBatches(
+  token: string,
+  sppgId?: string,
+  status?: string,
+) {
   const params = new URLSearchParams();
-  if (sppgId) params.append('sppgId', sppgId);
-  if (status) params.append('status', status);
-  const qs = params.toString() ? `?${params.toString()}` : '';
+  if (sppgId) params.append("sppgId", sppgId);
+  if (status) params.append("status", status);
+  const qs = params.toString() ? `?${params.toString()}` : "";
   return fetchApi(`/api/batches${qs}`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -206,9 +224,14 @@ export async function getBatches(token: string, sppgId?: string, status?: string
   });
 }
 
-export async function createBatch(token: string, data: any, sppgId: string, userId: string) {
+export async function createBatch(
+  token: string,
+  data: any,
+  sppgId: string,
+  userId: string,
+) {
   return fetchApi(`/api/batches?sppgId=${sppgId}&userId=${userId}`, {
-    method: 'POST',
+    method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -216,9 +239,13 @@ export async function createBatch(token: string, data: any, sppgId: string, user
   });
 }
 
-export async function updateBatchStatus(token: string, id: string, status: string) {
+export async function updateBatchStatus(
+  token: string,
+  id: string,
+  status: string,
+) {
   return fetchApi(`/api/batches/${id}/status`, {
-    method: 'PUT',
+    method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -229,11 +256,15 @@ export async function updateBatchStatus(token: string, id: string, status: strin
 // ============================================================================
 // Order API
 // ============================================================================
-export async function getOrders(token: string, sppgId?: string, supplierId?: string) {
+export async function getOrders(
+  token: string,
+  sppgId?: string,
+  supplierId?: string,
+) {
   const params = new URLSearchParams();
-  if (sppgId) params.append('sppgId', sppgId);
-  if (supplierId) params.append('supplierId', supplierId);
-  const qs = params.toString() ? `?${params.toString()}` : '';
+  if (sppgId) params.append("sppgId", sppgId);
+  if (supplierId) params.append("supplierId", supplierId);
+  const qs = params.toString() ? `?${params.toString()}` : "";
   return fetchApi(`/api/orders${qs}`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -249,9 +280,14 @@ export async function getOrderById(token: string, id: string) {
   });
 }
 
-export async function createOrder(token: string, data: any, sppgId: string, userId: string) {
+export async function createOrder(
+  token: string,
+  data: any,
+  sppgId: string,
+  userId: string,
+) {
   return fetchApi(`/api/orders?sppgId=${sppgId}&userId=${userId}`, {
-    method: 'POST',
+    method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -259,9 +295,13 @@ export async function createOrder(token: string, data: any, sppgId: string, user
   });
 }
 
-export async function updateOrderStatus(token: string, id: string, status: string) {
+export async function updateOrderStatus(
+  token: string,
+  id: string,
+  status: string,
+) {
   return fetchApi(`/api/orders/${id}/status`, {
-    method: 'PUT',
+    method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -272,11 +312,15 @@ export async function updateOrderStatus(token: string, id: string, status: strin
 // ============================================================================
 // Complaint API
 // ============================================================================
-export async function getComplaints(token: string, batchId?: string, status?: string) {
+export async function getComplaints(
+  token: string,
+  batchId?: string,
+  status?: string,
+) {
   const params = new URLSearchParams();
-  if (batchId) params.append('batchId', batchId);
-  if (status) params.append('status', status);
-  const qs = params.toString() ? `?${params.toString()}` : '';
+  if (batchId) params.append("batchId", batchId);
+  if (status) params.append("status", status);
+  const qs = params.toString() ? `?${params.toString()}` : "";
   return fetchApi(`/api/complaints${qs}`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -289,15 +333,20 @@ export async function submitComplaint(data: {
   description: string;
   evidence?: string;
 }) {
-  return fetchApi('/api/complaints', {
-    method: 'POST',
+  return fetchApi("/api/complaints", {
+    method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export async function updateComplaintStatus(token: string, id: string, status: string, notes?: string) {
+export async function updateComplaintStatus(
+  token: string,
+  id: string,
+  status: string,
+  notes?: string,
+) {
   return fetchApi(`/api/complaints/${id}/status`, {
-    method: 'PUT',
+    method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -308,9 +357,13 @@ export async function updateComplaintStatus(token: string, id: string, status: s
 // ============================================================================
 // Market API
 // ============================================================================
-export async function getMarketPrices(token: string, item: string, region?: string) {
+export async function getMarketPrices(
+  token: string,
+  item: string,
+  region?: string,
+) {
   const params = new URLSearchParams({ item });
-  if (region) params.append('region', region);
+  if (region) params.append("region", region);
   return fetchApi(`/api/market/prices?${params.toString()}`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -319,7 +372,7 @@ export async function getMarketPrices(token: string, item: string, region?: stri
 }
 
 export async function getMarketAnomalies(token: string, region?: string) {
-  const params = region ? `?region=${encodeURIComponent(region)}` : '';
+  const params = region ? `?region=${encodeURIComponent(region)}` : "";
   return fetchApi(`/api/market/anomalies${params}`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -327,9 +380,13 @@ export async function getMarketAnomalies(token: string, region?: string) {
   });
 }
 
-export async function getHETSuggestion(token: string, item: string, region?: string) {
+export async function getHETSuggestion(
+  token: string,
+  item: string,
+  region?: string,
+) {
   const params = new URLSearchParams({ item });
-  if (region) params.append('region', region);
+  if (region) params.append("region", region);
   return fetchApi(`/api/market/het-suggestion?${params.toString()}`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -340,9 +397,13 @@ export async function getHETSuggestion(token: string, item: string, region?: str
 // ============================================================================
 // Reports API
 // ============================================================================
-export async function getDailyReport(token: string, date: string, sppgId?: string) {
+export async function getDailyReport(
+  token: string,
+  date: string,
+  sppgId?: string,
+) {
   const params = new URLSearchParams({ date });
-  if (sppgId) params.append('sppgId', sppgId);
+  if (sppgId) params.append("sppgId", sppgId);
   return fetchApi(`/api/reports/daily?${params.toString()}`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -350,9 +411,13 @@ export async function getDailyReport(token: string, date: string, sppgId?: strin
   });
 }
 
-export async function getWeeklyReport(token: string, week: string, sppgId?: string) {
+export async function getWeeklyReport(
+  token: string,
+  week: string,
+  sppgId?: string,
+) {
   const params = new URLSearchParams({ week });
-  if (sppgId) params.append('sppgId', sppgId);
+  if (sppgId) params.append("sppgId", sppgId);
   return fetchApi(`/api/reports/weekly?${params.toString()}`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -364,7 +429,7 @@ export async function getWeeklyReport(token: string, week: string, sppgId?: stri
 // MoU API
 // ============================================================================
 export async function getMoUs(token: string, sppgId?: string) {
-  const params = sppgId ? `?sppgId=${sppgId}` : '';
+  const params = sppgId ? `?sppgId=${sppgId}` : "";
   return fetchApi(`/api/mou${params}`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -382,7 +447,7 @@ export async function getMoUById(token: string, id: string) {
 
 export async function createMoU(token: string, data: any, userId: string) {
   return fetchApi(`/api/mou?userId=${userId}`, {
-    method: 'POST',
+    method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -390,9 +455,13 @@ export async function createMoU(token: string, data: any, userId: string) {
   });
 }
 
-export async function updateMoUStatus(token: string, id: string, status: string) {
+export async function updateMoUStatus(
+  token: string,
+  id: string,
+  status: string,
+) {
   return fetchApi(`/api/mou/${id}/status`, {
-    method: 'PUT',
+    method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -404,7 +473,7 @@ export async function updateMoUStatus(token: string, id: string, status: string)
 // Beneficiary API
 // ============================================================================
 export async function getBeneficiaries(token: string, sppgId?: string) {
-  const params = sppgId ? `?sppgId=${sppgId}` : '';
+  const params = sppgId ? `?sppgId=${sppgId}` : "";
   return fetchApi(`/api/beneficiaries${params}`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -420,9 +489,13 @@ export async function getBeneficiaryById(token: string, id: string) {
   });
 }
 
-export async function createBeneficiary(token: string, data: any, sppgId: string) {
+export async function createBeneficiary(
+  token: string,
+  data: any,
+  sppgId: string,
+) {
   return fetchApi(`/api/beneficiaries?sppgId=${sppgId}`, {
-    method: 'POST',
+    method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -432,7 +505,7 @@ export async function createBeneficiary(token: string, data: any, sppgId: string
 
 export async function deleteBeneficiary(token: string, id: string) {
   return fetchApi(`/api/beneficiaries/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -443,7 +516,7 @@ export async function deleteBeneficiary(token: string, id: string) {
 // SPPG API
 // ============================================================================
 export async function getSppgs(token: string) {
-  return fetchApi('/api/sppg', {
+  return fetchApi("/api/sppg", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -459,8 +532,8 @@ export async function getSppgById(token: string, id: string) {
 }
 
 export async function createSppg(token: string, data: any) {
-  return fetchApi('/api/sppg', {
-    method: 'POST',
+  return fetchApi("/api/sppg", {
+    method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -470,7 +543,7 @@ export async function createSppg(token: string, data: any) {
 
 export async function updateSppg(token: string, id: string, data: any) {
   return fetchApi(`/api/sppg/${id}`, {
-    method: 'PUT',
+    method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
     },

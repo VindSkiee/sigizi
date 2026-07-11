@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  ForbiddenException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { hash, compare } from "bcrypt";
@@ -41,6 +42,50 @@ export class AuthService {
   async handleSsoCallback(dto: SsoCallbackDto): Promise<AuthResponse> {
     const mockUser = await this.getOrCreateMockUser();
     return this.buildAuthResponse(mockUser);
+  }
+
+  async devLogin(role: string): Promise<AuthResponse> {
+    if (process.env.NODE_ENV === "production") {
+      throw new ForbiddenException("Dev login tidak tersedia di production");
+    }
+
+    const validRole =
+      role === "SPPG_ADMIN" || role === "SUPPLIER" ? role : "SPPG_ADMIN";
+
+    let user;
+    if (validRole === "SUPPLIER") {
+      user = await this.prisma.user.findFirst({
+        where: { role: "SUPPLIER" },
+        include: { sppg: true, supplier: true },
+      });
+      if (!user) {
+        user = await this.prisma.user.create({
+          data: {
+            email: "supplier@sumberrejeki.go.id",
+            name: "UD. Sumber Rejeki",
+            role: "SUPPLIER",
+          },
+          include: { sppg: true, supplier: true },
+        });
+      }
+    } else {
+      user = await this.prisma.user.findFirst({
+        where: { role: "SPPG_ADMIN" },
+        include: { sppg: true, supplier: true },
+      });
+      if (!user) {
+        user = await this.prisma.user.create({
+          data: {
+            email: "admin@sppg.go.id",
+            name: "Admin SPPG",
+            role: "SPPG_ADMIN",
+          },
+          include: { sppg: true, supplier: true },
+        });
+      }
+    }
+
+    return this.buildAuthResponse(user);
   }
 
   async register(dto: RegisterSupplierDto): Promise<AuthResponse> {

@@ -51,4 +51,10 @@ export class AuthController {
   async getMe(@Request() req: any) {
     return req.user;
   }
+
+  @Get("dev-login")
+  @ApiOperation({ summary: "Dev-only quick login (not for production)" })
+  async devLogin(@Query("role") role?: string) {
+    return this.authService.devLogin(role || "SPPG_ADMIN");
+  }
 }
