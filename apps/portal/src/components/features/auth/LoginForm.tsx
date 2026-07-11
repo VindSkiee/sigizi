@@ -91,10 +91,8 @@ export function LoginForm() {
   return (
     // Menggunakan h-[100dvh] dan overflow-hidden untuk mencegah scroll di mobile
     <div className="h-[100dvh] overflow-hidden bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center p-4 md:min-h-screen md:overflow-auto">
-      
       {/* Di mobile: tidak ada border, shadow, dan background (menyalatu dengan page). Di md (desktop): tampil sebagai Card */}
       <div className="w-full max-w-md flex flex-col justify-center h-full max-h-[600px] md:h-auto md:max-h-none md:bg-white md:p-10 md:shadow-lg md:border md:border-gray-100">
-        
         {/* Logo diperkecil marginnya pada layar mobile */}
         <Logo className="mb-4 md:mb-8 scale-90 md:scale-100 origin-center" />
 
@@ -142,18 +140,20 @@ export function LoginForm() {
               type="submit"
               variant="primary"
               // Di mobile gunakan size medium (atau default), di desktop size lg
-              size="lg" 
+              size="lg"
               isLoading={isLoading}
               className="flex-1 py-2 md:py-3 text-sm md:text-base"
             >
               Login
             </Button>
 
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="lg"
               onClick={handleSsoLogin}
-              disabled={isLoading}
-              className="flex-1 py-2 md:py-3 px-2 md:px-3 bg-white hover:bg-gray-50 disabled:bg-gray-100 text-gray-700 font-medium text-xs md:text-sm rounded-xl border-2 border-gray-200 hover:border-gray-300 transition-colors duration-200 flex items-center justify-center gap-1 md:gap-2"
+              isLoading={isLoading}
+              className="flex-1 py-2 md:py-3 text-sm md:text-base"
             >
               <svg
                 className="w-4 h-4 md:w-5 md:h-5 text-green-600 shrink-0"
@@ -168,8 +168,8 @@ export function LoginForm() {
                   d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                 />
               </svg>
-              <span>SSO BGN</span>
-            </button>
+              SSO BGN
+            </Button>
           </div>
         </form>
 
@@ -203,7 +203,6 @@ export function LoginForm() {
             </Link>
           </div>
         </div>
-
       </div>
     </div>
   );
