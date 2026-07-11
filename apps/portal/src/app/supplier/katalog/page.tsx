@@ -1,18 +1,57 @@
 'use client';
 
-import { Package, Plus, Search } from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { useState, useEffect } from 'react';
+import { Package, Plus, Search, Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { getSupplierItems } from '@/lib/api';
 
-const products = [
-  { id: '1', name: 'Beras Premium', category: 'Bahan Baku', price: 12000, unit: 'kg', stock: 500, status: 'active' },
-  { id: '2', name: 'Ayam Segar', category: 'Bahan Baku', price: 35000, unit: 'kg', stock: 200, status: 'active' },
-  { id: '3', name: 'Sayuran Campur', category: 'Olahan', price: 15000, unit: 'kg', stock: 15, status: 'low' },
-  { id: '4', name: 'Minyak Goreng', category: 'Bahan Baku', price: 18000, unit: 'liter', stock: 0, status: 'out' },
-  { id: '5', name: 'Telur Ayam', category: 'Bahan Baku', price: 22000, unit: 'kg', stock: 100, status: 'active' },
-];
+interface Product {
+  id: string;
+  name: string;
+  unit: string;
+  basePrice: number;
+  description?: string;
+  minOrderQty?: number;
+  orderStep?: number;
+}
 
 export default function KatalogPage() {
+  const { token, user } = useAuth();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (!token || !user?.supplierId) return;
+
+    async function fetchProducts() {
+      try {
+        const response = await getSupplierItems(token!, user!.supplierId!);
+        if (response.success) {
+          setProducts((response.data as any) || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch products:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchProducts();
+  }, [token, user]);
+
+  const filteredProducts = products.filter((p) =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -32,49 +71,69 @@ export default function KatalogPage() {
         <input
           type="text"
           placeholder="Cari produk..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
       {/* Products Table */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">Produk</th>
-              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">Kategori</th>
-              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">Harga</th>
-              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">Stok</th>
-              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {products.map((product) => (
-              <tr key={product.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Package className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">{product.name}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">{product.category}</td>
-                <td className="px-6 py-4 text-sm text-gray-700">Rp {product.price.toLocaleString()}/{product.unit}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{product.stock} {product.unit}</td>
-                <td className="px-6 py-4">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    product.status === 'active' ? 'bg-green-100 text-green-700' : 
-                    product.status === 'low' ? 'bg-yellow-100 text-yellow-700' : 
-                    'bg-red-100 text-red-700'
-                  }`}>
-                    {product.status === 'active' ? 'Tersedia' : product.status === 'low' ? 'Stok Rendah' : 'Habis'}
-                  </span>
-                </td>
+        {filteredProducts.length === 0 ? (
+          <div className="p-12 text-center">
+            <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500">
+              {searchQuery ? 'Produk tidak ditemukan' : 'Belum ada produk'}
+            </p>
+          </div>
+        ) : (
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">
+                  Produk
+                </th>
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">
+                  Satuan
+                </th>
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">
+                  Harga
+                </th>
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">
+                  Min. Order
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filteredProducts.map((product) => (
+                <tr key={product.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <Package className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-700 block">
+                          {product.name}
+                        </span>
+                        {product.description && (
+                          <span className="text-xs text-gray-400">{product.description}</span>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{product.unit}</td>
+                  <td className="px-6 py-4 text-sm text-gray-700">
+                    Rp {product.basePrice.toLocaleString('id-ID')}/{product.unit}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {product.minOrderQty || 1} {product.unit}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
