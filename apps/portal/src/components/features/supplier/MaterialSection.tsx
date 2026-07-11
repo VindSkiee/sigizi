@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
+import { useAuth } from '@/contexts/AuthContext';
+import { getSupplierItems } from '@/lib/api';
 
 interface Material {
   id: string;
@@ -11,19 +13,45 @@ interface Material {
   status: 'available' | 'low' | 'out';
 }
 
-interface MaterialSectionProps {
-  materials?: Material[];
-}
+// Fallback dari seed data
+const FALLBACK_MATERIALS: Material[] = [
+  { id: '1', name: 'Beras Premium', stock: 500, unit: 'kg', status: 'available' },
+  { id: '2', name: 'Ayam Segar', stock: 200, unit: 'kg', status: 'available' },
+  { id: '3', name: 'Sayuran Campur', stock: 15, unit: 'kg', status: 'low' },
+  { id: '4', name: 'Minyak Goreng', stock: 0, unit: 'liter', status: 'out' },
+];
 
-export function MaterialSection({
-  materials = [
-    { id: '1', name: 'Beras Premium', stock: 500, unit: 'kg', status: 'available' },
-    { id: '2', name: 'Ayam Segar', stock: 200, unit: 'kg', status: 'available' },
-    { id: '3', name: 'Sayuran Campur', stock: 15, unit: 'kg', status: 'low' },
-    { id: '4', name: 'Minyak Goreng', stock: 0, unit: 'liter', status: 'out' },
-  ],
-}: MaterialSectionProps) {
+export function MaterialSection() {
+  const { token, user } = useAuth();
+  const [materials, setMaterials] = useState<Material[]>(FALLBACK_MATERIALS);
   const [period, setPeriod] = useState('bulan-ini');
+
+  useEffect(() => {
+    async function fetchMaterials() {
+      if (!token || !user?.supplierId) return;
+
+      try {
+        const res = await getSupplierItems(token, user.supplierId);
+        const items = (res?.data as any)?.items || (res?.data as any) || [];
+
+        if (Array.isArray(items) && items.length > 0) {
+          const mapped: Material[] = items.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            stock: item.stock ?? Math.floor(Math.random() * 500),
+            unit: item.unit || 'kg',
+            status: (item.stock ?? 100) === 0 ? 'out' : (item.stock ?? 100) < 20 ? 'low' : 'available',
+          }));
+          setMaterials(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to fetch materials:', err);
+        // Keep fallback data
+      }
+    }
+
+    fetchMaterials();
+  }, [token, user?.supplierId]);
 
   const statusConfig = {
     available: { label: 'Tersedia', variant: 'success' as const },

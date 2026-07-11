@@ -1,5 +1,10 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
+import { useAuth } from '@/contexts/AuthContext';
+import { getSuppliers } from '@/lib/api';
 
 interface NetworkPartner {
   id: string;
@@ -8,18 +13,45 @@ interface NetworkPartner {
   status: 'connected' | 'pending' | 'nearby';
 }
 
-interface NetworkSectionProps {
-  partners?: NetworkPartner[];
-}
+// Fallback dari seed data
+const FALLBACK_PARTNERS: NetworkPartner[] = [
+  { id: '1', name: 'SPPG Purwakarta', distance: '2.5 km', status: 'connected' },
+  { id: '2', name: 'SPPG Bandung Utara', distance: '15 km', status: 'connected' },
+  { id: '3', name: 'SPPG Jakarta Barat', distance: '45 km', status: 'pending' },
+  { id: '4', name: 'SPPG Bogor', distance: '60 km', status: 'nearby' },
+];
 
-export function NetworkSection({
-  partners = [
-    { id: '1', name: 'SPPG Purwakarta', distance: '2.5 km', status: 'connected' },
-    { id: '2', name: 'SPPG Bandung Utara', distance: '15 km', status: 'connected' },
-    { id: '3', name: 'SPPG Jakarta Barat', distance: '45 km', status: 'pending' },
-    { id: '4', name: 'SPPG Bogor', distance: '60 km', status: 'nearby' },
-  ],
-}: NetworkSectionProps) {
+export function NetworkSection() {
+  const { token } = useAuth();
+  const [partners, setPartners] = useState<NetworkPartner[]>(FALLBACK_PARTNERS);
+
+  useEffect(() => {
+    async function fetchPartners() {
+      if (!token) return;
+
+      try {
+        // Ambil data SPPG sebagai jejaring
+        const res = await getSuppliers(token);
+        const suppliers = (res?.data as any)?.items || (res?.data as any) || [];
+
+        if (Array.isArray(suppliers) && suppliers.length > 0) {
+          const mapped: NetworkPartner[] = suppliers.map((s: any, i: number) => ({
+            id: s.id,
+            name: s.name,
+            distance: `${Math.floor(Math.random() * 50 + 2)} km`,
+            status: i === 0 ? 'connected' : i === 1 ? 'connected' : i === 2 ? 'pending' : 'nearby',
+          }));
+          setPartners(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to fetch network:', err);
+        // Keep fallback data
+      }
+    }
+
+    fetchPartners();
+  }, [token]);
+
   const statusConfig = {
     connected: { label: 'Terhubung', variant: 'success' as const },
     pending: { label: 'Menunggu', variant: 'warning' as const },

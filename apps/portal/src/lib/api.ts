@@ -15,9 +15,8 @@ async function fetchApi<T>(
 ): Promise<ApiResponse<T>> {
   const url = `${API_URL}${endpoint}`;
 
-  // Tambahkan AbortController untuk timeout 1 detik (agar cepat fallback ke mock)
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 1500);
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
 
   const response = await fetch(url, {
     ...options,
@@ -40,12 +39,16 @@ async function fetchApi<T>(
   return response.json();
 }
 
+// ============================================================================
 // Public API (no auth)
+// ============================================================================
 export async function getBatchByNumber(batchNumber: string) {
-  return fetchApi(`/api/public/batch/${batchNumber}`);
+  return fetchApi(`/api/batches/by-number/${batchNumber}`);
 }
 
+// ============================================================================
 // Auth API
+// ============================================================================
 export async function loginEmail(email: string, password: string) {
   return fetchApi('/api/auth/login', {
     method: 'POST',
@@ -81,7 +84,9 @@ export async function getCurrentUser(token: string) {
   });
 }
 
+// ============================================================================
 // File Upload API
+// ============================================================================
 export async function uploadFile(file: File) {
   const formData = new FormData();
   formData.append('file', file);
@@ -109,10 +114,20 @@ export async function uploadFile(file: File) {
   return response.json();
 }
 
-// Supplier API
+// ============================================================================
+// Supplier API (Admin)
+// ============================================================================
 export async function getSuppliers(token: string, search?: string) {
   const params = search ? `?search=${encodeURIComponent(search)}` : '';
   return fetchApi(`/api/suppliers${params}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function getSupplierById(token: string, id: string) {
+  return fetchApi(`/api/suppliers/${id}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -129,18 +144,36 @@ export async function createSupplier(token: string, data: any) {
   });
 }
 
-// Batch API
-export async function getBatches(token: string, date?: string) {
-  const params = date ? `?date=${date}` : '';
-  return fetchApi(`/api/batches${params}`, {
+export async function updateSupplier(token: string, id: string, data: any) {
+  return fetchApi(`/api/suppliers/${id}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteSupplier(token: string, id: string) {
+  return fetchApi(`/api/suppliers/${id}`, {
+    method: 'DELETE',
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
 }
 
-export async function createBatch(token: string, data: any) {
-  return fetchApi('/api/batches', {
+// Supplier Items
+export async function getSupplierItems(token: string, supplierId: string) {
+  return fetchApi(`/api/suppliers/${supplierId}/items`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function addSupplierItem(token: string, supplierId: string, data: any) {
+  return fetchApi(`/api/suppliers/${supplierId}/items`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -149,10 +182,102 @@ export async function createBatch(token: string, data: any) {
   });
 }
 
+export async function removeSupplierItem(token: string, itemId: string) {
+  return fetchApi(`/api/suppliers/items/${itemId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+// ============================================================================
+// Batch API
+// ============================================================================
+export async function getBatches(token: string, sppgId?: string, status?: string) {
+  const params = new URLSearchParams();
+  if (sppgId) params.append('sppgId', sppgId);
+  if (status) params.append('status', status);
+  const qs = params.toString() ? `?${params.toString()}` : '';
+  return fetchApi(`/api/batches${qs}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function createBatch(token: string, data: any, sppgId: string, userId: string) {
+  return fetchApi(`/api/batches?sppgId=${sppgId}&userId=${userId}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateBatchStatus(token: string, id: string, status: string) {
+  return fetchApi(`/api/batches/${id}/status`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ status }),
+  });
+}
+
+// ============================================================================
+// Order API
+// ============================================================================
+export async function getOrders(token: string, sppgId?: string, supplierId?: string) {
+  const params = new URLSearchParams();
+  if (sppgId) params.append('sppgId', sppgId);
+  if (supplierId) params.append('supplierId', supplierId);
+  const qs = params.toString() ? `?${params.toString()}` : '';
+  return fetchApi(`/api/orders${qs}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function getOrderById(token: string, id: string) {
+  return fetchApi(`/api/orders/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function createOrder(token: string, data: any, sppgId: string, userId: string) {
+  return fetchApi(`/api/orders?sppgId=${sppgId}&userId=${userId}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateOrderStatus(token: string, id: string, status: string) {
+  return fetchApi(`/api/orders/${id}/status`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ status }),
+  });
+}
+
+// ============================================================================
 // Complaint API
-export async function getComplaints(token: string, status?: string) {
-  const params = status ? `?status=${status}` : '';
-  return fetchApi(`/api/complaints${params}`, {
+// ============================================================================
+export async function getComplaints(token: string, batchId?: string, status?: string) {
+  const params = new URLSearchParams();
+  if (batchId) params.append('batchId', batchId);
+  if (status) params.append('status', status);
+  const qs = params.toString() ? `?${params.toString()}` : '';
+  return fetchApi(`/api/complaints${qs}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -170,11 +295,32 @@ export async function submitComplaint(data: {
   });
 }
 
+export async function updateComplaintStatus(token: string, id: string, status: string, notes?: string) {
+  return fetchApi(`/api/complaints/${id}/status`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ status, notes }),
+  });
+}
+
+// ============================================================================
 // Market API
+// ============================================================================
 export async function getMarketPrices(token: string, item: string, region?: string) {
   const params = new URLSearchParams({ item });
   if (region) params.append('region', region);
   return fetchApi(`/api/market/prices?${params.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function getMarketAnomalies(token: string, region?: string) {
+  const params = region ? `?region=${encodeURIComponent(region)}` : '';
+  return fetchApi(`/api/market/anomalies${params}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -191,78 +337,143 @@ export async function getHETSuggestion(token: string, item: string, region?: str
   });
 }
 
+// ============================================================================
 // Reports API
-export async function getDailyReport(token: string, date: string) {
-  return fetchApi(`/api/reports/daily?date=${date}`, {
+// ============================================================================
+export async function getDailyReport(token: string, date: string, sppgId?: string) {
+  const params = new URLSearchParams({ date });
+  if (sppgId) params.append('sppgId', sppgId);
+  return fetchApi(`/api/reports/daily?${params.toString()}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
 }
 
-export async function getWeeklyReport(token: string, week: string) {
-  return fetchApi(`/api/reports/weekly?week=${week}`, {
+export async function getWeeklyReport(token: string, week: string, sppgId?: string) {
+  const params = new URLSearchParams({ week });
+  if (sppgId) params.append('sppgId', sppgId);
+  return fetchApi(`/api/reports/weekly?${params.toString()}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
 }
 
-// Supplier Dashboard API
-export async function getSupplierDashboard(token: string) {
-  return fetchApi('/api/supplier/dashboard', {
-    headers: { Authorization: `Bearer ${token}` },
+// ============================================================================
+// MoU API
+// ============================================================================
+export async function getMoUs(token: string, sppgId?: string) {
+  const params = sppgId ? `?sppgId=${sppgId}` : '';
+  return fetchApi(`/api/mou${params}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   });
 }
 
-export async function getSupplierProducts(token: string) {
-  return fetchApi('/api/supplier/products', {
-    headers: { Authorization: `Bearer ${token}` },
+export async function getMoUById(token: string, id: string) {
+  return fetchApi(`/api/mou/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   });
 }
 
-export async function getSupplierOrders(token: string, status?: string) {
-  const params = status ? `?status=${status}` : '';
-  return fetchApi(`/api/supplier/orders${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
+export async function createMoU(token: string, data: any, userId: string) {
+  return fetchApi(`/api/mou?userId=${userId}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
   });
 }
 
-export async function acceptOrder(token: string, orderId: string) {
-  return fetchApi(`/api/supplier/orders/${orderId}/accept`, {
+export async function updateMoUStatus(token: string, id: string, status: string) {
+  return fetchApi(`/api/mou/${id}/status`, {
     method: 'PUT',
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ status }),
   });
 }
 
-export async function rejectOrder(token: string, orderId: string) {
-  return fetchApi(`/api/supplier/orders/${orderId}/reject`, {
+// ============================================================================
+// Beneficiary API
+// ============================================================================
+export async function getBeneficiaries(token: string, sppgId?: string) {
+  const params = sppgId ? `?sppgId=${sppgId}` : '';
+  return fetchApi(`/api/beneficiaries${params}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function getBeneficiaryById(token: string, id: string) {
+  return fetchApi(`/api/beneficiaries/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function createBeneficiary(token: string, data: any, sppgId: string) {
+  return fetchApi(`/api/beneficiaries?sppgId=${sppgId}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteBeneficiary(token: string, id: string) {
+  return fetchApi(`/api/beneficiaries/${id}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+// ============================================================================
+// SPPG API
+// ============================================================================
+export async function getSppgs(token: string) {
+  return fetchApi('/api/sppg', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function getSppgById(token: string, id: string) {
+  return fetchApi(`/api/sppg/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function createSppg(token: string, data: any) {
+  return fetchApi('/api/sppg', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateSppg(token: string, id: string, data: any) {
+  return fetchApi(`/api/sppg/${id}`, {
     method: 'PUT',
-    headers: { Authorization: `Bearer ${token}` },
-  });
-}
-
-export async function getSupplierMoUs(token: string) {
-  return fetchApi('/api/supplier/mou', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-}
-
-export async function getSupplierMaterials(token: string, period?: string) {
-  const params = period ? `?period=${period}` : '';
-  return fetchApi(`/api/supplier/materials${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-}
-
-export async function getSupplierNetwork(token: string) {
-  return fetchApi('/api/supplier/network', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-}
-
-export async function getWeeklyShipments(token: string) {
-  return fetchApi('/api/supplier/shipments/weekly', {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
   });
 }
