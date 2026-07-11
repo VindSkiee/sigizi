@@ -5,6 +5,7 @@ import {
   ForbiddenException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
 import { hash, compare } from "bcrypt";
 import { PrismaService } from "../../../database/prisma.service";
 import { SsoLoginDto } from "../dto/sso-login.dto";
@@ -29,14 +30,27 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   async loginSso(dto: SsoLoginDto): Promise<{ redirectUrl: string }> {
     const state = Buffer.from(JSON.stringify({ nonce: dto.code })).toString(
       "base64",
     );
-    const redirectUrl = `https://mitra.bgn.go.id/sso/authorize?client_id=sigizi&state=${state}`;
-    return { redirectUrl };
+
+    if (process.env.NODE_ENV === "production") {
+      const bgnUrl = this.configService.get(
+        "SSO_BGN_AUTHORIZE_URL",
+        "https://mitra.bgn.go.id/sso/authorize",
+      );
+      return { redirectUrl: `${bgnUrl}?client_id=sigizi&state=${state}` };
+    }
+
+    const portalUrl = this.configService.get(
+      "NEXT_PUBLIC_PORTAL_URL",
+      "http://localhost:3000",
+    );
+    return { redirectUrl: `${portalUrl}/auth/sso-redirect?state=${state}` };
   }
 
   async handleSsoCallback(dto: SsoCallbackDto): Promise<AuthResponse> {
