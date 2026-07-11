@@ -36,7 +36,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           variant === 'secondary' &&
             'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
           variant === 'outline' &&
-            'border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:ring-primary-500',
+            'border-2 border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:ring-primary-500',
           variant === 'ghost' &&
             'text-gray-600 hover:bg-gray-100 focus:ring-gray-500',
           // Sizes
