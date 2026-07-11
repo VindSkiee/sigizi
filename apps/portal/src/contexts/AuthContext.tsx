@@ -26,32 +26,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users - fallback saat backend tidak tersedia
-const mockUsers = [
-  {
-    email: 'supplier@sumbermakmur.com',
-    password: 'supplier123',
-    user: {
-      id: 'sup-001',
-      email: 'supplier@sumbermakmur.com',
-      name: 'PT Sumber Makmur',
-      role: 'SUPPLIER' as const,
-      supplierId: 'sup-9921',
-    },
-  },
-  {
-    email: 'admin@sppg.go.id',
-    password: 'admin123',
-    user: {
-      id: 'admin-001',
-      email: 'admin@sppg.go.id',
-      name: 'Budi Santoso',
-      role: 'SPPG_ADMIN' as const,
-      sppgId: 'sppg-001',
-    },
-  },
-];
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -65,6 +39,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setToken(savedToken);
       try {
         setUser(JSON.parse(savedUser));
+        // Validate token against backend
+        getCurrentUser(savedToken)
+          .then((response: any) => {
+            if (response.success && response.data) {
+              setUser(response.data);
+              localStorage.setItem('user', JSON.stringify(response.data));
+            }
+          })
+          .catch(() => {
+            // Token invalid or backend down - clear and redirect
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setToken(null);
+            setUser(null);
+          });
       } catch {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -78,32 +67,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = user?.role === 'SPPG_ADMIN';
 
   const login = async (email: string, password: string) => {
-    // 1. Coba login ke backend
-    try {
-      const response = await loginEmail(email, password);
-      if (response.success) {
-        const data = response.data as { token: string; user: User };
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        setToken(data.token);
-        setUser(data.user);
-        return;
-      }
-    } catch (err) {
-      console.log('Backend tidak tersedia, mencoba mock login...');
-    }
-
-    // 2. Fallback ke mock login
-    const mockUser = mockUsers.find(
-      (u) => u.email === email && u.password === password
-    );
-
-    if (mockUser) {
-      const mockToken = 'mock-token-' + Date.now();
-      localStorage.setItem('token', mockToken);
-      localStorage.setItem('user', JSON.stringify(mockUser.user));
-      setToken(mockToken);
-      setUser(mockUser.user);
+    const response = await loginEmail(email, password);
+    if (response.success) {
+      const data = response.data as { token: string; user: User };
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      setToken(data.token);
+      setUser(data.user);
     } else {
       throw new Error('Email atau password salah');
     }

@@ -61,7 +61,13 @@ export async function registerSupplier(data: {
   nib: string;
   email: string;
   password: string;
-  nibFileUrl?: string;
+  phone?: string;
+  address?: string;
+  province: string;
+  regency: string;
+  district: string;
+  village?: string;
+  postalCode?: string;
 }) {
   return fetchApi("/api/auth/register", {
     method: "POST",

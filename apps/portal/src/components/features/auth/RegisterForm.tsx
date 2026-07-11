@@ -17,6 +17,9 @@ interface FormErrors {
   email?: string;
   password?: string;
   confirmPassword?: string;
+  province?: string;
+  regency?: string;
+  district?: string;
   nibFile?: string;
 }
 
@@ -27,6 +30,11 @@ export function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [province, setProvince] = useState("");
+  const [regency, setRegency] = useState("");
+  const [district, setDistrict] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [nibFile, setNibFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -64,6 +72,18 @@ export function RegisterForm() {
       newErrors.confirmPassword = "Password tidak cocok";
     }
 
+    if (!province.trim()) {
+      newErrors.province = "Provinsi wajib diisi";
+    }
+
+    if (!regency.trim()) {
+      newErrors.regency = "Kabupaten/Kota wajib diisi";
+    }
+
+    if (!district.trim()) {
+      newErrors.district = "Kecamatan wajib diisi";
+    }
+
     if (!nibFile) {
       newErrors.nibFile = "File NIB wajib diupload";
     }
@@ -84,11 +104,12 @@ export function RegisterForm() {
     setIsLoading(true);
 
     try {
-      let nibFileUrl = "";
+      // Upload NIB file if provided (optional - backend doesn't require it)
       if (nibFile) {
-        const uploadResponse = await uploadFile(nibFile);
-        if (uploadResponse.success) {
-          nibFileUrl = uploadResponse.data.url;
+        try {
+          await uploadFile(nibFile);
+        } catch {
+          // File upload is optional, continue with registration
         }
       }
 
@@ -97,7 +118,11 @@ export function RegisterForm() {
         nib: nib.trim(),
         email: email.trim(),
         password,
-        nibFileUrl,
+        province: province.trim(),
+        regency: regency.trim(),
+        district: district.trim(),
+        phone: phone.trim() || undefined,
+        address: address.trim() || undefined,
       });
 
       if (registerResponse.success) {
@@ -186,6 +211,69 @@ export function RegisterForm() {
                 </p>
               </div>
 
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label
+                    htmlFor="province"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                  >
+                    Provinsi <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="province"
+                    type="text"
+                    placeholder="Jawa Barat"
+                    value={province}
+                    onChange={(e) => setProvince(e.target.value)}
+                    className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200"
+                    required
+                  />
+                  {errors.province && (
+                    <p className="mt-1 text-xs text-red-500">{errors.province}</p>
+                  )}
+                </div>
+                <div>
+                  <label
+                    htmlFor="regency"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                  >
+                    Kabupaten <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="regency"
+                    type="text"
+                    placeholder="Purwakarta"
+                    value={regency}
+                    onChange={(e) => setRegency(e.target.value)}
+                    className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200"
+                    required
+                  />
+                  {errors.regency && (
+                    <p className="mt-1 text-xs text-red-500">{errors.regency}</p>
+                  )}
+                </div>
+                <div>
+                  <label
+                    htmlFor="district"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                  >
+                    Kecamatan <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="district"
+                    type="text"
+                    placeholder="Wanayasa"
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200"
+                    required
+                  />
+                  {errors.district && (
+                    <p className="mt-1 text-xs text-red-500">{errors.district}</p>
+                  )}
+                </div>
+              </div>
+
               <Input
                 id="email"
                 type="email"
@@ -217,6 +305,24 @@ export function RegisterForm() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 error={errors.confirmPassword}
                 required
+              />
+
+              <Input
+                id="phone"
+                type="tel"
+                label="No. Telepon"
+                placeholder="08123456789"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+
+              <Input
+                id="address"
+                type="text"
+                label="Alamat"
+                placeholder="Masukkan Alamat Lengkap"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
               />
             </div>
 
