@@ -11,6 +11,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         showSpinner={false}
         crawl={true}
         easing="ease"
+        shadow="0 0 10px #22c55e,0 0 5px #22c55e"
       />
       {children}
     </AuthProvider>

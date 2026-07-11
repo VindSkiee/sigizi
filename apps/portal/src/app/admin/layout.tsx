@@ -22,11 +22,7 @@ export default function AdminLayout({
   }, [isLoading, isAuthenticated, isAdmin, router]);
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="text-sm text-gray-500">Memuat...</div>
-      </div>
-    );
+    return null;
   }
 
   if (!isAuthenticated || !isAdmin) {
