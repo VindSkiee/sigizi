@@ -1,12 +1,17 @@
 "use client";
 
+import NextTopLoader from "nextjs-toploader";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { TopProgressBar } from "@/components/ui/TopProgressBar";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
-      <TopProgressBar />
+      <NextTopLoader
+        color="#22c55e"
+        showSpinner={false}
+        crawl={true}
+        easing="ease"
+      />
       {children}
     </AuthProvider>
   );
