@@ -39,6 +39,7 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSsoLoading, setIsSsoLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
@@ -52,7 +53,8 @@ export function LoginForm() {
         const data = response.data as { token: string; user: any };
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
-        router.push(data.user.role === "SUPPLIER" ? "/supplier" : "/admin");
+        window.location.href =
+          data.user.role === "SUPPLIER" ? "/supplier" : "/admin";
         return;
       }
     } catch (err: any) {
@@ -67,7 +69,8 @@ export function LoginForm() {
       const mockToken = "mock-token-" + Date.now();
       localStorage.setItem("token", mockToken);
       localStorage.setItem("user", JSON.stringify(mockUser.user));
-      router.push(mockUser.user.role === "SUPPLIER" ? "/supplier" : "/admin");
+      window.location.href =
+        mockUser.user.role === "SUPPLIER" ? "/supplier" : "/admin";
     } else {
       setError("Email atau password salah. Silakan coba lagi.");
       setIsLoading(false);
@@ -75,7 +78,7 @@ export function LoginForm() {
   }
 
   async function handleSsoLogin() {
-    setIsLoading(true);
+    setIsSsoLoading(true);
     setError("");
     try {
       const response = await loginSso("mock-code", "mock-state");
@@ -152,7 +155,7 @@ export function LoginForm() {
               variant="outline"
               size="lg"
               onClick={handleSsoLogin}
-              isLoading={isLoading}
+              isLoading={isSsoLoading}
               className="flex-1 py-2 md:py-3 text-sm md:text-base gap-1.5"
             >
               <svg
