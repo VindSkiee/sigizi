@@ -12,23 +12,23 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 class BatchItemRequestDto {
   @ApiProperty({ example: "clx..." })
   @IsString()
-  itemId: string;
+  itemId!: string;
 
   @ApiProperty({ example: 10 })
   @IsNumber()
   @Min(0.01)
-  quantity: number;
+  quantity!: number;
 
   @ApiProperty({ example: 12000 })
   @IsNumber()
   @Min(0)
-  unitPrice: number;
+  unitPrice!: number;
 }
 
 export class CreateBatchDto {
   @ApiProperty({ example: "Nasi Ayam Bakar + Sayur Bayam" })
   @IsString()
-  menu: string;
+  menu!: string;
 
   @ApiPropertyOptional({
     example: { calories: 450, protein: 25, fat: 15, carbs: 50 },
@@ -52,5 +52,5 @@ export class CreateBatchDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => BatchItemRequestDto)
-  items: BatchItemRequestDto[];
+  items!: BatchItemRequestDto[];
 }

@@ -32,7 +32,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           "disabled:opacity-50 disabled:cursor-not-allowed",
           // Variants
           variant === "primary" &&
-            "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500",
+            "bg-blue-700 text-white hover:bg-blue-600 focus:ring-blue-500",
           variant === "secondary" &&
             "bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500",
           variant === "outline" &&

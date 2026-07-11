@@ -18,7 +18,48 @@ interface FormErrors {
   password?: string;
   confirmPassword?: string;
   nibFile?: string;
+  phone?: string;
+  province?: string;
+  regency?: string;
+  district?: string;
 }
+
+const provinces = [
+  "ACEH",
+  "SUMATERA_UTARA",
+  "SUMATERA_BARAT",
+  "RIAU",
+  "JAMBI",
+  "SUMATERA_SELATAN",
+  "BENGKULU",
+  "LAMPUNG",
+  "KEPULAUAN_BANGKA_BELITUNG",
+  "KEPULAUAN_RIAU",
+  "DKI_JAKARTA",
+  "JAWA_BARAT",
+  "JAWA_TENGAH",
+  "DI_YOGYAKARTA",
+  "JAWA_TIMUR",
+  "BANTEN",
+  "BALI",
+  "NUSA_TENGGARA_BARAT",
+  "NUSA_TENGGARA_TIMUR",
+  "KALIMANTAN_BARAT",
+  "KALIMANTAN_TENGAH",
+  "KALIMANTAN_SELATAN",
+  "KALIMANTAN_TIMUR",
+  "KALIMANTAN_UTARA",
+  "SULAWESI_UTARA",
+  "SULAWESI_TENGAH",
+  "SULAWESI_SELATAN",
+  "SULAWESI_TENGGARA",
+  "GORONTALO",
+  "SULAWESI_BARAT",
+  "MALUKU",
+  "MALUKU_UTARA",
+  "PAPUA_BARAT",
+  "PAPUA",
+];
 
 export function RegisterForm() {
   const router = useRouter();
@@ -28,6 +69,10 @@ export function RegisterForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [nibFile, setNibFile] = useState<File | null>(null);
+  const [phone, setPhone] = useState("");
+  const [province, setProvince] = useState("");
+  const [regency, setRegency] = useState("");
+  const [district, setDistrict] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState("");
@@ -68,8 +113,26 @@ export function RegisterForm() {
       newErrors.nibFile = "File NIB wajib diupload";
     }
 
+    if (!province) {
+      newErrors.province = "Provinsi wajib dipilih";
+    }
+
+    if (!regency.trim()) {
+      newErrors.regency = "Kabupaten/Kota wajib diisi";
+    }
+
+    if (!district.trim()) {
+      newErrors.district = "Kecamatan wajib diisi";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  }
+
+  function clearError(field: keyof FormErrors) {
+    if (errors[field]) {
+      setErrors({ ...errors, [field]: undefined });
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -88,7 +151,7 @@ export function RegisterForm() {
       if (nibFile) {
         const uploadResponse = await uploadFile(nibFile);
         if (uploadResponse.success) {
-          nibFileUrl = uploadResponse.data.url;
+          nibFileUrl = (uploadResponse.data as any).url;
         }
       }
 
@@ -98,6 +161,10 @@ export function RegisterForm() {
         email: email.trim(),
         password,
         nibFileUrl,
+        phone: phone.trim() || undefined,
+        province,
+        regency: regency.trim(),
+        district: district.trim(),
       });
 
       if (registerResponse.success) {
@@ -105,10 +172,36 @@ export function RegisterForm() {
           "Registrasi berhasil! Anda akan dialihkan ke halaman login...",
         );
         setTimeout(() => {
-          router.push("/login");
+          window.location.href = "/login";
         }, 2000);
       }
     } catch (err: any) {
+      // Parse backend error for field-level details
+      if (err.details && Array.isArray(err.details)) {
+        const fieldErrors: FormErrors = {};
+        err.details.forEach((d: any) => {
+          if (
+            d.field in fieldErrors ||
+            [
+              "name",
+              "nib",
+              "email",
+              "password",
+              "phone",
+              "province",
+              "regency",
+              "district",
+            ].includes(d.field)
+          ) {
+            (fieldErrors as any)[d.field] = d.message;
+          }
+        });
+        if (Object.keys(fieldErrors).length > 0) {
+          setErrors(fieldErrors);
+          setIsLoading(false);
+          return;
+        }
+      }
       setApiError(err.message || "Registrasi gagal. Silakan coba lagi.");
     } finally {
       setIsLoading(false);
@@ -146,6 +239,7 @@ export function RegisterForm() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+            {/* Left Column: Account Info */}
             <div className="space-y-4">
               <Input
                 id="name"
@@ -153,7 +247,10 @@ export function RegisterForm() {
                 label="Nama Toko"
                 placeholder="contoh: UD. Sumber Rejeki"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  clearError("name");
+                }}
                 error={errors.name}
                 required
               />
@@ -174,7 +271,10 @@ export function RegisterForm() {
                   type="text"
                   placeholder="Masukkan NIB"
                   value={nib}
-                  onChange={(e) => setNib(e.target.value)}
+                  onChange={(e) => {
+                    setNib(e.target.value);
+                    clearError("nib");
+                  }}
                   className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200"
                   required
                 />
@@ -192,7 +292,10 @@ export function RegisterForm() {
                 label="Email"
                 placeholder="Masukkan Email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  clearError("email");
+                }}
                 error={errors.email}
                 required
               />
@@ -203,7 +306,10 @@ export function RegisterForm() {
                 label="Password"
                 placeholder="Masukkan Password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  clearError("password");
+                }}
                 error={errors.password}
                 required
               />
@@ -214,13 +320,30 @@ export function RegisterForm() {
                 label="Konfirmasi Password"
                 placeholder="Masukkan Konfirmasi Password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  clearError("confirmPassword");
+                }}
                 error={errors.confirmPassword}
                 required
               />
+
+              <Input
+                id="phone"
+                type="tel"
+                label="No. Telepon (Opsional)"
+                placeholder="contoh: 081234567890"
+                value={phone}
+                onChange={(e) => {
+                  setPhone(e.target.value);
+                  clearError("phone");
+                }}
+                error={errors.phone}
+              />
             </div>
 
-            <div className="flex flex-col gap-4">
+            {/* Right Column: Address + File Upload */}
+            <div className="space-y-4">
               <FileUpload
                 label="Upload Dokumen NIB"
                 accept=".pdf"
@@ -231,7 +354,62 @@ export function RegisterForm() {
                 helperText="Klik atau seret file PDF NIB di sini"
               />
 
-              <div className="flex-1" />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Provinsi <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={province}
+                  onChange={(e) => {
+                    setProvince(e.target.value);
+                    clearError("province");
+                  }}
+                  className={`w-full px-4 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors duration-200 ${
+                    errors.province
+                      ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                      : "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
+                  }`}
+                  required
+                >
+                  <option value="">Pilih Provinsi</option>
+                  {provinces.map((p) => (
+                    <option key={p} value={p}>
+                      {p.replace(/_/g, " ")}
+                    </option>
+                  ))}
+                </select>
+                {errors.province && (
+                  <p className="mt-1 text-xs text-red-500">{errors.province}</p>
+                )}
+              </div>
+
+              <Input
+                id="regency"
+                type="text"
+                label="Kabupaten/Kota"
+                placeholder="contoh: PURWAKARTA"
+                value={regency}
+                onChange={(e) => {
+                  setRegency(e.target.value);
+                  clearError("regency");
+                }}
+                error={errors.regency}
+                required
+              />
+
+              <Input
+                id="district"
+                type="text"
+                label="Kecamatan"
+                placeholder="contoh: WANAYASA"
+                value={district}
+                onChange={(e) => {
+                  setDistrict(e.target.value);
+                  clearError("district");
+                }}
+                error={errors.district}
+                required
+              />
 
               <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <Info className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />

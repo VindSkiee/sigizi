@@ -1,8 +1,9 @@
-'use client';
+"use client";
 
-import { useRef, useState, DragEvent, ChangeEvent } from 'react';
-import { FileText, X, Upload } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useRef, useState, DragEvent, ChangeEvent } from "react";
+import { FileText, X, Upload } from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export interface FileUploadProps {
   accept?: string;
@@ -15,7 +16,7 @@ export interface FileUploadProps {
 }
 
 export function FileUpload({
-  accept = '.pdf',
+  accept = ".pdf",
   maxSize = 5,
   onFileSelect,
   error,
@@ -28,10 +29,10 @@ export function FileUpload({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   function validateFile(file: File): string | null {
-    const acceptedTypes = accept.split(',').map((t) => t.trim());
-    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    const acceptedTypes = accept.split(",").map((t) => t.trim());
+    const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
     if (!acceptedTypes.includes(fileExtension)) {
-      return `Format file tidak didukung. Gunakan: ${accept.replace(/\./g, '').toUpperCase()}`;
+      return `Format file tidak didukung. Gunakan: ${accept.replace(/\./g, "").toUpperCase()}`;
     }
 
     const fileSizeMB = file.size / (1024 * 1024);
@@ -45,7 +46,7 @@ export function FileUpload({
   function handleFile(file: File) {
     const validationError = validateFile(file);
     if (validationError) {
-      alert(validationError);
+      toast.error(validationError);
       return;
     }
     setSelectedFile(file);
@@ -90,14 +91,14 @@ export function FileUpload({
     setSelectedFile(null);
     onFileSelect(null);
     if (inputRef.current) {
-      inputRef.current.value = '';
+      inputRef.current.value = "";
     }
   }
 
   function formatFileSize(bytes: number): string {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   }
 
   return (
@@ -114,14 +115,14 @@ export function FileUpload({
         onDrop={handleDrop}
         onClick={handleClick}
         className={cn(
-          'relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors duration-200',
+          "relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors duration-200",
           isDragging
-            ? 'border-primary-500 bg-primary-50'
+            ? "border-primary-500 bg-primary-50"
             : selectedFile
-            ? 'border-green-300 bg-green-50'
-            : error
-            ? 'border-red-300 bg-red-50'
-            : 'border-gray-300 hover:border-primary-400 hover:bg-gray-50'
+              ? "border-green-300 bg-green-50"
+              : error
+                ? "border-red-300 bg-red-50"
+                : "border-gray-300 hover:border-primary-400 hover:bg-gray-50",
         )}
       >
         {/* Hidden file input - using opacity approach instead of display:none */}
@@ -160,18 +161,17 @@ export function FileUpload({
           <div className="relative z-0 pointer-events-none">
             <Upload className="mx-auto w-10 h-10 text-gray-400 mb-2" />
             <p className="text-sm text-gray-600">
-              {helperText || 'Klik atau seret file di sini'}
+              {helperText || "Klik atau seret file di sini"}
             </p>
             <p className="text-xs text-gray-400 mt-1">
-              Format: {accept.replace(/\./g, '').toUpperCase()} (Maks. {maxSize}MB)
+              Format: {accept.replace(/\./g, "").toUpperCase()} (Maks. {maxSize}
+              MB)
             </p>
           </div>
         )}
       </div>
 
-      {error && (
-        <p className="mt-1 text-xs text-red-500">{error}</p>
-      )}
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   );
 }

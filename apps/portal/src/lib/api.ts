@@ -33,7 +33,11 @@ async function fetchApi<T>(
     const error = await response.json().catch(() => ({
       message: "Terjadi kesalahan",
     }));
-    throw new Error(error.message || "Request failed");
+    const err = new Error(error.message || "Request failed") as any;
+    err.code = error.code || "UNKNOWN_ERROR";
+    err.details = error.details || undefined;
+    err.status = response.status;
+    throw err;
   }
 
   return response.json();
@@ -62,6 +66,10 @@ export async function registerSupplier(data: {
   email: string;
   password: string;
   nibFileUrl?: string;
+  phone?: string;
+  province: string;
+  regency: string;
+  district: string;
 }) {
   return fetchApi("/api/auth/register", {
     method: "POST",

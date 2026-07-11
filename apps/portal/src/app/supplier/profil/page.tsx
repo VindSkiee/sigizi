@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Save, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSupplierById, updateSupplier } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
@@ -58,10 +59,10 @@ export default function ProfilPage() {
         phone: profile.phone,
         address: profile.address,
       });
-      alert("Profil berhasil disimpan!");
+      toast.success("Profil berhasil disimpan!");
     } catch (err) {
       console.error("Failed to save profile:", err);
-      alert("Gagal menyimpan profil");
+      toast.error("Gagal menyimpan profil. Silakan coba lagi.");
     } finally {
       setSaving(false);
     }
