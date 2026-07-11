@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "nest build",
-    "dev": "nest start --watch",
+    "dev": "cross-env NODE_OPTIONS=--no-experimental-strip-types nest start --watch",
     "start": "node dist/main",
     "start:debug": "nest start --debug --watch",
     "lint": "eslint \"{src,test}/**/*.ts\"",
@@ -12,10 +12,13 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:generate": "pnpm exec dotenv -e ../../.env -- prisma generate",
+    "prisma:migrate": "pnpm exec dotenv -e ../../.env -- prisma migrate dev",
+    "prisma:studio": "pnpm exec dotenv -e ../../.env -- prisma studio",
+    "prisma:seed": "pnpm exec dotenv -e ../../.env -- pnpm exec ts-node prisma/seed.ts",
+    "prisma:reset": "pnpm exec dotenv -e ../../.env -- prisma migrate reset --force && pnpm prisma:generate",
+    "prisma:fresh": "pnpm prisma:reset && pnpm prisma:seed",
+    "prisma:reseed": "pnpm prisma:seed"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",
@@ -45,12 +48,10 @@
     "@types/express": "^4.17.21",
     "@types/node": "^20.11.0",
     "@types/passport-jwt": "^4.0.1",
-    "@types/pino": "^7.0.5",
+    "cross-env": "^7.0.3",
+    "dotenv-cli": "^7.4.0",
     "prisma": "^5.10.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.0"
-  },
-  "prisma": {
-    "seed": "ts-node prisma/seed.ts"
   }
 }

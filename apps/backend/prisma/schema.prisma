@@ -7,11 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Enums
+// ============================================================================
+// ENUMS
+// ============================================================================
+
 enum Role {
   SPPG_ADMIN
   SUPPLIER
-  PUBLIC
 }
 
 enum BatchStatus {
@@ -30,96 +32,351 @@ enum OrderStatus {
   PENDING
   CONFIRMED
   DELIVERED
+  COMPLETED
 }
 
-// Models
+enum MouStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  TERMINATED
+}
+
+// ============================================================================
+// MODELS
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// 1. USER & ORGANIZATION
+// ----------------------------------------------------------------------------
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String    @id @default(cuid())
+  email     String    @unique
   name      String
   role      Role
   password  String?
   sppgId    String?
-  sppg      Sppg?    @relation(fields: [sppgId], references: [id])
+  sppg      Sppg?     @relation(fields: [sppgId], references: [id], onDelete: Restrict)
   supplierId String?
-  supplier  Supplier? @relation(fields: [supplierId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  supplier  Supplier? @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Audit relationships
+  createdOrders     Order[]     @relation("OrderCreatedBy")
+  updatedOrders     Order[]     @relation("OrderUpdatedBy")
+  createdBatches    Batch[]     @relation("BatchCreatedBy")
+  updatedBatches    Batch[]     @relation("BatchUpdatedBy")
+  createdBatchItems BatchItem[]
+  createdMous       Mou[]       @relation("MouCreatedBy")
 
   @@index([sppgId])
   @@index([supplierId])
+  @@index([role])
 }
 
+// ----------------------------------------------------------------------------
+// 2. SPPG — Satuan Pelaksana Pemberian Makanan Gratis
+// Alamat terstruktur + GPS untuk proximity-based supplier filtering
+// ----------------------------------------------------------------------------
+
 model Sppg {
-  id           String        @id @default(cuid())
-  name         String
-  mitraId      String?       @unique
-  address      String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id          String   @id @default(cuid())
+  name        String
+  mitraId     String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // --- Alamat Terstruktur (wajib untuk filtering lokasi) ---
+  address     String?  // Alamat bebas teks
+  province    String   // Provinsi
+  regency     String   // Kabupaten/Kota
+  district    String   // Kecamatan
+  village     String?  // Kelurahan/Desa
+  postalCode  String?  // Kode Pos
+
+  // --- Koordinat GPS (untuk perhitungan jarak) ---
+  latitude    Float?   // -90 to 90
+  longitude   Float?   // -180 to 180
+
   users        User[]
   beneficiaries Beneficiary[]
   batches      Batch[]
   orders       Order[]
+  mous         Mou[]
 }
 
+// ----------------------------------------------------------------------------
+// 3. SUPPLIER — Pemasok bahan baku
+// NIB: Nomor Induk Berusaha (dokumen scan)
+// Alamat terstruktur + GPS untuk proximity-based discovery oleh SPPG
+// ----------------------------------------------------------------------------
+
 model Supplier {
-  id        String         @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
-  npwp      String         @unique
   phone     String?
-  address   String?
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  nib       String   @unique // File URL/path ke scan NIB
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // --- Alamat Terstruktur ---
+  address     String?  // Alamat bebas teks
+  province    String   // Provinsi
+  regency     String   // Kabupaten/Kota
+  district    String   // Kecamatan
+  village     String?  // Kelurahan/Desa
+  postalCode  String?  // Kode Pos
+
+  // --- Koordinat GPS ---
+  latitude    Float?   // -90 to 90
+  longitude   Float?   // -180 to 180
+
   users     User[]
   items     SupplierItem[]
   orders    Order[]
+  mous      Mou[]
 }
+
+// ----------------------------------------------------------------------------
+// 4. SUPPLIER ITEM — Catalogue harga terkini (BISA BERUBAH)
+// Harga di sini adalah "list price" / "catalogue price".
+// Harga transaksi dibekukan di OrderItem.unitPrice / MouItem.agreedPrice.
+// ----------------------------------------------------------------------------
 
 model SupplierItem {
-  id         String   @id @default(cuid())
-  name       String
-  unit       String
-  basePrice  Float
-  supplier   Supplier @relation(fields: [supplierId], references: [id])
-  supplierId String
-  createdAt  DateTime @default(now())
-  orderItems OrderItem[]
+  id           String   @id @default(cuid())
+  name         String
+  unit         String
+  basePrice    Float
+  description  String?
+  minOrderQty  Float?
+  orderStep    Float?
+  supplier     Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  supplierId   String
+  createdAt    DateTime @default(now())
+  orderItems   OrderItem[]
+  batchItems   BatchItem[]
+  mouItems     MouItem[]
 
   @@index([supplierId])
+  @@index([name])
 }
+
+// ----------------------------------------------------------------------------
+// 5. BENEFICIARY — Penerima manfaat (bukan hanya sekolah)
+// ----------------------------------------------------------------------------
 
 model Beneficiary {
-  id        String   @id @default(cuid())
-  name      String
-  school    String
-  sppg      Sppg     @relation(fields: [sppgId], references: [id])
-  sppgId    String
-  createdAt DateTime @default(now())
+  id                 String   @id @default(cuid())
+  name               String
+  institution        String
+  institutionType    String?
+  totalBeneficiary   Int
+  address            String?
+  contactPhone       String?
+  contactEmail       String?
+  sppg               Sppg     @relation(fields: [sppgId], references: [id], onDelete: Restrict)
+  sppgId             String
+  createdAt          DateTime @default(now())
 
   @@index([sppgId])
+  @@index([institution])
 }
 
-model Batch {
-  id             String          @id @default(cuid())
-  batchNumber    String          @unique
-  reportKey      String          @unique
-  date           DateTime        @default(now())
-  menu           String
-  nutrition      Json?
-  allergens      String[]
-  costPerPortion Float
-  totalCost      Float
-  sppg           Sppg            @relation(fields: [sppgId], references: [id])
+// ----------------------------------------------------------------------------
+// 6. MoU — Memorandum of Understanding / Kontrak Kerjasama
+// Status flow: DRAFT → ACTIVE → EXPIRED / TERMINATED
+// ----------------------------------------------------------------------------
+
+model Mou {
+  id             String    @id @default(cuid())
+  mouNumber      String    @unique
+
+  // --- Pihak-pihak ---
+  sppg           Sppg      @relation(fields: [sppgId], references: [id], onDelete: Restrict)
   sppgId         String
-  status         BatchStatus     @default(ACTIVE)
-  createdAt      DateTime        @default(now())
-  complaints     Complaint[]
+  supplier       Supplier  @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  supplierId     String
+
+  // --- Masa Kontrak ---
+  startDate      DateTime
+  endDate        DateTime
+
+  // --- Status ---
+  status         MouStatus @default(DRAFT)
+
+  // --- Dokumen & Ketentuan ---
+  title          String
+  nibSnapshot    String?   // NIB supplier saat kontrak dibuat (snapshot historis)
+  terms          Json?     // { paymentTerms, deliverySchedule, penalties, dll }
+  documentUrl    String?   // URL file MoU signed
+  notes          String?
+
+  // --- Audit ---
+  createdBy      User      @relation("MouCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById    String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // --- Relationships ---
+  items          MouItem[]
+  orders         Order[]
+
+  @@index([sppgId])
+  @@index([supplierId])
+  @@index([status])
+  @@index([startDate])
+  @@index([endDate])
+}
+
+// ----------------------------------------------------------------------------
+// 7. MoU ITEM — Item dengan harga khusus dalam MoU
+// Harga agreedPrice bisa beda dari SupplierItem.basePrice
+// ----------------------------------------------------------------------------
+
+model MouItem {
+  id             String        @id @default(cuid())
+  mou            Mou           @relation(fields: [mouId], references: [id], onDelete: Restrict)
+  mouId          String
+  item           SupplierItem  @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  itemId         String
+
+  agreedPrice    Float
+  minOrderQty    Float?
+  maxOrderQty    Float?
+
+  createdAt      DateTime      @default(now())
+
+  @@unique([mouId, itemId])
+}
+
+// ----------------------------------------------------------------------------
+// 8. ORDER — Pemesanan dari SPPG ke Supplier
+// Status flow: PENDING → CONFIRMED → DELIVERED → COMPLETED
+// opsional link ke MoU jika order berdasarkan kontrak
+// ----------------------------------------------------------------------------
+
+model Order {
+  id         String      @id @default(cuid())
+  status     OrderStatus @default(PENDING)
+  total      Float
+  notes      String?
+
+  sppg       Sppg        @relation(fields: [sppgId], references: [id], onDelete: Restrict)
+  sppgId     String
+  supplier   Supplier    @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  supplierId String
+  items      OrderItem[]
+
+  // --- Link ke MoU (opsional) ---
+  mou        Mou?        @relation(fields: [mouId], references: [id], onDelete: Restrict)
+  mouId      String?
+
+  // Audit trail
+  createdBy  User     @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById String
+  updatedBy  User?    @relation("OrderUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  updatedById String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([sppgId])
+  @@index([supplierId])
+  @@index([status])
+  @@index([createdById])
+  @@index([mouId])
+}
+
+// ----------------------------------------------------------------------------
+// 9. ORDER ITEM — Detail item dalam order
+// Harga dibekukan saat order dibuat (snapshot dari SupplierItem.basePrice atau MouItem.agreedPrice)
+// ----------------------------------------------------------------------------
+
+model OrderItem {
+  id       String @id @default(cuid())
+  order    Order  @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  orderId  String
+  item     SupplierItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  itemId   String
+
+  quantity    Float
+  unitPrice   Float
+  subtotal    Float
+
+  @@index([orderId])
+}
+
+// ----------------------------------------------------------------------------
+// 10. BATCH — Satu kali produksi makanan
+// costPerPortion dan totalCost dihitung otomatis dari BatchItems
+// ----------------------------------------------------------------------------
+
+model Batch {
+  id               String      @id @default(cuid())
+  batchNumber      String      @unique
+  reportKey        String      @unique
+  date             DateTime    @default(now())
+  menu             String
+  nutrition        Json?
+  allergens        String[]
+  beneficiaryCount Int?
+
+  costPerPortion   Float
+  totalCost        Float
+
+  sppg             Sppg        @relation(fields: [sppgId], references: [id], onDelete: Restrict)
+  sppgId           String
+  status           BatchStatus @default(ACTIVE)
+
+  batchItems       BatchItem[]
+  complaints       Complaint[]
+
+  // Audit trail
+  createdBy        User     @relation("BatchCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById      String
+  updatedBy        User?    @relation("BatchUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  updatedById      String?
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@index([sppgId])
   @@index([batchNumber])
   @@index([date])
+  @@index([status])
+  @@index([createdById])
 }
+
+// ----------------------------------------------------------------------------
+// 11. BATCH ITEM — Bahan baku yang digunakan dalam batch
+// Harga diambil dari SupplierItem.basePrice saat batch dibuat
+// ----------------------------------------------------------------------------
+
+model BatchItem {
+  id          String    @id @default(cuid())
+  batch       Batch     @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  batchId     String
+  item        SupplierItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  itemId      String
+
+  quantity    Float
+  unitPrice   Float
+  subtotal    Float
+
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@index([batchId])
+  @@index([itemId])
+}
+
+// ----------------------------------------------------------------------------
+// 12. COMPLAINT — Keluhan masyarakat
+// ----------------------------------------------------------------------------
 
 model Complaint {
   id          String          @id @default(cuid())
@@ -127,40 +384,13 @@ model Complaint {
   description String
   evidence    String?
   status      ComplaintStatus @default(PENDING)
-  batch       Batch           @relation(fields: [batchId], references: [id])
+  notes       String?
+  batch       Batch           @relation(fields: [batchId], references: [id], onDelete: Restrict)
   batchId     String
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
   @@index([batchId])
   @@index([status])
-}
-
-model Order {
-  id         String      @id @default(cuid())
-  status     OrderStatus @default(PENDING)
-  total      Float
-  sppg       Sppg        @relation(fields: [sppgId], references: [id])
-  sppgId     String
-  supplier   Supplier    @relation(fields: [supplierId], references: [id])
-  supplierId String
-  items      OrderItem[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-
-  @@index([sppgId])
-  @@index([supplierId])
-}
-
-model OrderItem {
-  id         String       @id @default(cuid())
-  order      Order        @relation(fields: [orderId], references: [id])
-  orderId    String
-  item       SupplierItem @relation(fields: [itemId], references: [id])
-  itemId     String
-  quantity   Float
-  unitPrice  Float
-  subtotal   Float
-
-  @@index([orderId])
+  @@index([reportKey])
 }
