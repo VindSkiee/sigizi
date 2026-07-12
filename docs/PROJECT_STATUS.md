@@ -55,7 +55,7 @@
 | Reports | ❌ Not Started | 0% | Daily/weekly views |
 | Order Management | ❌ Not Started | 0% | SPPG: Create/manage orders |
 | Supplier Orders | ❌ Not Started | 0% | Supplier: View/accept incoming orders |
-| Order Tracking | ❌ Not Started | 0% | Status tracking dashboard |    
+| Stock Management | ❌ Not Started | 0% | Stock management for supplier |
 
 ### Frontend Components
 
