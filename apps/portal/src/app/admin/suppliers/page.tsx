@@ -28,40 +28,60 @@ export default function SupplierIntegrationPage() {
   );
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Helper: Check if order is completed or cancelled
+  const isCompletedOrCancelled = (status: string) =>
+    status === OrderStatus.COMPLETED || status === "CANCELLED";
+
   const stats: SupplierStats = {
     pendingCount: orders.filter((o) => o.status === OrderStatus.PENDING)
       .length,
+    confirmedCount: orders.filter((o) => o.status === OrderStatus.CONFIRMED)
+      .length,
     deliveredCount: orders.filter((o) => o.status === OrderStatus.DELIVERED)
       .length,
-    completedCount: orders.filter((o) => o.status === OrderStatus.COMPLETED)
+    completedCount: orders.filter((o) => isCompletedOrCancelled(o.status))
       .length,
     totalActiveValue: orders
       .filter(
         (o) =>
           o.status === OrderStatus.PENDING ||
+          o.status === OrderStatus.CONFIRMED ||
           o.status === OrderStatus.DELIVERED
       )
       .reduce((sum, o) => sum + o.total, 0),
   };
 
   const counts = {
-    all: orders.filter((o) => o.status !== OrderStatus.CONFIRMED).length,
+    all: orders.length,
     pending: stats.pendingCount,
+    confirmed: stats.confirmedCount,
     delivered: stats.deliveredCount,
     completed: stats.completedCount,
   };
 
-  const filteredOrders = orders
-    .filter((order) => order.status !== OrderStatus.CONFIRMED)
-    .filter((order) => {
-      const matchesTab =
-        activeTab === "ALL" || order.status === activeTab;
-      const matchesSearch =
-        search === "" ||
-        order.id.toLowerCase().includes(search.toLowerCase()) ||
-        order.supplier?.name.toLowerCase().includes(search.toLowerCase());
-      return matchesTab && matchesSearch;
-    });
+  const filteredOrders = orders.filter((order) => {
+    // Tab filter
+    let matchesTab = false;
+    switch (activeTab) {
+      case "ALL":
+        matchesTab = true;
+        break;
+      case "SELESAI":
+        // Group COMPLETED + CANCELLED
+        matchesTab = isCompletedOrCancelled(order.status);
+        break;
+      default:
+        matchesTab = order.status === activeTab;
+    }
+
+    // Search filter
+    const matchesSearch =
+      search === "" ||
+      order.id.toLowerCase().includes(search.toLowerCase()) ||
+      order.supplier?.name.toLowerCase().includes(search.toLowerCase());
+
+    return matchesTab && matchesSearch;
+  });
 
   const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -82,14 +102,14 @@ export default function SupplierIntegrationPage() {
     setOrders((prev) =>
       prev.map((o) =>
         o.id === orderId
-          ? { ...o, status: newStatus as OrderStatus }
+          ? { ...o, status: newStatus as OrderStatus | "CANCELLED" }
           : o
       )
     );
     if (selectedOrder?.id === orderId) {
       setSelectedOrder((prev) =>
         prev
-          ? { ...prev, status: newStatus as OrderStatus }
+          ? { ...prev, status: newStatus as OrderStatus | "CANCELLED" }
           : null
       );
     }
@@ -142,7 +162,7 @@ export default function SupplierIntegrationPage() {
 
       {/* Pagination */}
       {filteredOrders.length > 0 && (
-        <div className="mt-6 flex items-center justify-between">
+        <div className="mt-6 flex flex-col items-center gap-2">
           <p className="text-sm text-gray-500">
             Menampilkan {startIndex + 1}-{Math.min(endIndex, filteredOrders.length)} dari {filteredOrders.length} pesanan
           </p>

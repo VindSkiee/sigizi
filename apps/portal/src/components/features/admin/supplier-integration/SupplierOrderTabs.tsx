@@ -9,16 +9,18 @@ interface SupplierOrderTabsProps {
   counts: {
     all: number;
     pending: number;
+    confirmed: number;
     delivered: number;
     completed: number;
   };
 }
 
 const TABS: { key: OrderFilterTab; label: string }[] = [
-  { key: "ALL", label: "Semua Pesanan" },
-  { key: OrderStatus.PENDING, label: "Menunggu Konfirmasi" },
+  { key: "ALL", label: "Semua" },
+  { key: OrderStatus.PENDING, label: "Menunggu" },
+  { key: OrderStatus.CONFIRMED, label: "Dikonfirmasi" },
   { key: OrderStatus.DELIVERED, label: "Dikirim" },
-  { key: OrderStatus.COMPLETED, label: "Selesai" },
+  { key: "SELESAI", label: "Selesai" },
 ];
 
 export function SupplierOrderTabs({
@@ -32,9 +34,11 @@ export function SupplierOrderTabs({
         return counts.all;
       case OrderStatus.PENDING:
         return counts.pending;
+      case OrderStatus.CONFIRMED:
+        return counts.confirmed;
       case OrderStatus.DELIVERED:
         return counts.delivered;
-      case OrderStatus.COMPLETED:
+      case "SELESAI":
         return counts.completed;
       default:
         return 0;
@@ -43,7 +47,7 @@ export function SupplierOrderTabs({
 
   return (
     <div className="border-b border-gray-200 mb-6">
-      <nav className="flex gap-0 -mb-px">
+      <nav className="flex gap-0 -mb-px overflow-x-auto">
         {TABS.map((tab) => {
           const count = getCount(tab.key);
           const isActive = activeTab === tab.key;
@@ -53,7 +57,7 @@ export function SupplierOrderTabs({
               onClick={() => onTabChange(tab.key)}
               className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 isActive
-                  ? "border-blue-600 text-blue-600"
+                  ? "border-primary-600 text-primary-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
@@ -62,7 +66,7 @@ export function SupplierOrderTabs({
                 <span
                   className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
                     isActive
-                      ? "bg-blue-100 text-blue-700"
+                      ? "bg-primary-100 text-primary-700"
                       : "bg-gray-100 text-gray-600"
                   }`}
                 >

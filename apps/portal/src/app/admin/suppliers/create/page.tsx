@@ -46,6 +46,8 @@ export default function CreateOrderPage() {
 
   const handleAddToDraft = (supplier: SupplierSearchResult) => {
     const newItem: DraftItem = {
+      draftId: crypto.randomUUID(),
+      addedAt: Date.now(),
       supplierId: supplier.id,
       supplierName: supplier.name,
       itemId: supplier.id,

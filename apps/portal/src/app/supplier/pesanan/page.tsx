@@ -1,73 +1,248 @@
 "use client";
 
-import { useState } from "react";
-import { X, ClipboardList, FileText, Download, Eye } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { ClipboardList, Search } from "lucide-react";
+import { Pagination } from "@/components/ui/Pagination";
+import {
+  OrderViewModel,
+  FilterType,
+  Order,
+} from "@/components/features/supplier/orders/types";
+import { OrderTabs } from "@/components/features/supplier/orders/OrderTabs";
+import { OrderCard } from "@/components/features/supplier/orders/OrderCard";
+import { OrderDetailModal } from "@/components/features/supplier/orders/OrderDetailModal";
+import { PaymentProofModal } from "@/components/features/supplier/orders/PaymentProofModal";
 
 // ============================================================================
-// CATATAN ENDPOINT (untuk integrasi backend nanti)
-// ============================================================================
-// GET  /api/orders?supplierId={supplierId}  → List pesanan supplier
-// GET  /api/orders/:id                      → Detail pesanan
-// PUT  /api/orders/:id/status               → Update status (CONFIRMED/CANCELLED)
-//
-// Status flow: PENDING → CONFIRMED → DELIVERED → COMPLETED
-// Supplier bisa: PENDING → CONFIRMED (konfirmasi) atau PENDING → CANCELLED (tolak)
+// CONSTANTS
 // ============================================================================
 
+const ITEMS_PER_PAGE = 5;
+
 // ============================================================================
-// INTERFACES (sesuai struktur response backend)
+// MOCK DATA (sesuai struktur response backend)
+// Akan diganti dengan real API setelah backend team selesai
 // ============================================================================
 
-interface OrderItem {
-  id: string;
-  quantity: number;
-  unitPrice: number;
-  subtotal: number;
-  item: {
-    id: string;
-    name: string;
-    unit: string;
-    basePrice: number;
-  };
-}
-
-interface Order {
-  id: string;
-  status: "PENDING" | "CONFIRMED" | "DELIVERED" | "CANCELLED";
-  total: number;
-  notes?: string;
-  sppgId: string;
-  supplierId: string;
-  createdAt: string;
-  updatedAt: string;
-  sppg: {
-    id: string;
-    name: string;
-  };
-  supplier: {
-    id: string;
-    name: string;
-  };
-  items: OrderItem[];
-}
-
-// Frontend-friendly format (setelah mapping)
-interface OrderViewModel {
-  id: string;
-  sppgName: string;
-  supplierName: string;
-  items: {
-    id: string;
-    name: string;
-    quantity: number;
-    unit: string;
-    unitPrice: number;
-    subtotal: number;
-  }[];
-  total: number;
-  status: Order["status"];
-  createdAt: string;
-}
+const MOCK_ORDERS: Order[] = [
+  {
+    id: "ord001pending123",
+    status: "PENDING",
+    total: 1160000,
+    notes: undefined,
+    sppgId: "sppg001",
+    supplierId: "supplier001",
+    createdAt: "2026-07-12T08:00:00Z",
+    updatedAt: "2026-07-12T08:00:00Z",
+    sppg: { id: "sppg001", name: "SPPG Purwakarta" },
+    supplier: { id: "supplier001", name: "UD. Sumber Makmur" },
+    items: [
+      {
+        id: "item001",
+        quantity: 50,
+        unitPrice: 12000,
+        subtotal: 600000,
+        item: { id: "si001", name: "Beras", unit: "kg", basePrice: 12000 },
+      },
+      {
+        id: "item002",
+        quantity: 20,
+        unitPrice: 28000,
+        subtotal: 560000,
+        item: { id: "si002", name: "Telur", unit: "kg", basePrice: 28000 },
+      },
+    ],
+  },
+  {
+    id: "ord002pending456",
+    status: "PENDING",
+    total: 4500000,
+    notes: "Urgent - butuh besok",
+    sppgId: "sppg002",
+    supplierId: "supplier001",
+    createdAt: "2026-07-11T14:30:00Z",
+    updatedAt: "2026-07-11T14:30:00Z",
+    sppg: { id: "sppg002", name: "SPPG Bandung Barat" },
+    supplier: { id: "supplier001", name: "UD. Sumber Makmur" },
+    items: [
+      {
+        id: "item003",
+        quantity: 30,
+        unitPrice: 120000,
+        subtotal: 3600000,
+        item: { id: "si003", name: "Daging Sapi", unit: "kg", basePrice: 120000 },
+      },
+      {
+        id: "item004",
+        quantity: 15,
+        unitPrice: 60000,
+        subtotal: 900000,
+        item: { id: "si004", name: "Ayam Potong", unit: "kg", basePrice: 60000 },
+      },
+    ],
+  },
+  {
+    id: "ord003confirm789",
+    status: "CONFIRMED",
+    total: 2040000,
+    notes: undefined,
+    sppgId: "sppg003",
+    supplierId: "supplier001",
+    createdAt: "2026-07-10T09:30:00Z",
+    updatedAt: "2026-07-10T10:00:00Z",
+    sppg: { id: "sppg003", name: "SPPG Cimahi Central" },
+    supplier: { id: "supplier001", name: "UD. Sumber Makmur" },
+    items: [
+      {
+        id: "item005",
+        quantity: 15,
+        unitPrice: 120000,
+        subtotal: 1800000,
+        item: { id: "si003", name: "Daging Sapi", unit: "kg", basePrice: 120000 },
+      },
+      {
+        id: "item006",
+        quantity: 30,
+        unitPrice: 8000,
+        subtotal: 240000,
+        item: { id: "si005", name: "Wortel", unit: "kg", basePrice: 8000 },
+      },
+    ],
+  },
+  {
+    id: "ord004deliv012",
+    status: "DELIVERED",
+    total: 1160000,
+    notes: undefined,
+    sppgId: "sppg001",
+    supplierId: "supplier001",
+    createdAt: "2026-07-08T08:00:00Z",
+    updatedAt: "2026-07-09T14:00:00Z",
+    sppg: { id: "sppg001", name: "SPPG Purwakarta" },
+    supplier: { id: "supplier001", name: "UD. Sumber Makmur" },
+    items: [
+      {
+        id: "item007",
+        quantity: 50,
+        unitPrice: 12000,
+        subtotal: 600000,
+        item: { id: "si001", name: "Beras", unit: "kg", basePrice: 12000 },
+      },
+      {
+        id: "item008",
+        quantity: 20,
+        unitPrice: 28000,
+        subtotal: 560000,
+        item: { id: "si002", name: "Telur", unit: "kg", basePrice: 28000 },
+      },
+    ],
+  },
+  {
+    id: "ord005complete345",
+    status: "COMPLETED",
+    total: 3200000,
+    notes: undefined,
+    sppgId: "sppg004",
+    supplierId: "supplier001",
+    createdAt: "2026-07-05T10:00:00Z",
+    updatedAt: "2026-07-08T16:00:00Z",
+    sppg: { id: "sppg004", name: "SPPG Jakarta Selatan" },
+    supplier: { id: "supplier001", name: "UD. Sumber Makmur" },
+    items: [
+      {
+        id: "item009",
+        quantity: 25,
+        unitPrice: 80000,
+        subtotal: 2000000,
+        item: { id: "si006", name: "Ikan Salmon", unit: "kg", basePrice: 80000 },
+      },
+      {
+        id: "item010",
+        quantity: 20,
+        unitPrice: 60000,
+        subtotal: 1200000,
+        item: { id: "si004", name: "Ayam Potong", unit: "kg", basePrice: 60000 },
+      },
+    ],
+  },
+  {
+    id: "ord006cancel678",
+    status: "CANCELLED",
+    total: 2800000,
+    notes: "Stok tidak mencukupi",
+    sppgId: "sppg005",
+    supplierId: "supplier001",
+    createdAt: "2026-07-03T14:00:00Z",
+    updatedAt: "2026-07-03T15:00:00Z",
+    sppg: { id: "sppg005", name: "SPPG Padalarang" },
+    supplier: { id: "supplier001", name: "UD. Sumber Makmur" },
+    items: [
+      {
+        id: "item011",
+        quantity: 100,
+        unitPrice: 28000,
+        subtotal: 2800000,
+        item: { id: "si002", name: "Telur", unit: "kg", basePrice: 28000 },
+      },
+    ],
+  },
+  {
+    id: "ord007deliv901",
+    status: "DELIVERED",
+    total: 890000,
+    notes: undefined,
+    sppgId: "sppg002",
+    supplierId: "supplier001",
+    createdAt: "2026-07-01T11:00:00Z",
+    updatedAt: "2026-07-02T09:00:00Z",
+    sppg: { id: "sppg002", name: "SPPG Bandung Barat" },
+    supplier: { id: "supplier001", name: "UD. Sumber Makmur" },
+    items: [
+      {
+        id: "item012",
+        quantity: 50,
+        unitPrice: 8000,
+        subtotal: 400000,
+        item: { id: "si005", name: "Wortel", unit: "kg", basePrice: 8000 },
+      },
+      {
+        id: "item013",
+        quantity: 30,
+        unitPrice: 10000,
+        subtotal: 300000,
+        item: { id: "si007", name: "Bayam", unit: "ikat", basePrice: 10000 },
+      },
+      {
+        id: "item014",
+        quantity: 19,
+        unitPrice: 10000,
+        subtotal: 190000,
+        item: { id: "si008", name: "Kangkung", unit: "ikat", basePrice: 10000 },
+      },
+    ],
+  },
+  {
+    id: "ord008confirm234",
+    status: "CONFIRMED",
+    total: 1800000,
+    notes: undefined,
+    sppgId: "sppg003",
+    supplierId: "supplier001",
+    createdAt: "2026-07-11T16:00:00Z",
+    updatedAt: "2026-07-11T16:30:00Z",
+    sppg: { id: "sppg003", name: "SPPG Cimahi Central" },
+    supplier: { id: "supplier001", name: "UD. Sumber Makmur" },
+    items: [
+      {
+        id: "item015",
+        quantity: 60,
+        unitPrice: 30000,
+        subtotal: 1800000,
+        item: { id: "si009", name: "Tahu", unit: "pcs", basePrice: 3000 },
+      },
+    ],
+  },
+];
 
 // ============================================================================
 // MAPPING FUNCTION (backend → frontend)
@@ -76,6 +251,7 @@ interface OrderViewModel {
 function mapOrderFromBackend(raw: Order): OrderViewModel {
   return {
     id: raw.id,
+    orderNumber: `ORD-${raw.id.slice(-3).toUpperCase()}`,
     sppgName: raw.sppg?.name || "SPPG",
     supplierName: raw.supplier?.name || "Supplier",
     items: raw.items.map((i) => ({
@@ -93,232 +269,79 @@ function mapOrderFromBackend(raw: Order): OrderViewModel {
 }
 
 // ============================================================================
-// STATUS CONFIG
-// ============================================================================
-
-const statusConfig = {
-  PENDING: {
-    label: "BARU",
-    badgeClass: "bg-blue-100 text-blue-700",
-  },
-  CONFIRMED: {
-    label: "DIPROSES",
-    badgeClass: "bg-yellow-100 text-yellow-700",
-  },
-  DELIVERED: {
-    label: "SELESAI",
-    badgeClass: "bg-green-100 text-green-700",
-  },
-  CANCELLED: {
-    label: "GAGAL",
-    badgeClass: "bg-red-100 text-red-700",
-  },
-};
-
-type FilterType = "all" | "PENDING" | "CONFIRMED" | "DELIVERED" | "CANCELLED";
-
-const filterLabels: Record<FilterType, string> = {
-  all: "Semua",
-  PENDING: "Baru",
-  CONFIRMED: "Diproses",
-  DELIVERED: "Selesai",
-  CANCELLED: "Batal",
-};
-
-// ============================================================================
-// MOCK DATA (sesuai struktur response backend)
-// Akan diganti dengan real API setelah backend team verifikasi endpoint
-// ============================================================================
-
-const MOCK_ORDERS_RAW: Order[] = [
-  {
-    id: "cm8k2n5p6q7r1s0t001",
-    status: "PENDING",
-    total: 1160000,
-    notes: null,
-    sppgId: "cm8k2n5p6q7r1s0t010",
-    supplierId: "cm8k2n5p6q7r1s0t020",
-    createdAt: "2026-05-22T08:00:00Z",
-    updatedAt: "2026-05-22T08:00:00Z",
-    sppg: { id: "cm8k2n5p6q7r1s0t010", name: "SPPG Bandung 01" },
-    supplier: { id: "cm8k2n5p6q7r1s0t020", name: "UD. Sumber Makmur" },
-    items: [
-      {
-        id: "cm8k2n5p6q7r1s0t031",
-        quantity: 50,
-        unitPrice: 12000,
-        subtotal: 600000,
-        item: { id: "cm8k2n5p6q7r1s0t041", name: "Beras", unit: "kg", basePrice: 12000 },
-      },
-      {
-        id: "cm8k2n5p6q7r1s0t032",
-        quantity: 20,
-        unitPrice: 28000,
-        subtotal: 560000,
-        item: { id: "cm8k2n5p6q7r1s0t042", name: "Telur", unit: "kg", basePrice: 28000 },
-      },
-    ],
-  },
-  {
-    id: "cm8k2n5p6q7r1s0t002",
-    status: "CONFIRMED",
-    total: 2040000,
-    notes: null,
-    sppgId: "cm8k2n5p6q7r1s0t011",
-    supplierId: "cm8k2n5p6q7r1s0t020",
-    createdAt: "2026-05-21T09:30:00Z",
-    updatedAt: "2026-05-21T10:00:00Z",
-    sppg: { id: "cm8k2n5p6q7r1s0t011", name: "SPPG Cimahi Central" },
-    supplier: { id: "cm8k2n5p6q7r1s0t020", name: "UD. Sumber Makmur" },
-    items: [
-      {
-        id: "cm8k2n5p6q7r1s0t033",
-        quantity: 15,
-        unitPrice: 120000,
-        subtotal: 1800000,
-        item: { id: "cm8k2n5p6q7r1s0t043", name: "Daging Sapi", unit: "kg", basePrice: 120000 },
-      },
-      {
-        id: "cm8k2n5p6q7r1s0t034",
-        quantity: 30,
-        unitPrice: 8000,
-        subtotal: 240000,
-        item: { id: "cm8k2n5p6q7r1s0t044", name: "Wortel", unit: "kg", basePrice: 8000 },
-      },
-    ],
-  },
-  {
-    id: "cm8k2n5p6q7r1s0t003",
-    status: "CANCELLED",
-    total: 2800000,
-    notes: null,
-    sppgId: "cm8k2n5p6q7r1s0t012",
-    supplierId: "cm8k2n5p6q7r1s0t020",
-    createdAt: "2026-05-18T14:00:00Z",
-    updatedAt: "2026-05-18T15:00:00Z",
-    sppg: { id: "cm8k2n5p6q7r1s0t012", name: "SPPG Padalarang" },
-    supplier: { id: "cm8k2n5p6q7r1s0t020", name: "UD. Sumber Makmur" },
-    items: [
-      {
-        id: "cm8k2n5p6q7r1s0t035",
-        quantity: 100,
-        unitPrice: 28000,
-        subtotal: 2800000,
-        item: { id: "cm8k2n5p6q7r1s0t045", name: "Telur Ayam", unit: "kg", basePrice: 28000 },
-      },
-    ],
-  },
-  {
-    id: "cm8k2n5p6q7r1s0t004",
-    status: "DELIVERED",
-    total: 1160000,
-    notes: null,
-    sppgId: "cm8k2n5p6q7r1s0t010",
-    supplierId: "cm8k2n5p6q7r1s0t020",
-    createdAt: "2026-05-22T08:00:00Z",
-    updatedAt: "2026-05-23T14:00:00Z",
-    sppg: { id: "cm8k2n5p6q7r1s0t010", name: "SPPG Bandung 01" },
-    supplier: { id: "cm8k2n5p6q7r1s0t020", name: "UD. Sumber Makmur" },
-    items: [
-      {
-        id: "cm8k2n5p6q7r1s0t036",
-        quantity: 50,
-        unitPrice: 12000,
-        subtotal: 600000,
-        item: { id: "cm8k2n5p6q7r1s0t041", name: "Beras", unit: "kg", basePrice: 12000 },
-      },
-      {
-        id: "cm8k2n5p6q7r1s0t037",
-        quantity: 20,
-        unitPrice: 28000,
-        subtotal: 560000,
-        item: { id: "cm8k2n5p6q7r1s0t042", name: "Telur", unit: "kg", basePrice: 28000 },
-      },
-    ],
-  },
-];
-
-// ============================================================================
 // PAGE COMPONENT
 // ============================================================================
 
 export default function PesananPage() {
-  // Map raw backend data ke view model
-  const [orders] = useState<OrderViewModel[]>(MOCK_ORDERS_RAW.map(mapOrderFromBackend));
+  // State
+  const [orders] = useState<OrderViewModel[]>(MOCK_ORDERS.map(mapOrderFromBackend));
   const [filter, setFilter] = useState<FilterType>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<OrderViewModel | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState<OrderViewModel | null>(null);
 
-  // ============================================================================
-  // FUNGSI INI AKAN DIGUNAKAN SAAT INTEGRASI BACKEND
-  // ============================================================================
-  // const { token, user } = useAuth();
-  // const [orders, setOrders] = useState<OrderViewModel[]>([]);
-  // const [loading, setLoading] = useState(true);
-  //
-  // useEffect(() => {
-  //   if (token && user?.supplierId) {
-  //     fetchOrders();
-  //   }
-  // }, [token, user]);
-  //
-  // async function fetchOrders() {
-  //   setLoading(true);
-  //   try {
-  //     const response = await getOrders(token!, user!.supplierId);
-  //     if (response.success) {
-  //       const rawOrders = response.data.items || [];
-  //       setOrders(rawOrders.map(mapOrderFromBackend));
-  //     }
-  //   } catch (err) {
-  //     console.error("Failed to fetch orders:", err);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }
-  //
-  // async function handleAccept(orderId: string) {
-  //   try {
-  //     await updateOrderStatus(token!, orderId, "CONFIRMED");
-  //     fetchOrders();
-  //   } catch (err) {
-  //     console.error("Failed to accept order:", err);
-  //   }
-  // }
-  //
-  // async function handleReject(orderId: string) {
-  //   try {
-  //     await updateOrderStatus(token!, orderId, "CANCELLED");
-  //     fetchOrders();
-  //   } catch (err) {
-  //     console.error("Failed to reject order:", err);
-  //   }
-  // }
-  // ============================================================================
+  // Filter orders
+  const filteredOrders = useMemo(() => {
+    let result = orders;
 
-  // Mock functions untuk demo
+    // Filter by status
+    if (filter !== "all") {
+      result = result.filter((o) => o.status === filter);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (o) =>
+          o.orderNumber.toLowerCase().includes(query) ||
+          o.sppgName.toLowerCase().includes(query) ||
+          o.items.some((item) => item.name.toLowerCase().includes(query))
+      );
+    }
+
+    return result;
+  }, [orders, filter, searchQuery]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+
+  // Reset page when filter or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, searchQuery]);
+
+  // Handle filter change (page reset handled by useEffect)
+  function handleFilterChange(newFilter: FilterType) {
+    setFilter(newFilter);
+  }
+
+  // Mock handlers
   function handleAccept(orderId: string) {
-    alert(`Konfirmasi pesanan ${orderId} (mock)`);
+    alert(`✅ Konfirmasi pesanan ${orderId}\n\n(Demo: Status akan berubah dari PENDING ke CONFIRMED)`);
   }
 
   function handleReject(orderId: string) {
-    alert(`Tolak pesanan ${orderId} (mock)`);
+    const confirmed = window.confirm(
+      `⚠️ Tolak pesanan ${orderId}?\n\n(Demo: Status akan berubah dari PENDING ke CANCELLED)`
+    );
+    if (confirmed) {
+      alert("Pesanan ditolak (demo)");
+    }
   }
 
-  const filteredOrders =
-    filter === "all" ? orders : orders.filter((o) => o.status === filter);
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-  };
-
-  const formatItems = (items: OrderViewModel["items"]) => {
-    return items.map((item) => `${item.name} ${item.quantity}${item.unit}`).join(", ");
-  };
+  function handleMarkDelivered(orderId: string) {
+    const confirmed = window.confirm(
+      `📦 Tandai pesanan ${orderId} sebagai dikirim?\n\n(Demo: Status akan berubah dari CONFIRMED ke DELIVERED)`
+    );
+    if (confirmed) {
+      alert("Pesanan ditandai sudah dikirim (demo)");
+    }
+  }
 
   return (
     <div className="w-full">
@@ -330,198 +353,72 @@ export default function PesananPage() {
         </p>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-        {(Object.keys(filterLabels) as FilterType[]).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-              filter === f
-                ? "bg-blue-600 text-white shadow-sm"
-                : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
-            }`}
-          >
-            {filterLabels[f]}
-          </button>
-        ))}
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <input
+            type="text"
+            placeholder="Cari ID Pesanan / Nama SPPG / Item..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          />
+        </div>
       </div>
 
+      {/* Filter Tabs */}
+      <OrderTabs activeFilter={filter} orders={orders} onFilterChange={handleFilterChange} />
+
       {/* Orders List */}
-      {filteredOrders.length === 0 ? (
+      {paginatedOrders.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 shadow-sm text-center">
           <ClipboardList className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500">Tidak ada pesanan</p>
+          <p className="text-gray-500 font-medium">Tidak ada pesanan</p>
+          <p className="text-sm text-gray-400 mt-1">
+            {searchQuery
+              ? "Tidak ada pesanan yang sesuai dengan pencarian"
+              : "Belum ada pesanan masuk saat ini"}
+          </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredOrders.map((order, idx) => (
-            <div
-              key={`${order.id}-${idx}`}
-              className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                {/* Order Info */}
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="font-bold text-lg text-gray-800">{order.id}</span>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusConfig[order.status].badgeClass}`}
-                    >
-                      {statusConfig[order.status].label}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-700 font-medium">{order.sppgName}</p>
-                  <p className="text-sm text-gray-500 mt-1">Item: {formatItems(order.items)}</p>
-                  <p className="text-xs text-gray-400 mt-2">Dipesan: {formatDate(order.createdAt)}</p>
-                </div>
+        <>
+          <div className="space-y-4">
+            {paginatedOrders.map((order, idx) => (
+              <OrderCard
+                key={`${order.id}-${idx}`}
+                order={order}
+                onAccept={handleAccept}
+                onReject={handleReject}
+                onMarkDelivered={handleMarkDelivered}
+                onViewDetail={setSelectedOrder}
+                onViewPayment={setShowPaymentModal}
+              />
+            ))}
+          </div>
 
-                {/* Action Buttons */}
-                <div className="flex flex-row md:flex-col gap-2 md:items-end">
-                  {order.status === "PENDING" && (
-                    <>
-                      <button
-                        onClick={() => handleAccept(order.id)}
-                        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors w-full md:w-auto"
-                      >
-                        Konfirmasi
-                      </button>
-                      <button
-                        onClick={() => handleReject(order.id)}
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors w-full md:w-auto"
-                      >
-                        Tolak
-                      </button>
-                    </>
-                  )}
-                  {(order.status === "CONFIRMED" || order.status === "CANCELLED") && (
-                    <button
-                      onClick={() => setSelectedOrder(order)}
-                      className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors w-full md:w-auto"
-                    >
-                      Detail Pesanan
-                    </button>
-                  )}
-                  {order.status === "DELIVERED" && (
-                    <>
-                      <button
-                        onClick={() => setShowPaymentModal(order)}
-                        className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors w-full md:w-auto flex items-center justify-center gap-2"
-                      >
-                        <FileText size={16} />
-                        Lihat Bukti Pembayaran
-                      </button>
-                      <button
-                        onClick={() => setSelectedOrder(order)}
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors w-full md:w-auto"
-                      >
-                        Detail Pesanan
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+          {/* Pagination Info + Controls */}
+          <div className="mt-6 flex flex-col items-center gap-2">
+            <p className="text-sm text-gray-500">
+              Menampilkan {startIndex + 1}-{Math.min(endIndex, filteredOrders.length)} dari {filteredOrders.length} pesanan
+            </p>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        </>
       )}
 
       {/* Modal Detail Pesanan */}
       {selectedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-            <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-gray-50">
-              <h3 className="text-lg font-semibold text-gray-800">
-                Detail Pesanan {selectedOrder.id}
-              </h3>
-              <button
-                onClick={() => setSelectedOrder(null)}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-200"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <p className="text-sm text-gray-500">Status</p>
-                <span
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusConfig[selectedOrder.status].badgeClass}`}
-                >
-                  {statusConfig[selectedOrder.status].label}
-                </span>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">SPPG</p>
-                <p className="font-medium">{selectedOrder.sppgName}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Supplier</p>
-                <p className="font-medium">{selectedOrder.supplierName}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-2">Items</p>
-                {selectedOrder.items.map((item) => (
-                  <div key={item.id} className="flex justify-between py-2 border-b border-gray-50">
-                    <span className="text-sm">
-                      {item.name} {item.quantity}{item.unit}
-                    </span>
-                    <span className="text-sm font-medium">
-                      Rp {item.subtotal.toLocaleString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <div className="flex justify-between pt-2 border-t">
-                <span className="font-semibold">Total</span>
-                <span className="font-bold text-lg">
-                  Rp {selectedOrder.total.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => setSelectedOrder(null)}
-                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Tutup
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
       )}
 
       {/* Modal Bukti Pembayaran */}
       {showPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden">
-            <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-gray-50">
-              <h3 className="text-lg font-semibold text-gray-800">Bukti Pembayaran</h3>
-              <button
-                onClick={() => setShowPaymentModal(null)}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-200"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="p-6 flex flex-col items-center">
-              <div className="bg-gray-100 rounded-xl p-8 w-full flex items-center justify-center min-h-[320px] border-2 border-dashed border-gray-300 relative group cursor-pointer hover:bg-gray-200 transition-colors">
-                <div className="text-center text-gray-400 group-hover:text-gray-500 transition-colors">
-                  <FileText size={48} className="mx-auto mb-3" />
-                  <p className="text-sm font-medium text-gray-500">bukti_pembayaran.jpg</p>
-                  <p className="text-xs text-gray-400 mt-1">Klik untuk melihat penuh</p>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-3 mt-6 w-full justify-end">
-                <button className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2">
-                  <Eye size={16} /> Lihat Penuh
-                </button>
-                <button className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2">
-                  <Download size={16} /> Unduh Gambar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <PaymentProofModal order={showPaymentModal} onClose={() => setShowPaymentModal(null)} />
       )}
     </div>
   );

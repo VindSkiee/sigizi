@@ -7,6 +7,8 @@ export interface SupplierSearchResult {
 }
 
 export interface DraftItem {
+  draftId: string;
+  addedAt: number;
   supplierId: string;
   supplierName: string;
   itemId: string;

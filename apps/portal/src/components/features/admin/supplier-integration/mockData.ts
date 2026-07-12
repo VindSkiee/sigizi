@@ -24,7 +24,7 @@ export const MOCK_ORDERS: SupplierOrder[] = [
   {
     id: "clx00000000000000000000o2",
     createdAt: "2026-07-09T14:00:00Z",
-    status: OrderStatus.DELIVERED,
+    status: OrderStatus.CONFIRMED,
     total: 345000,
     estimatedArrival: "2026-07-11T14:30:00Z",
     supplier: {
@@ -127,5 +127,61 @@ export const MOCK_ORDERS: SupplierOrder[] = [
     ],
     sppg: { id: "clx0000000000000000000001", name: "SPPG Purwakarta" },
     mou: { id: "clx00000000000000000000m1", mouNumber: "MOU-20260710-001" },
+  },
+  {
+    id: "clx00000000000000000000o8",
+    createdAt: "2026-07-03T08:00:00Z",
+    status: "CANCELLED",
+    total: 280000,
+    estimatedArrival: "2026-07-05T08:00:00Z",
+    supplier: {
+      id: "clx00000000000000000000s2",
+      name: "UD. Murah Jaya",
+      nib: "/uploads/nib/murah-jaya-2026.pdf",
+    },
+    items: [
+      { id: "i15", name: "Telur Ayam", quantity: 10, unit: "kg", unitPrice: 28000, subtotal: 280000 },
+    ],
+    sppg: { id: "clx0000000000000000000001", name: "SPPG Purwakarta" },
+    notes: "Stok tidak mencukupi",
+    mou: undefined,
+  },
+  {
+    id: "clx00000000000000000000o9",
+    createdAt: "2026-07-02T14:00:00Z",
+    status: OrderStatus.CONFIRMED,
+    total: 850000,
+    estimatedArrival: "2026-07-04T10:00:00Z",
+    supplier: {
+      id: "clx00000000000000000000s3",
+      name: "Tani Segar Farm",
+      nib: "/uploads/nib/tani-segar-2026.pdf",
+    },
+    items: [
+      { id: "i16", name: "Sayur Bayam", quantity: 50, unit: "kg", unitPrice: 7500, subtotal: 375000 },
+      { id: "i17", name: "Sayur Kangkung", quantity: 30, unit: "kg", unitPrice: 6000, subtotal: 180000 },
+      { id: "i18", name: "Wortel", quantity: 29.5, unit: "kg", unitPrice: 10000, subtotal: 295000 },
+    ],
+    sppg: { id: "clx0000000000000000000001", name: "SPPG Purwakarta" },
+    mou: { id: "clx00000000000000000000m2", mouNumber: "MOU-20260708-002" },
+  },
+  {
+    id: "clx00000000000000000000o10",
+    createdAt: "2026-07-01T10:00:00Z",
+    status: "CANCELLED",
+    total: 195000,
+    estimatedArrival: "2026-07-03T08:00:00Z",
+    supplier: {
+      id: "clx00000000000000000000s1",
+      name: "UD. Sumber Rejeki",
+      nib: "/uploads/nib/sumber-rejeki-2026.pdf",
+    },
+    items: [
+      { id: "i19", name: "Ayam Potong", quantity: 5, unit: "kg", unitPrice: 34000, subtotal: 170000 },
+      { id: "i20", name: "Sayur Kangkung", quantity: 5, unit: "kg", unitPrice: 5000, subtotal: 25000 },
+    ],
+    sppg: { id: "clx0000000000000000000001", name: "SPPG Purwakarta" },
+    notes: "Supplier tidak dapat memenuhi waktu pengiriman",
+    mou: undefined,
   },
 ];
