@@ -52,7 +52,7 @@ export default function SsoRedirectPage() {
         {/* BGN Portal Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-green-600 to-green-700 px-6 py-8 text-center">
+          <div className="bg-blue-700 px-6 py-8 text-center">
             <div className="flex justify-center mb-4">
               <div className="bg-white rounded-xl p-3 shadow-md">
                 <Image
@@ -87,8 +87,8 @@ export default function SsoRedirectPage() {
             {/* User Info Card */}
             <div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-green-700 font-bold text-lg">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-blue-700 font-bold text-lg">
                     {mockUser.name
                       .split(" ")
                       .map((n) => n[0])
