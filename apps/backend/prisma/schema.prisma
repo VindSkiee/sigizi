@@ -34,6 +34,7 @@ enum OrderStatus {
   CONFIRMED
   DELIVERED
   COMPLETED
+  CANCELLED
 }
 
 enum MouStatus {
@@ -65,12 +66,15 @@ model User {
   updatedAt DateTime  @updatedAt
 
   // Audit relationships
-  createdOrders     Order[]     @relation("OrderCreatedBy")
-  updatedOrders     Order[]     @relation("OrderUpdatedBy")
-  createdBatches    Batch[]     @relation("BatchCreatedBy")
-  updatedBatches    Batch[]     @relation("BatchUpdatedBy")
-  createdBatchItems BatchItem[]
-  createdMous       Mou[]       @relation("MouCreatedBy")
+  createdOrders      Order[]              @relation("OrderCreatedBy")
+  updatedOrders      Order[]              @relation("OrderUpdatedBy")
+  paidOrders         Order[]              @relation("OrderPaidBy")
+  cancelledOrders    Order[]              @relation("OrderCancelledBy")
+  orderStatusChanges OrderStatusHistory[]
+  createdBatches     Batch[]              @relation("BatchCreatedBy")
+  updatedBatches     Batch[]              @relation("BatchUpdatedBy")
+  createdBatchItems  BatchItem[]
+  createdMous        Mou[]                @relation("MouCreatedBy")
 
   @@index([sppgId])
   @@index([supplierId])
@@ -278,14 +282,34 @@ model Order {
   mou        Mou?        @relation(fields: [mouId], references: [id], onDelete: Restrict)
   mouId      String?
 
-  // Audit trail
-  createdBy  User     @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  createdById String
-  updatedBy  User?    @relation("OrderUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
-  updatedById String?
+  // --- Delivery tracking ---
+  expectedDeliveryDate DateTime?
+  actualDeliveryDate   DateTime?
+  deliveryEvidence     String?
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  // --- Payment tracking ---
+  paidAt               DateTime?
+  paymentEvidenceUrl   String?
+  paidById             String?
+  paidBy               User?    @relation("OrderPaidBy", fields: [paidById], references: [id], onDelete: SetNull)
+
+  // --- Cancellation tracking ---
+  cancelledAt          DateTime?
+  cancelledReason      String?
+  cancelledById        String?
+  cancelledBy          User?    @relation("OrderCancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+
+  // Audit trail
+  createdBy            User     @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById          String
+  updatedBy            User?    @relation("OrderUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedById          String?
+
+  // --- Status history ---
+  statusHistory        OrderStatusHistory[]
+
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   @@index([sppgId])
   @@index([supplierId])
@@ -313,6 +337,28 @@ model OrderItem {
   inventoryStocks InventoryStock[]
 
   @@index([orderId])
+}
+
+// ----------------------------------------------------------------------------
+// 9B. ORDER STATUS HISTORY — Audit trail perubahan status order
+// Append-only: tidak bisa dihapus atau diubah
+// ----------------------------------------------------------------------------
+
+model OrderStatusHistory {
+  id           String      @id @default(cuid())
+  orderId      String
+  order        Order       @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  fromStatus   OrderStatus?
+  toStatus     OrderStatus
+  changedById  String
+  changedBy    User        @relation(fields: [changedById], references: [id], onDelete: Restrict)
+  notes        String?
+  evidenceUrl  String?
+  createdAt    DateTime    @default(now())
+
+  @@index([orderId])
+  @@index([toStatus])
+  @@index([createdAt])
 }
 
 // ----------------------------------------------------------------------------

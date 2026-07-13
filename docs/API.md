@@ -800,6 +800,342 @@ Authorization: Bearer <token>
 
 ---
 
+## Order Management
+
+### List Orders
+
+```
+GET /api/orders
+Authorization: Bearer <token>
+```
+
+**Query Params:**
+
+| Param        | Type   | Required | Description                                         |
+| ------------ | ------ | -------- | --------------------------------------------------- |
+| `sppgId`     | string | No       | Filter by SPPG ID                                   |
+| `supplierId` | string | No       | Filter by Supplier ID                               |
+| `status`     | string | No       | PENDING, CONFIRMED, DELIVERED, COMPLETED, CANCELLED |
+| `page`       | number | No       | Page number (default: 1)                            |
+| `limit`      | number | No       | Items per page (default: 20)                        |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "clx...",
+        "status": "PENDING",
+        "total": 615000,
+        "notes": "Pesanan bahan baku minggu ini",
+        "sppgId": "clx...",
+        "supplierId": "clx...",
+        "mouId": "clx...",
+        "expectedDeliveryDate": "2026-07-15T00:00:00Z",
+        "actualDeliveryDate": null,
+        "deliveryEvidence": null,
+        "paidAt": null,
+        "paymentEvidenceUrl": null,
+        "cancelledAt": null,
+        "cancelledReason": null,
+        "isLate": false,
+        "supplier": {
+          "id": "clx...",
+          "name": "UD. Sumber Rejeki"
+        },
+        "sppg": {
+          "id": "clx...",
+          "name": "SPPG Purwakarta"
+        },
+        "items": [
+          {
+            "id": "clx...",
+            "itemId": "clx...",
+            "quantity": 20,
+            "unitPrice": 11500,
+            "subtotal": 230000
+          }
+        ],
+        "createdAt": "2026-07-13T00:00:00Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 10,
+      "totalPages": 1
+    }
+  }
+}
+```
+
+**Note:** Field `isLate` akan bernilai `true` jika order melewati tanggal pengiriman yang diharapkan dan status belum COMPLETED atau CANCELLED.
+
+### Get Order Detail
+
+```
+GET /api/orders/:id
+Authorization: Bearer <token>
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx...",
+    "status": "CONFIRMED",
+    "total": 615000,
+    "notes": "Pesanan bahan baku minggu ini",
+    "expectedDeliveryDate": "2026-07-15T00:00:00Z",
+    "actualDeliveryDate": null,
+    "isLate": false,
+    "supplier": {
+      "id": "clx...",
+      "name": "UD. Sumber Rejeki"
+    },
+    "sppg": {
+      "id": "clx...",
+      "name": "SPPG Purwakarta"
+    },
+    "items": [
+      {
+        "id": "clx...",
+        "itemId": "clx...",
+        "quantity": 20,
+        "unitPrice": 11500,
+        "subtotal": 230000,
+        "inventoryStocks": []
+      }
+    ],
+    "statusHistory": [
+      {
+        "id": "clx...",
+        "fromStatus": null,
+        "toStatus": "PENDING",
+        "notes": "Order berhasil dibuat dan menunggu konfirmasi dari supplier",
+        "createdAt": "2026-07-13T00:00:00Z"
+      },
+      {
+        "id": "clx...",
+        "fromStatus": "PENDING",
+        "toStatus": "CONFIRMED",
+        "notes": "Konfirmasi dari supplier",
+        "createdAt": "2026-07-13T01:00:00Z"
+      }
+    ],
+    "createdAt": "2026-07-13T00:00:00Z"
+  }
+}
+```
+
+### Create Order
+
+```
+POST /api/orders
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Access:** SPPG_ADMIN only
+
+**Request Body:**
+
+```json
+{
+  "supplierId": "clx...",
+  "mouId": "clx...",
+  "notes": "Pesanan bahan baku minggu ini",
+  "expectedDeliveryDate": "2026-07-15T00:00:00Z",
+  "items": [
+    {
+      "itemId": "clx...",
+      "quantity": 20
+    },
+    {
+      "itemId": "clx...",
+      "quantity": 5
+    }
+  ]
+}
+```
+
+**Field Descriptions:**
+
+| Field                  | Type   | Required | Description                                   |
+| ---------------------- | ------ | -------- | --------------------------------------------- |
+| `supplierId`           | string | Ya       | ID Supplier                                   |
+| `mouId`                | string | Tidak    | ID MoU (jika ada perjanjian kerjasama)        |
+| `notes`                | string | Tidak    | Catatan order                                 |
+| `expectedDeliveryDate` | string | Tidak    | Tanggal pengiriman yang diharapkan (ISO 8601) |
+| `items`                | array  | Ya       | Daftar barang yang dipesan                    |
+| `items[].itemId`       | string | Ya       | ID Barang                                     |
+| `items[].quantity`     | number | Ya       | Jumlah yang dipesan                           |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx...",
+    "status": "PENDING",
+    "total": 615000,
+    "expectedDeliveryDate": "2026-07-15T00:00:00Z",
+    "items": [
+      {
+        "id": "clx...",
+        "itemId": "clx...",
+        "quantity": 20,
+        "unitPrice": 11500,
+        "subtotal": 230000
+      }
+    ],
+    "createdAt": "2026-07-13T00:00:00Z"
+  }
+}
+```
+
+### Update Order Status
+
+```
+PUT /api/orders/:id/status
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Access:** SPPG_ADMIN atau SUPPLIER (tergantung transisi)
+
+**Request Body:**
+
+```json
+{
+  "status": "CONFIRMED",
+  "reason": null,
+  "deliveryEvidence": null,
+  "paymentEvidenceUrl": null,
+  "notes": "Konfirmasi pesanan"
+}
+```
+
+**Field Descriptions:**
+
+| Field                | Type   | Required    | Description                                         |
+| -------------------- | ------ | ----------- | --------------------------------------------------- |
+| `status`             | string | Ya          | Status baru (lihat tabel transisi)                  |
+| `reason`             | string | Kondisional | Wajib diisi jika status = CANCELLED                 |
+| `deliveryEvidence`   | string | Kondisional | URL bukti pengiriman (untuk status DELIVERED)       |
+| `paymentEvidenceUrl` | string | Kondisional | URL bukti pembayaran (wajib untuk status COMPLETED) |
+| `notes`              | string | Tidak       | Catatan tambahan                                    |
+
+**Status Transitions:**
+
+| Dari      | Ke        | Oleh                 | Syarat                           |
+| --------- | --------- | -------------------- | -------------------------------- |
+| PENDING   | CONFIRMED | SUPPLIER             | -                                |
+| PENDING   | CANCELLED | SPPG_ADMIN, SUPPLIER | `reason` wajib diisi             |
+| CONFIRMED | DELIVERED | SUPPLIER             | -                                |
+| CONFIRMED | CANCELLED | SPPG_ADMIN, SUPPLIER | `reason` wajib diisi             |
+| DELIVERED | COMPLETED | SPPG_ADMIN           | `paymentEvidenceUrl` wajib diisi |
+| DELIVERED | CANCELLED | SPPG_ADMIN           | `reason` wajib diisi             |
+
+**Response (COMPLETED):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx...",
+    "status": "COMPLETED",
+    "paidAt": "2026-07-15T10:00:00Z",
+    "paymentEvidenceUrl": "https://example.com/bukti-bayar.jpg",
+    "updatedAt": "2026-07-15T10:00:00Z"
+  }
+}
+```
+
+**Response (CANCELLED):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx...",
+    "status": "CANCELLED",
+    "cancelledAt": "2026-07-14T08:00:00Z",
+    "cancelledReason": "Supplier tidak dapat memenuhi pesanan tepat waktu",
+    "updatedAt": "2026-07-14T08:00:00Z"
+  }
+}
+```
+
+**Error Responses:**
+
+```json
+// Transisi tidak diperbolehkan
+{
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Transisi status dari \"PENDING\" ke \"COMPLETED\" tidak diperbolehkan"
+  }
+}
+
+// Role tidak memiliki akses
+{
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Anda tidak memiliki hak akses untuk mengubah status dari \"PENDING\" ke \"CONFIRMED\""
+  }
+}
+
+// Stok sudah terpakai (membatalkan order COMPLETED)
+{
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Tidak dapat membatalkan order karena stok barang dengan ID clx... sudah terpakai (tersisa 15 dari 20 unit). Silakan hubungi administrator untuk proses retur secara manual."
+  }
+}
+```
+
+---
+
+## Inventory Stock (Event-Driven)
+
+Inventory Stock dikelola secara otomatis melalui event-driven:
+
+### Order COMPLETED → InventoryStock Dibuat
+
+Ketika order berubah status menjadi `COMPLETED`, sistem akan otomatis membuat `InventoryStock` untuk setiap item dalam order.
+
+**Trigger:** Event `order.completed`
+
+**Behavior:**
+
+- Membuat 1 `InventoryStock` record untuk setiap `OrderItem`
+- `purchasePrice` diambil dari `OrderItem.unitPrice` (harga beku)
+- `initialQty` dan `remainingQty` diatur sesuai jumlah yang dipesan
+
+### Order CANCELLED → InventoryStock Dikembalikan
+
+Ketika order yang statusnya `COMPLETED` dibatalkan menjadi `CANCELLED`, sistem akan menghapus `InventoryStock` yang terkait.
+
+**Trigger:** Event `order.cancelled`
+
+**Behavior:**
+
+- Hanya diproses jika status sebelumnya adalah `COMPLETED`
+- Mengecek apakah stok masih utuh (`remainingQty == initialQty`)
+- Jika stok sudah terpakai, pembatalan akan dicegah oleh validasi di OrderService
+
+---
+
 ## Authentication
 
 All protected endpoints require `Authorization: Bearer <token>` header.
@@ -816,3 +1152,9 @@ All protected endpoints require `Authorization: Bearer <token>` header.
 | Complaint Submit |      ❌       |     ❌      |     ✅      |
 | Complaint View   |   ✅ (own)    |     ❌      |     ❌      |
 | Reports          |   ✅ (own)    |     ❌      |     ❌      |
+| Order Create     |      ✅       |     ❌      |     ❌      |
+| Order View       |   ✅ (own)    |  ✅ (own)   |     ❌      |
+| Order Confirm    |      ❌       |  ✅ (own)   |     ❌      |
+| Order Deliver    |      ❌       |  ✅ (own)   |     ❌      |
+| Order Complete   |      ✅       |     ❌      |     ❌      |
+| Order Cancel     |      ✅       |  ✅ (own)   |     ❌      |

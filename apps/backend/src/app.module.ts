@@ -1,5 +1,6 @@
 import { Module, MiddlewareConsumer, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { EventEmitterModule } from "@nestjs/event-emitter";
 import { AuthModule } from "./modules/auth/auth.module";
 import { SppgModule } from "./modules/sppg/sppg.module";
 import { SupplierModule } from "./modules/supplier/supplier.module";
@@ -10,6 +11,7 @@ import { BatchModule } from "./modules/batch/batch.module";
 import { ComplaintModule } from "./modules/complaint/complaint.module";
 import { MarketModule } from "./modules/market/market.module";
 import { ReportsModule } from "./modules/reports/reports.module";
+import { InventoryModule } from "./modules/inventory/inventory.module";
 import { PrismaModule } from "./database/prisma.module";
 import {
   LoggerModule,
@@ -24,6 +26,7 @@ import { HealthModule } from "./health/health.module";
       isGlobal: true,
       envFilePath: "../../.env",
     }),
+    EventEmitterModule.forRoot(),
     LoggerModule,
     PrismaModule,
     AuthModule,
@@ -36,6 +39,7 @@ import { HealthModule } from "./health/health.module";
     ComplaintModule,
     MarketModule,
     ReportsModule,
+    InventoryModule,
     HealthModule,
   ],
 })

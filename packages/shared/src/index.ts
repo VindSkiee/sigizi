@@ -25,6 +25,7 @@ export enum OrderStatus {
   CONFIRMED = "CONFIRMED",
   DELIVERED = "DELIVERED",
   COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
 }
 
 export enum MouStatus {
@@ -203,10 +204,25 @@ export interface Order {
   items?: OrderItem[];
   mouId?: string;
   mou?: Mou;
+  // Delivery tracking
+  expectedDeliveryDate?: Date;
+  actualDeliveryDate?: Date;
+  deliveryEvidence?: string;
+  // Payment tracking
+  paidAt?: Date;
+  paymentEvidenceUrl?: string;
+  paidById?: string;
+  // Cancellation tracking
+  cancelledAt?: Date;
+  cancelledReason?: string;
+  cancelledById?: string;
+  // Audit
   createdById: string;
   updatedById?: string;
   createdAt: Date;
   updatedAt: Date;
+  // Computed
+  isLate?: boolean;
 }
 
 export interface OrderItem {
@@ -218,6 +234,22 @@ export interface OrderItem {
   unitPrice: number;
   subtotal: number;
   inventoryStocks?: InventoryStock[];
+}
+
+// ============================================================================
+// OrderStatusHistory — Audit trail perubahan status order
+// ============================================================================
+
+export interface OrderStatusHistory {
+  id: string;
+  orderId: string;
+  fromStatus?: OrderStatus;
+  toStatus: OrderStatus;
+  changedById: string;
+  changedBy?: User;
+  notes?: string;
+  evidenceUrl?: string;
+  createdAt: Date;
 }
 
 // ============================================================================
@@ -312,11 +344,7 @@ export interface Complaint {
 // ============================================================================
 
 export type MarketScopeUsed =
-  | "district"
-  | "regency"
-  | "province"
-  | "gps_radius"
-  | "master";
+  "district" | "regency" | "province" | "gps_radius" | "master";
 
 export type HETBasedOn =
   | "master_reference_cold_start"
@@ -769,10 +797,11 @@ export const UNIT_OPTIONS = [
 // ============================================================================
 
 export const VALID_ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  [OrderStatus.PENDING]: [OrderStatus.CONFIRMED],
-  [OrderStatus.CONFIRMED]: [OrderStatus.DELIVERED],
-  [OrderStatus.DELIVERED]: [OrderStatus.COMPLETED],
+  [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+  [OrderStatus.CONFIRMED]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
+  [OrderStatus.DELIVERED]: [OrderStatus.COMPLETED, OrderStatus.CANCELLED],
   [OrderStatus.COMPLETED]: [],
+  [OrderStatus.CANCELLED]: [],
 };
 
 // ============================================================================

@@ -1,1 +1,5 @@
-export { CreateOrderDto, OrderItemRequestDto } from "./create-order.dto";
+export {
+  CreateOrderDto,
+  UpdateOrderStatusDto,
+  OrderItemRequestDto,
+} from "./create-order.dto";
