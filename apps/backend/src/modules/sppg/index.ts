@@ -1,2 +1,2 @@
 export { SppgModule } from "./sppg.module";
-export { SppgService } from "./services/sppg.service";
+export { SppgService } from "./application/services/sppg.service";

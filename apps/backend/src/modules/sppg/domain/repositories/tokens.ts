@@ -1,0 +1,1 @@
+export const SPPG_REPOSITORY = "SPPG_REPOSITORY";
