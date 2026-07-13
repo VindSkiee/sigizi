@@ -204,10 +204,38 @@ Content-Type: application/json
 
 ### Get Market Prices
 
+**Admin hierarchy filter:**
+
 ```
-GET /api/market/prices?item=Beras&region=Purwakarta
+GET /api/market/prices?item=Beras&province=Jawa+Barat&regency=Purwakarta&district=Babakancikao
 Authorization: Bearer <token>
 ```
+
+**GPS radius filter:**
+
+```
+GET /api/market/prices?item=Beras&latitude=-6.5398&longitude=107.4471&radiusKm=5
+Authorization: Bearer <token>
+```
+
+**Query Params:**
+
+| Param       | Type   | Required | Example        | Description                  |
+| ----------- | ------ | -------- | -------------- | ---------------------------- |
+| `item`      | string | **Yes**  | `Beras`        | Item name to search          |
+| `province`  | string | No*      | `Jawa Barat`   | Province filter (admin mode) |
+| `regency`   | string | No*      | `Purwakarta`   | Regency filter (admin mode)  |
+| `district`  | string | No*      | `Babakancikao` | District filter (admin mode) |
+| `latitude`  | number | No**     | `-6.5398`      | GPS latitude (GPS mode)      |
+| `longitude` | number | No**     | `107.4471`     | GPS longitude (GPS mode)     |
+| `radiusKm`  | number | No       | `5`            | Radius in km (default: 25)   |
+
+\* Admin mode filters are **mutually exclusive** with GPS mode.  
+\** latitude & longitude must be provided together.
+
+**Scope cascade (admin mode):** `district` → `regency` → `province` → `master`  
+**Scope cascade (GPS mode):** radius → ×3 → ×5 (max 50km) → admin fallback → master  
+**Threshold:** ≥5 samples per scope to use that scope; <5 cascades to wider scope.
 
 **Response:**
 
@@ -216,45 +244,93 @@ Authorization: Bearer <token>
   "success": true,
   "data": {
     "item": "Beras",
-    "region": "Purwakarta",
+    "filter": {
+      "province": "Jawa Barat",
+      "regency": "Purwakarta",
+      "district": "Babakancikao",
+      "latitude": null,
+      "longitude": null,
+      "radiusKm": null
+    },
+    "scopeUsed": "district",
+    "sampleCount": 25,
+    "effectiveRadiusKm": null,
     "statistics": {
-      "min": 10000,
-      "max": 15000,
-      "median": 12000,
-      "mean": 12500,
-      "count": 25
+      "raw": {
+        "min": 10000,
+        "max": 15000,
+        "median": 12000,
+        "mean": 12500,
+        "count": 25
+      },
+      "clean": {
+        "min": 10000,
+        "max": 14000,
+        "median": 12000,
+        "mean": 12100,
+        "count": 23
+      }
     },
     "suppliers": [
       {
         "id": "clx...",
         "name": "UD. Sumber Rejeki",
         "price": 12000,
-        "isAnomaly": false
-      },
-      {
-        "id": "clx...",
-        "name": "UD. Murah Jaya",
-        "price": 15000,
-        "isAnomaly": true
+        "isAnomaly": false,
+        "latitude": -6.5563,
+        "longitude": 107.4439,
+        "distanceKm": 2.4
       }
     ]
   }
 }
 ```
 
+**`scopeUsed` values:** `district` | `regency` | `province` | `gps_radius` | `master`
+
 ### Get Price Anomalies
 
 ```
-GET /api/market/anomalies?region=Purwakarta
+GET /api/market/anomalies?province=Jawa+Barat&regency=Purwakarta
 Authorization: Bearer <token>
 ```
+
+Same query params as above (without `item`). Returns IQR-based outliers per item.
 
 ### Get HET Suggestion
 
 ```
-GET /api/market/het-suggestion?item=Beras&region=Purwakarta
+GET /api/market/het-suggestion?item=Beras&latitude=-6.5398&longitude=107.4471&radiusKm=5
 Authorization: Bearer <token>
 ```
+
+**`basedOn` values:**
+
+| Value                         | Kondisi                      | Formula                           |
+| ----------------------------- | ---------------------------- | --------------------------------- |
+| `master_reference_cold_start` | 0 supplier di semua scope    | `ceil(master)`                    |
+| `blended_small_sample`        | 1–4 supplier                 | `ceil((master + mean) / 2 * 1.1)` |
+| `clean_dynamic_median`        | ≥ 5 supplier, clean data ada | `ceil(median(clean) * 1.1)`       |
+| `all_anomaly_fallback`        | ≥ 5 supplier, semua outlier  | `ceil(master)`                    |
+
+**Master Reference Prices (MVP 90% budget):**
+
+| Kategori       | Keyword | Default Price |
+| -------------- | ------- | ------------- |
+| Karbohidrat    | beras   | Rp 15.000     |
+| Karbohidrat    | kentang | Rp 12.000     |
+| Protein Hewani | ayam    | Rp 40.000     |
+| Protein Hewani | sapi    | Rp 120.000    |
+| Protein Hewani | telur   | Rp 28.000     |
+| Protein Hewani | ikan    | Rp 35.000     |
+| Protein Nabati | tahu    | Rp 8.000      |
+| Protein Nabati | tempe   | Rp 10.000     |
+| Susu           | susu    | Rp 18.000     |
+| Minyak         | minyak  | Rp 16.000     |
+| Sayur          | wortel  | Rp 10.000     |
+| Sayur          | bayam   | Rp 8.000      |
+| Sayur          | sawi    | Rp 7.000      |
+| Fallback       | —       | Rp 20.000     |
 
 ---
 
