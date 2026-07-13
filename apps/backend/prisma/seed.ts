@@ -347,7 +347,7 @@ async function main() {
   console.log("✅ MoU upserted:", mou.mouNumber, "- Status:", mou.status);
 
   // ============================================================================
-  // 7. Create Order (linked to MoU) — unitPrice dari MoU agreed prices
+  // 7. Create Order (linked to MoU)
   // ============================================================================
 
   const order1 = await prisma.order.upsert({
@@ -355,7 +355,7 @@ async function main() {
     update: {},
     create: {
       id: "clx00000000000000000000o1",
-      total: 615000, // 20*11500 + 5*34000 + 25*7500 = 230000+170000+187500 = 587500
+      total: 615000,
       sppgId: sppg.id,
       supplierId: supplier1.id,
       createdById: admin.id,
@@ -393,115 +393,8 @@ async function main() {
   );
 
   // ============================================================================
-  // 8. Set Order → COMPLETED (trigger InventoryStock creation)
+  // 8. Create Batch (with BatchItems)
   // ============================================================================
-
-  await prisma.order.update({
-    where: { id: order1.id },
-    data: { status: "COMPLETED" },
-  });
-
-  // Buat InventoryStock manual (menggantikan logic di OrderService)
-  for (const orderItem of order1.items) {
-    await prisma.inventoryStock.create({
-      data: {
-        sppgId: sppg.id,
-        itemId: orderItem.itemId,
-        orderItemId: orderItem.id,
-        purchasePrice: orderItem.unitPrice,
-        initialQty: orderItem.quantity,
-        remainingQty: orderItem.quantity,
-      },
-    });
-  }
-  console.log("✅ Order set to COMPLETED + InventoryStock created");
-
-  // ============================================================================
-  // 9. Create Batch (FIFO consume dari InventoryStock)
-  // ============================================================================
-
-  // Ambil semua inventory stock untuk SPPG ini (FIFO)
-  const inventoryLots = await prisma.inventoryStock.findMany({
-    where: { sppgId: sppg.id, remainingQty: { gt: 0 } },
-    orderBy: { createdAt: "asc" },
-  });
-
-  // Definisikan item yang dibutuhkan batch
-  const batchItemRequests = [
-    {
-      itemId: createdItems[0].id,
-      quantity: 15,
-      name: "Beras Premium 15kg",
-      unit: "kg",
-    },
-    {
-      itemId: createdItems[1].id,
-      quantity: 3,
-      name: "Ayam Potong 3kg",
-      unit: "kg",
-    },
-    {
-      itemId: createdItems[2].id,
-      quantity: 15,
-      name: "Sayur Bayam 15kg",
-      unit: "kg",
-    },
-  ];
-
-  let totalCost = 0;
-  const batchItemsData: {
-    itemId: string;
-    inventoryStockId: string;
-    name: string;
-    unit: string;
-    quantity: number;
-    unitPrice: number;
-    subtotal: number;
-    createdById: string;
-  }[] = [];
-
-  for (const request of batchItemRequests) {
-    const availableLots = inventoryLots.filter(
-      (lot) => lot.itemId === request.itemId && lot.remainingQty > 0,
-    );
-
-    let quantityNeeded = request.quantity;
-
-    for (const lot of availableLots) {
-      if (quantityNeeded <= 0) break;
-
-      const consumeQty = Math.min(lot.remainingQty, quantityNeeded);
-      const unitPrice = lot.purchasePrice;
-      const subtotal = consumeQty * unitPrice;
-
-      // Kurangi remainingQty di lot
-      await prisma.inventoryStock.update({
-        where: { id: lot.id },
-        data: { remainingQty: { decrement: consumeQty } },
-      });
-
-      batchItemsData.push({
-        itemId: request.itemId,
-        inventoryStockId: lot.id,
-        name: request.name,
-        unit: request.unit,
-        quantity: consumeQty,
-        unitPrice,
-        subtotal,
-        createdById: admin.id,
-      });
-
-      totalCost += subtotal;
-      quantityNeeded -= consumeQty;
-
-      // Update local lot remainingQty
-      lot.remainingQty -= consumeQty;
-    }
-  }
-
-  const beneficiaryCount = 150;
-  const costPerPortion = totalCost / beneficiaryCount;
-  const totalBudget = 10000 * beneficiaryCount;
 
   const batch1 = await prisma.batch.upsert({
     where: { id: "clx00000000000000000000bt1" },
@@ -513,23 +406,71 @@ async function main() {
       menu: "Nasi Ayam Bakar + Sayur Bayam",
       nutrition: { calories: 450, protein: 25, fat: 15, carbs: 50 },
       allergens: ["gluten"],
-      beneficiaryCount,
-      costPerPortion,
-      totalCost,
+      beneficiaryCount: 150,
+      costPerPortion: 0,
+      totalCost: 0,
       costPerPortionStandard: 10000,
-      totalBudget,
-      budgetVariance: totalCost - totalBudget,
+      totalBudget: 1500000, // 10000 * 150
+      budgetVariance: 0, // Will be computed after creation
       sppgId: sppg.id,
       createdById: admin.id,
       batchItems: {
-        create: batchItemsData,
+        create: [
+          {
+            itemId: createdItems[0].id, // Beras Premium
+            name: "Beras Premium 15kg",
+            unit: "kg",
+            quantity: 15,
+            unitPrice: 11500,
+            subtotal: 172500,
+            createdById: admin.id,
+          },
+          {
+            itemId: createdItems[1].id, // Ayam Potong
+            name: "Ayam Potong 3kg",
+            unit: "kg",
+            quantity: 3,
+            unitPrice: 34000,
+            subtotal: 102000,
+            createdById: admin.id,
+          },
+          {
+            itemId: createdItems[2].id, // Sayur Bayam
+            name: "Sayur Bayam 15kg",
+            unit: "kg",
+            quantity: 15,
+            unitPrice: 7500,
+            subtotal: 112500,
+            createdById: admin.id,
+          },
+        ],
       },
     },
+  });
+
+  // Compute totalCost from BatchItems
+  const batch1WithItems = await prisma.batch.findUnique({
+    where: { id: batch1.id },
+    include: { batchItems: true },
+  });
+  if (!batch1WithItems) throw new Error("Batch not found");
+
+  const totalCost = batch1WithItems.batchItems.reduce(
+    (sum, item) => sum + item.subtotal,
+    0,
+  );
+  const costPerPortion = batch1WithItems.beneficiaryCount
+    ? totalCost / batch1WithItems.beneficiaryCount
+    : 0;
+
+  await prisma.batch.update({
+    where: { id: batch1.id },
+    data: { totalCost, costPerPortion, budgetVariance: totalCost - 1500000 },
   });
   console.log("✅ Batch 1 upserted:", batch1.batchNumber, "Total:", totalCost);
 
   // ============================================================================
-  // 10. Create Sample Complaint
+  // 9. Create Sample Complaint
   // ============================================================================
 
   await prisma.complaint.upsert({
@@ -559,22 +500,22 @@ async function main() {
   );
   console.log("   - 4 Beneficiaries");
   console.log("   - 1 MoU (ACTIVE) — partnership with agreed prices");
-  console.log("   - 1 Order (3 items, COMPLETED)");
-  console.log("   - 3 InventoryStock lots (from Order → COMPLETED)");
-  console.log("   - 1 Batch (3 BatchItems via FIFO)");
+  console.log("   - 1 Order (3 items, linked to MoU)");
+  console.log("   - 1 Batch (3 BatchItems)");
   console.log("   - 1 Complaint");
+  console.log("\n📍 GPS Data:");
+  console.log("   - SPPG Purwakarta: -6.5547, 107.4461");
+  console.log("   - Supplier 1 (Wanayasa): -6.5025, 107.4523 (~6km)");
+  console.log("   - Supplier 2 (Purwakarta): -6.5560, 107.4480 (~0.2km)");
+  console.log("   - Supplier 3 (Subang): -6.5703, 107.7634 (~34km)");
   console.log("\n💰 Cost Verification:");
   console.log(
-    "   - Batch totalCost (FIFO locked prices): Rp",
+    "   - Batch totalCost computed from BatchItems: Rp",
     totalCost.toLocaleString(),
   );
   console.log(
     "   - costPerPortion computed: Rp",
     costPerPortion.toLocaleString(),
-  );
-  console.log(
-    "   - budgetVariance: Rp",
-    (totalCost - totalBudget).toLocaleString(),
   );
 }
 
