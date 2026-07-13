@@ -1,7 +1,7 @@
 "use client";
 
-import { BeneficiaryStats } from "./types";
-import { RefreshCw, Leaf } from "lucide-react";
+import { Building2, Users, UtensilsCrossed } from "lucide-react";
+import type { BeneficiaryStats } from "./types";
 
 interface BeneficiaryStatsCardsProps {
   stats: BeneficiaryStats;
@@ -10,56 +10,58 @@ interface BeneficiaryStatsCardsProps {
 export function BeneficiaryStatsCards({ stats }: BeneficiaryStatsCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      {/* Total Siswa Terdaftar */}
+      {/* Total Lembaga */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-          Total Siswa Terdaftar
-        </p>
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+            <Building2 className="w-5 h-5 text-blue-600" />
+          </div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            Total Lembaga
+          </p>
+        </div>
         <p className="text-3xl font-bold text-gray-900">
-          {stats.totalRegistered.toLocaleString("id-ID")}
-          <span className="text-sm font-normal text-gray-500 ml-1">Siswa</span>
+          {stats.totalInstitutions}
         </p>
-        <p className="text-xs text-gray-400 mt-2">
-          Dari {stats.totalSchools} Sekolah Target
-        </p>
+        <p className="text-xs text-gray-400 mt-1">Institusi Penerima</p>
       </div>
 
-      {/* Siswa Hadir Hari Ini */}
+      {/* Total Penerima Manfaat */}
       <div className="bg-blue-900 rounded-xl p-5 text-white">
-        <p className="text-xs font-semibold text-blue-200 uppercase tracking-wide mb-1">
-          Siswa Hadir Hari Ini
-        </p>
-        <p className="text-3xl font-bold">
-          {stats.presentToday.toLocaleString("id-ID")}
-          <span className="text-sm font-normal text-blue-200 ml-1">
-            Porsi Masak
-          </span>
-        </p>
-        <div className="flex items-center gap-1.5 mt-2">
-          <RefreshCw className="w-3 h-3 text-blue-300" />
-          <p className="text-xs text-blue-200">
-            Data tersinkron otomatis pukul 07:00 WIB
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 bg-blue-800 rounded-lg flex items-center justify-center">
+            <Users className="w-5 h-5 text-blue-200" />
+          </div>
+          <p className="text-xs font-semibold text-blue-200 uppercase tracking-wide">
+            Total Penerima Manfaat
           </p>
         </div>
+        <p className="text-3xl font-bold">
+          {stats.totalBeneficiaries.toLocaleString("id-ID")}
+          <span className="text-sm font-normal text-blue-200 ml-1">
+            Orang
+          </span>
+        </p>
+        <p className="text-xs text-blue-300 mt-2">
+          Seluruh lembaga terdaftar
+        </p>
       </div>
 
-      {/* Absen / Sakit / Izin */}
+      {/* Total Target Porsi */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-          Absen / Sakit / Izin
-        </p>
-        <p className="text-3xl font-bold text-orange-500">
-          {stats.absentToday.toLocaleString("id-ID")}
-          <span className="text-sm font-normal text-gray-500 ml-1">
-            Siswa
-          </span>
-        </p>
-        <div className="flex items-center gap-1.5 mt-2">
-          <Leaf className="w-3 h-3 text-green-500" />
-          <p className="text-xs text-green-600">
-            Menghemat {stats.absentToday} porsi masakan hari ini
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+            <UtensilsCrossed className="w-5 h-5 text-green-600" />
+          </div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            Total Target Porsi
           </p>
         </div>
+        <p className="text-3xl font-bold text-gray-900">
+          {stats.totalPortions.toLocaleString("id-ID")}
+          <span className="text-sm font-normal text-gray-500 ml-1">Porsi</span>
+        </p>
+        <p className="text-xs text-gray-400 mt-1">Target per hari</p>
       </div>
     </div>
   );

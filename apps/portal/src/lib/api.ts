@@ -261,13 +261,15 @@ export async function updateBatchStatus(
   token: string,
   id: string,
   status: string,
+  failedReason?: string,
+  failedEvidence?: string,
 ) {
   return fetchApi(`/api/batches/${id}/status`, {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, failedReason, failedEvidence }),
   });
 }
 
@@ -317,13 +319,14 @@ export async function updateOrderStatus(
   token: string,
   id: string,
   status: string,
+  notes?: string,
 ) {
   return fetchApi(`/api/orders/${id}/status`, {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, notes }),
   });
 }
 
@@ -402,20 +405,6 @@ function appendMarketLocationParams(
   if (location.radiusKm !== undefined) {
     params.append("radiusKm", String(location.radiusKm));
   }
-}
-
-export async function getMarketPrices(
-  token: string,
-  item: string,
-  location?: MarketLocationParams,
-) {
-  const params = new URLSearchParams({ item });
-  appendMarketLocationParams(params, location);
-  return fetchApi(`/api/market/prices?${params.toString()}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
 }
 
 export async function getMarketAnomalies(
@@ -524,9 +513,17 @@ export async function updateMoUStatus(
 // ============================================================================
 // Beneficiary API
 // ============================================================================
-export async function getBeneficiaries(token: string, sppgId?: string) {
-  const params = sppgId ? `?sppgId=${sppgId}` : "";
-  return fetchApi(`/api/beneficiaries${params}`, {
+export async function getBeneficiaries(
+  token: string,
+  params?: { sppgId?: string; search?: string; page?: number; limit?: number },
+) {
+  const searchParams = new URLSearchParams();
+  if (params?.sppgId) searchParams.append("sppgId", params.sppgId);
+  if (params?.search) searchParams.append("search", params.search);
+  if (params?.page) searchParams.append("page", String(params.page));
+  if (params?.limit) searchParams.append("limit", String(params.limit));
+  const qs = searchParams.toString() ? `?${searchParams.toString()}` : "";
+  return fetchApi(`/api/beneficiaries${qs}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -614,5 +611,110 @@ export async function updateSppg(
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
+  });
+}
+
+// ============================================================================
+// Market API
+// ============================================================================
+export async function getMarketPrices(
+  token: string,
+  params: { item: string; regency: string },
+) {
+  const searchParams = new URLSearchParams();
+  searchParams.append("item", params.item);
+  searchParams.append("regency", params.regency);
+  return fetchApi(`/api/market/prices?${searchParams.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+// ============================================================================
+// Inventory API
+// ============================================================================
+export async function getInventoryStocks(
+  token: string,
+  params?: { itemId?: string; page?: number; limit?: number },
+) {
+  const searchParams = new URLSearchParams();
+  if (params?.itemId) searchParams.append("itemId", params.itemId);
+  if (params?.page) searchParams.append("page", String(params.page));
+  if (params?.limit) searchParams.append("limit", String(params.limit));
+  const qs = searchParams.toString() ? `?${searchParams.toString()}` : "";
+  return fetchApi(`/api/inventory${qs}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function getInventoryBalance(token: string) {
+  return fetchApi("/api/inventory/balance", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function getInventoryValuation(token: string) {
+  return fetchApi("/api/inventory/valuation", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function getInventoryAlerts(token: string) {
+  return fetchApi("/api/inventory/alerts", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function createManualStock(
+  token: string,
+  data: {
+    itemId: string;
+    purchasePrice: number;
+    initialQty: number;
+    expiredAt?: string;
+    notes?: string;
+  },
+) {
+  return fetchApi("/api/inventory/manual", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function adjustStock(
+  token: string,
+  stockId: string,
+  data: {
+    adjustmentQty: number;
+    reason: string;
+    description?: string;
+  },
+) {
+  return fetchApi(`/api/inventory/${stockId}/adjust`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getStockHistory(token: string, stockId: string) {
+  return fetchApi(`/api/inventory/${stockId}/history`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   });
 }

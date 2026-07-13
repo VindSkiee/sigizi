@@ -1,28 +1,26 @@
-export type DistributionStatus =
-  | "belum_sync"
-  | "menunggu"
-  | "sedang_dikirim"
-  | "terkirim";
+export type InstitutionType =
+  | 'SEKOLAH'
+  | 'PONDOK'
+  | 'PANTI'
+  | 'Pesantren'
+  | 'Lembaga Kesejahteraan Sosial';
 
-export interface BeneficiaryClass {
+export interface Beneficiary {
   id: string;
-  schoolName: string;
-  className: string;
-  teacherName: string;
-  totalRegistered: number;
-  presentToday: number | null;
-  sickCount: number;
-  absentCount: number;
-  targetPortions: number | null;
-  distributionStatus: DistributionStatus;
-  lastSyncTime?: string;
+  name: string;
+  institution: string;
+  institutionType: InstitutionType;
+  totalBeneficiary: number;
+  address?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  sppgId?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface BeneficiaryStats {
-  totalRegistered: number;
-  totalSchools: number;
-  presentToday: number;
-  absentToday: number;
-  syncedClasses: number;
-  totalClasses: number;
+  totalBeneficiaries: number;
+  totalInstitutions: number;
+  totalPortions: number;
 }

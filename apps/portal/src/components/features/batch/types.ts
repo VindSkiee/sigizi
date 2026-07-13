@@ -1,4 +1,4 @@
-export type BatchStatus = 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+export type BatchStatus = 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'FAILED';
 
 export interface BatchMenuItem {
   name: string;
@@ -22,6 +22,18 @@ export interface BatchManagement {
   // Menu
   cycle: string;
   menus: BatchMenuItem[];
+
+  // Budget (Regulasi MBG Rp 10.000/porsi)
+  beneficiaryCount?: number;
+  costPerPortion?: number;
+  costPerPortionStandard: number;
+  totalBudget: number;
+  totalCost?: number;
+  budgetVariance?: number;
+
+  // Failure tracking
+  failedReason?: string;
+  failedEvidence?: string;
 
   // Timestamps
   createdAt: string;

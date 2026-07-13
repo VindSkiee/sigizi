@@ -27,7 +27,10 @@ export default function CreateOrderPage() {
 
     setIsSearching(true);
     try {
-      const response = await getMarketPrices(token, searchQuery.trim());
+      const response = await getMarketPrices(token, {
+        item: searchQuery.trim(),
+        regency: user?.sppg?.regency || "Kab. Purwakarta",
+      });
       if (response.success && response.data) {
         const data = response.data as any;
         setSearchResults(data.suppliers || []);

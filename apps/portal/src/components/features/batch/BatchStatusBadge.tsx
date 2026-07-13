@@ -17,6 +17,10 @@ const STATUS_CONFIG: Record<BatchStatus, { label: string; className: string }> =
     label: 'Dibatalkan',
     className: 'bg-red-100 text-red-700',
   },
+  FAILED: {
+    label: 'Gagal',
+    className: 'bg-red-100 text-red-700',
+  },
 };
 
 export function BatchStatusBadge({ status }: BatchStatusBadgeProps) {

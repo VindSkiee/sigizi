@@ -5,10 +5,15 @@ import { MarketCard } from "./MarketCard";
 
 interface MarketCardGridProps {
   items: MarketSupplierItem[];
+  medianPrice?: number;
   onAddToDraft: (item: MarketSupplierItem) => void;
 }
 
-export function MarketCardGrid({ items, onAddToDraft }: MarketCardGridProps) {
+export function MarketCardGrid({
+  items,
+  medianPrice,
+  onAddToDraft,
+}: MarketCardGridProps) {
   if (items.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
@@ -38,7 +43,12 @@ export function MarketCardGrid({ items, onAddToDraft }: MarketCardGridProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {items.map((item) => (
-        <MarketCard key={item.id} item={item} onAddToDraft={onAddToDraft} />
+        <MarketCard
+          key={item.id}
+          item={item}
+          medianPrice={medianPrice}
+          onAddToDraft={onAddToDraft}
+        />
       ))}
     </div>
   );

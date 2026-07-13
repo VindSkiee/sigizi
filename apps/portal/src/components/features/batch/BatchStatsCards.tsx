@@ -1,6 +1,6 @@
 'use client';
 
-import { Package, ChefHat, CheckCircle, XCircle } from 'lucide-react';
+import { Package, ChefHat, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import type { BatchManagement } from './types';
 
 interface BatchStatsCardsProps {
@@ -12,10 +12,15 @@ export function BatchStatsCards({ batches }: BatchStatsCardsProps) {
   const aktif = batches.filter((b) => b.status === 'ACTIVE').length;
   const selesai = batches.filter((b) => b.status === 'COMPLETED').length;
   const dibatalkan = batches.filter((b) => b.status === 'CANCELLED').length;
+  const gagal = batches.filter((b) => b.status === 'FAILED').length;
+
+  const totalBudget = batches.reduce((sum, b) => sum + (b.totalBudget || 0), 0);
+  const totalCost = batches.reduce((sum, b) => sum + (b.totalCost || 0), 0);
+  const variance = totalCost - totalBudget;
 
   const stats = [
     {
-      title: 'TOTAL BATCH HARI INI',
+      title: 'TOTAL BATCH',
       value: totalBatch,
       icon: <Package className="w-6 h-6" />,
       color: 'text-blue-600',
@@ -36,16 +41,16 @@ export function BatchStatsCards({ batches }: BatchStatsCardsProps) {
       bgColor: 'bg-green-50',
     },
     {
-      title: 'DIBATALKAN',
-      value: dibatalkan,
-      icon: <XCircle className="w-6 h-6" />,
+      title: 'GAGAL / BATAL',
+      value: dibatalkan + gagal,
+      icon: gagal > 0 ? <AlertTriangle className="w-6 h-6" /> : <XCircle className="w-6 h-6" />,
       color: 'text-red-600',
       bgColor: 'bg-red-50',
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       {stats.map((stat) => (
         <div
           key={stat.title}

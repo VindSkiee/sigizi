@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { getOrders, updateOrderStatus } from "@/lib/api";
 import { ClipboardList, Search } from "lucide-react";
 import { Pagination } from "@/components/ui/Pagination";
 import {
@@ -13,245 +15,12 @@ import { OrderCard } from "@/components/features/supplier/orders/OrderCard";
 import { OrderDetailModal } from "@/components/features/supplier/orders/OrderDetailModal";
 import { PaymentProofModal } from "@/components/features/supplier/orders/PaymentProofModal";
 
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
 const ITEMS_PER_PAGE = 5;
-
-// ============================================================================
-// MOCK DATA (sesuai struktur response backend)
-// Akan diganti dengan real API setelah backend team selesai
-// ============================================================================
-
-const MOCK_ORDERS: Order[] = [
-  {
-    id: "ord001pending123",
-    status: "PENDING",
-    total: 1160000,
-    notes: undefined,
-    sppgId: "sppg001",
-    supplierId: "supplier001",
-    createdAt: "2026-07-12T08:00:00Z",
-    updatedAt: "2026-07-12T08:00:00Z",
-    sppg: { id: "sppg001", name: "SPPG Purwakarta" },
-    supplier: { id: "supplier001", name: "UD. Sumber Makmur" },
-    items: [
-      {
-        id: "item001",
-        quantity: 50,
-        unitPrice: 12000,
-        subtotal: 600000,
-        item: { id: "si001", name: "Beras", unit: "kg", basePrice: 12000 },
-      },
-      {
-        id: "item002",
-        quantity: 20,
-        unitPrice: 28000,
-        subtotal: 560000,
-        item: { id: "si002", name: "Telur", unit: "kg", basePrice: 28000 },
-      },
-    ],
-  },
-  {
-    id: "ord002pending456",
-    status: "PENDING",
-    total: 4500000,
-    notes: "Urgent - butuh besok",
-    sppgId: "sppg002",
-    supplierId: "supplier001",
-    createdAt: "2026-07-11T14:30:00Z",
-    updatedAt: "2026-07-11T14:30:00Z",
-    sppg: { id: "sppg002", name: "SPPG Bandung Barat" },
-    supplier: { id: "supplier001", name: "UD. Sumber Makmur" },
-    items: [
-      {
-        id: "item003",
-        quantity: 30,
-        unitPrice: 120000,
-        subtotal: 3600000,
-        item: { id: "si003", name: "Daging Sapi", unit: "kg", basePrice: 120000 },
-      },
-      {
-        id: "item004",
-        quantity: 15,
-        unitPrice: 60000,
-        subtotal: 900000,
-        item: { id: "si004", name: "Ayam Potong", unit: "kg", basePrice: 60000 },
-      },
-    ],
-  },
-  {
-    id: "ord003confirm789",
-    status: "CONFIRMED",
-    total: 2040000,
-    notes: undefined,
-    sppgId: "sppg003",
-    supplierId: "supplier001",
-    createdAt: "2026-07-10T09:30:00Z",
-    updatedAt: "2026-07-10T10:00:00Z",
-    sppg: { id: "sppg003", name: "SPPG Cimahi Central" },
-    supplier: { id: "supplier001", name: "UD. Sumber Makmur" },
-    items: [
-      {
-        id: "item005",
-        quantity: 15,
-        unitPrice: 120000,
-        subtotal: 1800000,
-        item: { id: "si003", name: "Daging Sapi", unit: "kg", basePrice: 120000 },
-      },
-      {
-        id: "item006",
-        quantity: 30,
-        unitPrice: 8000,
-        subtotal: 240000,
-        item: { id: "si005", name: "Wortel", unit: "kg", basePrice: 8000 },
-      },
-    ],
-  },
-  {
-    id: "ord004deliv012",
-    status: "DELIVERED",
-    total: 1160000,
-    notes: undefined,
-    sppgId: "sppg001",
-    supplierId: "supplier001",
-    createdAt: "2026-07-08T08:00:00Z",
-    updatedAt: "2026-07-09T14:00:00Z",
-    sppg: { id: "sppg001", name: "SPPG Purwakarta" },
-    supplier: { id: "supplier001", name: "UD. Sumber Makmur" },
-    items: [
-      {
-        id: "item007",
-        quantity: 50,
-        unitPrice: 12000,
-        subtotal: 600000,
-        item: { id: "si001", name: "Beras", unit: "kg", basePrice: 12000 },
-      },
-      {
-        id: "item008",
-        quantity: 20,
-        unitPrice: 28000,
-        subtotal: 560000,
-        item: { id: "si002", name: "Telur", unit: "kg", basePrice: 28000 },
-      },
-    ],
-  },
-  {
-    id: "ord005complete345",
-    status: "COMPLETED",
-    total: 3200000,
-    notes: undefined,
-    sppgId: "sppg004",
-    supplierId: "supplier001",
-    createdAt: "2026-07-05T10:00:00Z",
-    updatedAt: "2026-07-08T16:00:00Z",
-    sppg: { id: "sppg004", name: "SPPG Jakarta Selatan" },
-    supplier: { id: "supplier001", name: "UD. Sumber Makmur" },
-    items: [
-      {
-        id: "item009",
-        quantity: 25,
-        unitPrice: 80000,
-        subtotal: 2000000,
-        item: { id: "si006", name: "Ikan Salmon", unit: "kg", basePrice: 80000 },
-      },
-      {
-        id: "item010",
-        quantity: 20,
-        unitPrice: 60000,
-        subtotal: 1200000,
-        item: { id: "si004", name: "Ayam Potong", unit: "kg", basePrice: 60000 },
-      },
-    ],
-  },
-  {
-    id: "ord006cancel678",
-    status: "CANCELLED",
-    total: 2800000,
-    notes: "Stok tidak mencukupi",
-    sppgId: "sppg005",
-    supplierId: "supplier001",
-    createdAt: "2026-07-03T14:00:00Z",
-    updatedAt: "2026-07-03T15:00:00Z",
-    sppg: { id: "sppg005", name: "SPPG Padalarang" },
-    supplier: { id: "supplier001", name: "UD. Sumber Makmur" },
-    items: [
-      {
-        id: "item011",
-        quantity: 100,
-        unitPrice: 28000,
-        subtotal: 2800000,
-        item: { id: "si002", name: "Telur", unit: "kg", basePrice: 28000 },
-      },
-    ],
-  },
-  {
-    id: "ord007deliv901",
-    status: "DELIVERED",
-    total: 890000,
-    notes: undefined,
-    sppgId: "sppg002",
-    supplierId: "supplier001",
-    createdAt: "2026-07-01T11:00:00Z",
-    updatedAt: "2026-07-02T09:00:00Z",
-    sppg: { id: "sppg002", name: "SPPG Bandung Barat" },
-    supplier: { id: "supplier001", name: "UD. Sumber Makmur" },
-    items: [
-      {
-        id: "item012",
-        quantity: 50,
-        unitPrice: 8000,
-        subtotal: 400000,
-        item: { id: "si005", name: "Wortel", unit: "kg", basePrice: 8000 },
-      },
-      {
-        id: "item013",
-        quantity: 30,
-        unitPrice: 10000,
-        subtotal: 300000,
-        item: { id: "si007", name: "Bayam", unit: "ikat", basePrice: 10000 },
-      },
-      {
-        id: "item014",
-        quantity: 19,
-        unitPrice: 10000,
-        subtotal: 190000,
-        item: { id: "si008", name: "Kangkung", unit: "ikat", basePrice: 10000 },
-      },
-    ],
-  },
-  {
-    id: "ord008confirm234",
-    status: "CONFIRMED",
-    total: 1800000,
-    notes: undefined,
-    sppgId: "sppg003",
-    supplierId: "supplier001",
-    createdAt: "2026-07-11T16:00:00Z",
-    updatedAt: "2026-07-11T16:30:00Z",
-    sppg: { id: "sppg003", name: "SPPG Cimahi Central" },
-    supplier: { id: "supplier001", name: "UD. Sumber Makmur" },
-    items: [
-      {
-        id: "item015",
-        quantity: 60,
-        unitPrice: 30000,
-        subtotal: 1800000,
-        item: { id: "si009", name: "Tahu", unit: "pcs", basePrice: 3000 },
-      },
-    ],
-  },
-];
-
-// ============================================================================
-// MAPPING FUNCTION (backend → frontend)
-// ============================================================================
 
 function mapOrderFromBackend(raw: Order): OrderViewModel {
   return {
     id: raw.id,
-    orderNumber: `ORD-${raw.id.slice(-3).toUpperCase()}`,
+    orderNumber: `ORD-${raw.id.slice(-6).toUpperCase()}`,
     sppgName: raw.sppg?.name || "SPPG",
     supplierName: raw.supplier?.name || "Supplier",
     items: raw.items.map((i) => ({
@@ -268,29 +37,42 @@ function mapOrderFromBackend(raw: Order): OrderViewModel {
   };
 }
 
-// ============================================================================
-// PAGE COMPONENT
-// ============================================================================
-
 export default function PesananPage() {
-  // State
-  const [orders] = useState<OrderViewModel[]>(MOCK_ORDERS.map(mapOrderFromBackend));
+  const { token } = useAuth();
+  const [orders, setOrders] = useState<OrderViewModel[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<OrderViewModel | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState<OrderViewModel | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  // Filter orders
+  const fetchOrders = useCallback(async () => {
+    if (!token) return;
+    try {
+      const response = await getOrders(token);
+      if (response.success) {
+        const data = response.data as any;
+        const items = data?.items || data || [];
+        setOrders(Array.isArray(items) ? items.map(mapOrderFromBackend) : []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch orders:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
   const filteredOrders = useMemo(() => {
     let result = orders;
-
-    // Filter by status
     if (filter !== "all") {
       result = result.filter((o) => o.status === filter);
     }
-
-    // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
@@ -300,52 +82,101 @@ export default function PesananPage() {
           o.items.some((item) => item.name.toLowerCase().includes(query))
       );
     }
-
     return result;
   }, [orders, filter, searchQuery]);
 
-  // Pagination calculations
   const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
 
-  // Reset page when filter or search changes
   useEffect(() => {
     setCurrentPage(1);
   }, [filter, searchQuery]);
 
-  // Handle filter change (page reset handled by useEffect)
   function handleFilterChange(newFilter: FilterType) {
     setFilter(newFilter);
   }
 
-  // Mock handlers
-  function handleAccept(orderId: string) {
-    alert(`✅ Konfirmasi pesanan ${orderId}\n\n(Demo: Status akan berubah dari PENDING ke CONFIRMED)`);
-  }
+  async function handleAccept(orderId: string) {
+    if (!token) return;
+    const confirmed = window.confirm("Konfirmasi pesanan ini?");
+    if (!confirmed) return;
 
-  function handleReject(orderId: string) {
-    const confirmed = window.confirm(
-      `⚠️ Tolak pesanan ${orderId}?\n\n(Demo: Status akan berubah dari PENDING ke CANCELLED)`
-    );
-    if (confirmed) {
-      alert("Pesanan ditolak (demo)");
+    setUpdatingId(orderId);
+    try {
+      await updateOrderStatus(token, orderId, "CONFIRMED");
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId ? { ...o, status: "CONFIRMED" as const } : o
+        )
+      );
+    } catch (err) {
+      console.error("Failed to confirm order:", err);
+      alert("Gagal mengkonfirmasi pesanan");
+    } finally {
+      setUpdatingId(null);
     }
   }
 
-  function handleMarkDelivered(orderId: string) {
-    const confirmed = window.confirm(
-      `📦 Tandai pesanan ${orderId} sebagai dikirim?\n\n(Demo: Status akan berubah dari CONFIRMED ke DELIVERED)`
-    );
-    if (confirmed) {
-      alert("Pesanan ditandai sudah dikirim (demo)");
+  async function handleReject(orderId: string) {
+    if (!token) return;
+    const confirmed = window.confirm("Tolak pesanan ini?");
+    if (!confirmed) return;
+
+    setUpdatingId(orderId);
+    try {
+      await updateOrderStatus(token, orderId, "CANCELLED", "Ditolak oleh supplier");
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId ? { ...o, status: "CANCELLED" as const } : o
+        )
+      );
+    } catch (err) {
+      console.error("Failed to reject order:", err);
+      alert("Gagal menolak pesanan");
+    } finally {
+      setUpdatingId(null);
     }
+  }
+
+  async function handleMarkDelivered(orderId: string) {
+    if (!token) return;
+    const confirmed = window.confirm("Tandai pesanan sebagai sudah dikirim?");
+    if (!confirmed) return;
+
+    setUpdatingId(orderId);
+    try {
+      await updateOrderStatus(token, orderId, "DELIVERED");
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId ? { ...o, status: "DELIVERED" as const } : o
+        )
+      );
+    } catch (err) {
+      console.error("Failed to mark delivered:", err);
+      alert("Gagal menandai pengiriman");
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="w-full">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-48" />
+          <div className="h-10 bg-gray-200 rounded max-w-md" />
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-40 bg-gray-200 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="w-full">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Daftar Pesanan Masuk</h1>
         <p className="text-sm text-gray-500 mt-1">
@@ -353,24 +184,21 @@ export default function PesananPage() {
         </p>
       </div>
 
-      {/* Search Bar */}
       <div className="mb-6">
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             type="text"
             placeholder="Cari ID Pesanan / Nama SPPG / Item..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <OrderTabs activeFilter={filter} orders={orders} onFilterChange={handleFilterChange} />
+      <OrderTabs activeFilter={filter} orders={orders.map(o => ({ ...o, status: o.status as any }))} onFilterChange={handleFilterChange} />
 
-      {/* Orders List */}
       {paginatedOrders.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 shadow-sm text-center">
           <ClipboardList className="w-12 h-12 text-gray-300 mx-auto mb-3" />
@@ -397,7 +225,6 @@ export default function PesananPage() {
             ))}
           </div>
 
-          {/* Pagination Info + Controls */}
           <div className="mt-6 flex flex-col items-center gap-2">
             <p className="text-sm text-gray-500">
               Menampilkan {startIndex + 1}-{Math.min(endIndex, filteredOrders.length)} dari {filteredOrders.length} pesanan
@@ -411,12 +238,10 @@ export default function PesananPage() {
         </>
       )}
 
-      {/* Modal Detail Pesanan */}
       {selectedOrder && (
         <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
       )}
 
-      {/* Modal Bukti Pembayaran */}
       {showPaymentModal && (
         <PaymentProofModal order={showPaymentModal} onClose={() => setShowPaymentModal(null)} />
       )}
