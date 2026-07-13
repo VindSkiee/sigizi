@@ -57,7 +57,7 @@ export class ComplaintService {
       include: { batch: true },
     });
     if (!complaint)
-      throw new NotFoundException(`Complaint with ID ${id} not found`);
+      throw new NotFoundException(`Komplain dengan ID ${id} tidak ditemukan`);
     return complaint;
   }
 
@@ -67,7 +67,7 @@ export class ComplaintService {
     });
     if (!batch) {
       throw new NotFoundException(
-        `Batch with report key ${reportKey} not found`,
+        `Batch dengan report key ${reportKey} tidak ditemukan`,
       );
     }
 
@@ -88,7 +88,7 @@ export class ComplaintService {
       this.VALID_TRANSITIONS[complaint.status as ComplaintStatus] ?? [];
     if (!allowed.includes(newStatus)) {
       throw new BadRequestException(
-        `Cannot transition from ${complaint.status} to ${newStatus}`,
+        `Tidak dapat transisi dari ${complaint.status} ke ${newStatus}`,
       );
     }
     return this.prisma.complaint.update({

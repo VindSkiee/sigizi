@@ -61,7 +61,8 @@ export class OrderService {
         sppg: true,
       },
     });
-    if (!order) throw new NotFoundException(`Order with ID ${id} not found`);
+    if (!order)
+      throw new NotFoundException(`Order dengan ID ${id} tidak ditemukan`);
     return order;
   }
 
@@ -122,7 +123,7 @@ export class OrderService {
     const allowed = this.VALID_TRANSITIONS[order.status as OrderStatus] ?? [];
     if (!allowed.includes(newStatus)) {
       throw new BadRequestException(
-        `Cannot transition from ${order.status} to ${newStatus}`,
+        `Tidak dapat transisi dari ${order.status} ke ${newStatus}`,
       );
     }
 
@@ -168,7 +169,9 @@ export class OrderService {
       select: { basePrice: true },
     });
     if (!item) {
-      throw new NotFoundException(`SupplierItem with ID ${itemId} not found`);
+      throw new NotFoundException(
+        `SupplierItem dengan ID ${itemId} tidak ditemukan`,
+      );
     }
     return item.basePrice;
   }

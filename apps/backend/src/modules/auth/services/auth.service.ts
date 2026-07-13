@@ -170,7 +170,7 @@ export class AuthService {
       include: { sppg: true, supplier: true },
     });
     if (!user) {
-      throw new UnauthorizedException("User not found");
+      throw new UnauthorizedException("User tidak ditemukan");
     }
     return user;
   }

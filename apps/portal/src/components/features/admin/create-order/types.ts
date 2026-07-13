@@ -20,12 +20,32 @@ export interface DraftItem {
 
 export interface MarketPricesResponse {
   item: string;
+  filter: {
+    province: string | null;
+    regency: string | null;
+    district: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    radiusKm: number | null;
+  };
+  scopeUsed: string;
+  sampleCount: number;
+  effectiveRadiusKm?: number | null;
   statistics: {
-    min: number;
-    max: number;
-    median: number;
-    mean: number;
-    count: number;
+    raw: {
+      min: number;
+      max: number;
+      median: number;
+      mean: number;
+      count: number;
+    };
+    clean: {
+      min: number;
+      max: number;
+      median: number;
+      mean: number;
+      count: number;
+    };
   };
   suppliers: SupplierSearchResult[];
 }

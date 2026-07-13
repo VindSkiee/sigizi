@@ -66,7 +66,8 @@ export class BatchService {
         complaints: true,
       },
     });
-    if (!batch) throw new NotFoundException(`Batch with ID ${id} not found`);
+    if (!batch)
+      throw new NotFoundException(`Batch dengan ID ${id} tidak ditemukan`);
     return batch;
   }
 
@@ -78,7 +79,8 @@ export class BatchService {
         sppg: true,
       },
     });
-    if (!batch) throw new NotFoundException(`Batch ${batchNumber} not found`);
+    if (!batch)
+      throw new NotFoundException(`Batch ${batchNumber} tidak ditemukan`);
     return batch;
   }
 
@@ -92,7 +94,7 @@ export class BatchService {
     });
     if (!batch)
       throw new NotFoundException(
-        `Batch with report key ${reportKey} not found`,
+        `Batch dengan report key ${reportKey} tidak ditemukan`,
       );
     return batch;
   }
@@ -230,19 +232,19 @@ export class BatchService {
     const allowed = this.VALID_TRANSITIONS[batch.status as BatchStatus] ?? [];
     if (!allowed.includes(dto.status)) {
       throw new BadRequestException(
-        `Cannot transition from ${batch.status} to ${dto.status}`,
+        `Tidak dapat transisi dari ${batch.status} ke ${dto.status}`,
       );
     }
 
     if (dto.status === BS.FAILED) {
       if (!dto.failedReason) {
         throw new BadRequestException(
-          "failedReason is required when marking batch as FAILED",
+          "failedReason wajib diisi ketika menandai batch sebagai FAILED",
         );
       }
       if (!dto.failedEvidence) {
         throw new BadRequestException(
-          "failedEvidence is required when marking batch as FAILED",
+          "failedEvidence wajib diisi ketika menandai batch sebagai FAILED",
         );
       }
     }

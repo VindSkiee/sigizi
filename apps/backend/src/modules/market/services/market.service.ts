@@ -215,7 +215,7 @@ export class MarketService {
 
     if (hasLatitude !== hasLongitude) {
       throw new BadRequestException(
-        "latitude and longitude must be provided together",
+        "latitude dan longitude harus disertakan bersamaan",
       );
     }
 
@@ -224,7 +224,7 @@ export class MarketService {
 
     if (hasAdmin && hasGps) {
       throw new BadRequestException(
-        "Admin filters (province/regency/district) and GPS filters (latitude/longitude) are mutually exclusive. Use one mode or the other.",
+        "Filter admin (province/regency/district) dan filter GPS (latitude/longitude) tidak bisa digunakan bersamaan. Gunakan salah satu mode.",
       );
     }
   }

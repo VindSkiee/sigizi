@@ -53,7 +53,8 @@ export class MouService {
       where: { id },
       include: { items: true, sppg: true, supplier: true },
     });
-    if (!mou) throw new NotFoundException(`MoU with ID ${id} not found`);
+    if (!mou)
+      throw new NotFoundException(`MoU dengan ID ${id} tidak ditemukan`);
     return mou;
   }
 
@@ -92,7 +93,7 @@ export class MouService {
     const allowed = this.VALID_TRANSITIONS[mou.status as MouStatus] ?? [];
     if (!allowed.includes(newStatus)) {
       throw new BadRequestException(
-        `Cannot transition from ${mou.status} to ${newStatus}`,
+        `Tidak dapat transisi dari ${mou.status} ke ${newStatus}`,
       );
     }
     return this.prisma.mou.update({
@@ -104,7 +105,9 @@ export class MouService {
   async remove(id: string) {
     const mou = await this.findOne(id);
     if (mou.status !== "DRAFT") {
-      throw new BadRequestException("Only DRAFT MoU can be deleted");
+      throw new BadRequestException(
+        "Hanya MoU berstatus DRAFT yang dapat dihapus",
+      );
     }
     await this.prisma.mouItem.deleteMany({ where: { mouId: id } });
     await this.prisma.mou.delete({ where: { id } });

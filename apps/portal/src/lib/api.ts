@@ -365,13 +365,42 @@ export async function updateComplaintStatus(
 // ============================================================================
 // Market API
 // ============================================================================
+export interface MarketLocationParams {
+  province?: string;
+  regency?: string;
+  district?: string;
+  latitude?: number;
+  longitude?: number;
+  radiusKm?: number;
+}
+
+function appendMarketLocationParams(
+  params: URLSearchParams,
+  location?: MarketLocationParams,
+) {
+  if (!location) return;
+
+  if (location.province) params.append("province", location.province);
+  if (location.regency) params.append("regency", location.regency);
+  if (location.district) params.append("district", location.district);
+  if (location.latitude !== undefined) {
+    params.append("latitude", String(location.latitude));
+  }
+  if (location.longitude !== undefined) {
+    params.append("longitude", String(location.longitude));
+  }
+  if (location.radiusKm !== undefined) {
+    params.append("radiusKm", String(location.radiusKm));
+  }
+}
+
 export async function getMarketPrices(
   token: string,
   item: string,
-  region?: string,
+  location?: MarketLocationParams,
 ) {
   const params = new URLSearchParams({ item });
-  if (region) params.append("region", region);
+  appendMarketLocationParams(params, location);
   return fetchApi(`/api/market/prices?${params.toString()}`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -379,9 +408,14 @@ export async function getMarketPrices(
   });
 }
 
-export async function getMarketAnomalies(token: string, region?: string) {
-  const params = region ? `?region=${encodeURIComponent(region)}` : "";
-  return fetchApi(`/api/market/anomalies${params}`, {
+export async function getMarketAnomalies(
+  token: string,
+  location?: MarketLocationParams,
+) {
+  const params = new URLSearchParams();
+  appendMarketLocationParams(params, location);
+  const query = params.toString();
+  return fetchApi(`/api/market/anomalies${query ? `?${query}` : ""}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -391,10 +425,10 @@ export async function getMarketAnomalies(token: string, region?: string) {
 export async function getHETSuggestion(
   token: string,
   item: string,
-  region?: string,
+  location?: MarketLocationParams,
 ) {
   const params = new URLSearchParams({ item });
-  if (region) params.append("region", region);
+  appendMarketLocationParams(params, location);
   return fetchApi(`/api/market/het-suggestion?${params.toString()}`, {
     headers: {
       Authorization: `Bearer ${token}`,

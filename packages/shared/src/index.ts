@@ -311,11 +311,26 @@ export interface Complaint {
 // Market Analytics
 // ============================================================================
 
-export interface MarketPrice {
-  item: string;
-  region: string;
-  statistics: PriceStatistics;
-  suppliers: SupplierPrice[];
+export type MarketScopeUsed =
+  | "district"
+  | "regency"
+  | "province"
+  | "gps_radius"
+  | "master";
+
+export type HETBasedOn =
+  | "master_reference_cold_start"
+  | "blended_small_sample"
+  | "clean_dynamic_median"
+  | "all_anomaly_fallback";
+
+export interface MarketLocationFilter {
+  province?: string | null;
+  regency?: string | null;
+  district?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  radiusKm?: number | null;
 }
 
 export interface PriceStatistics {
@@ -326,11 +341,38 @@ export interface PriceStatistics {
   count: number;
 }
 
+export interface DualPriceStatistics {
+  raw: PriceStatistics;
+  clean: PriceStatistics;
+}
+
+export interface MarketPrice {
+  item: string;
+  filter: MarketLocationFilter;
+  scopeUsed: MarketScopeUsed;
+  sampleCount: number;
+  effectiveRadiusKm?: number | null;
+  statistics: DualPriceStatistics;
+  suppliers: SupplierPrice[];
+}
+
 export interface SupplierPrice {
   id: string;
   name: string;
   price: number;
   isAnomaly: boolean;
+  latitude?: number;
+  longitude?: number;
+  distanceKm?: number;
+}
+
+export interface HETSuggestion {
+  item: string;
+  filter: MarketLocationFilter;
+  scopeUsed: MarketScopeUsed;
+  het: number;
+  basedOn: HETBasedOn;
+  statistics: DualPriceStatistics;
 }
 
 // ============================================================================
