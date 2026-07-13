@@ -822,6 +822,74 @@ async function main() {
   console.log("✅ Complaint upserted");
 
   // ============================================================================
+  // 11. Create Operational Expenses (for financial report demo)
+  // ============================================================================
+
+  await prisma.operationalExpense.upsert({
+    where: { id: "clx00000000000000000000ope1" },
+    update: {},
+    create: {
+      id: "clx00000000000000000000ope1",
+      sppgId: sppg.id,
+      category: "TRANSPORTATION",
+      amount: 125000,
+      expenseDate: new Date("2026-07-10T09:00:00Z"),
+      description: "Biaya transportasi pengambilan bahan baku ke supplier",
+      evidenceUrl: "/uploads/opex/transport-20260710.jpg",
+      notes: "Demo biaya transportasi harian",
+      createdById: admin.id,
+    },
+  });
+
+  await prisma.operationalExpense.upsert({
+    where: { id: "clx00000000000000000000ope2" },
+    update: {},
+    create: {
+      id: "clx00000000000000000000ope2",
+      sppgId: sppg.id,
+      category: "FUEL",
+      amount: 175000,
+      expenseDate: new Date("2026-07-11T14:00:00Z"),
+      description: "Pengeluaran bensin mobil pengantar",
+      evidenceUrl: "/uploads/opex/fuel-20260711.jpg",
+      notes: "Demo biaya bensin mingguan",
+      createdById: admin.id,
+    },
+  });
+
+  await prisma.operationalExpense.upsert({
+    where: { id: "clx00000000000000000000ope3" },
+    update: {},
+    create: {
+      id: "clx00000000000000000000ope3",
+      sppgId: sppg.id,
+      category: "VEHICLE_MAINTENANCE",
+      amount: 350000,
+      expenseDate: new Date("2026-07-12T11:30:00Z"),
+      description: "Maintenance kendaraan pengantaran",
+      evidenceUrl: "/uploads/opex/maintenance-20260712.jpg",
+      notes: "Servis berkala mobil pengantar",
+      createdById: admin.id,
+    },
+  });
+
+  await prisma.operationalExpense.upsert({
+    where: { id: "clx00000000000000000000ope4" },
+    update: {},
+    create: {
+      id: "clx00000000000000000000ope4",
+      sppgId: sppg.id,
+      category: "ADMINISTRATIVE",
+      amount: 90000,
+      expenseDate: new Date("2026-07-13T08:30:00Z"),
+      description: "Pengeluaran administrasi operasional",
+      notes: "ATK dan fotokopi dokumen laporan",
+      createdById: admin.id,
+    },
+  });
+  console.log("✅ Operational expenses upserted: 4 demo records");
+
+  // ============================================================================
   // Summary
   // ============================================================================
 
@@ -841,6 +909,7 @@ async function main() {
   console.log("   - 4 OrderStatusHistory entries (for COMPLETED order)");
   console.log("   - 2 Batches (1 ACTIVE, 1 COMPLETED)");
   console.log("   - 1 Complaint");
+  console.log("   - 4 OperationalExpense records (transport, fuel, maintenance, admin)");
   console.log("\n📍 GPS Data:");
   console.log("   - SPPG Purwakarta: -6.5547, 107.4461");
   console.log("   - Supplier 1 (Wanayasa): -6.5025, 107.4523 (~6km)");
@@ -881,6 +950,9 @@ async function main() {
   );
   console.log("     → InventoryStock otomatis dibuat saat COMPLETED");
   console.log("     → Status history: 4 entries tercatat");
+  console.log("\n📄 Report Demo Data:");
+  console.log("   - Daily / weekly / monthly reports now have COGS, procurement, and OPEX samples");
+  console.log("   - ReportSnapshot will be created at runtime by the report flow or scheduler");
 }
 
 main()
