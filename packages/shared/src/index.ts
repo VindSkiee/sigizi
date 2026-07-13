@@ -172,6 +172,22 @@ export interface MouItem {
 }
 
 // ============================================================================
+// Inventory Stock — Lot-based stok bahan baku per SPPG
+// ============================================================================
+
+export interface InventoryStock {
+  id: string;
+  sppgId: string;
+  itemId: string;
+  orderItemId?: string;
+  purchasePrice: number;
+  initialQty: number;
+  remainingQty: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ============================================================================
 // Order — Pemesanan dari SPPG ke Supplier
 // ============================================================================
 
@@ -200,6 +216,7 @@ export interface OrderItem {
   quantity: number;
   unitPrice: number;
   subtotal: number;
+  inventoryStocks?: InventoryStock[];
 }
 
 // ============================================================================
@@ -261,6 +278,8 @@ export interface BatchItem {
   batchId: string;
   itemId: string;
   item?: SupplierItem;
+  inventoryStockId?: string;
+  inventoryStock?: InventoryStock;
   name?: string;
   unit?: string;
   quantity: number;
@@ -450,7 +469,6 @@ export interface CreateBatchRequest {
 export interface BatchItemRequest {
   itemId: string;
   quantity: number;
-  unitPrice: number;
   name?: string;
   unit?: string;
 }
@@ -644,6 +662,8 @@ export const VALIDATION_MESSAGES = {
   MOU_STATUS_INVALID: "Transisi status MoU tidak valid",
   MOU_DATES_INVALID: "Tanggal sebelum harus sebelum tanggal berakhir",
   MOU_OVERLAP: "MoU aktif sudah ada untuk pasangan SPPG-Supplier ini",
+  INSUFFICIENT_STOCK: "Stok bahan baku tidak mencukupi untuk batch ini",
+  STOCK_LOT_NOT_FOUND: "Lot stok tidak ditemukan",
   PASSWORD_TOO_SHORT: `Password minimal ${PASSWORD_MIN_LENGTH} karakter`,
   EMAIL_ALREADY_REGISTERED: "Email sudah terdaftar",
   INVALID_CREDENTIALS: "Email atau password salah",

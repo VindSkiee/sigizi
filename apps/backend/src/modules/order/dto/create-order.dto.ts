@@ -20,11 +20,6 @@ export class OrderItemRequestDto {
   @IsNumber()
   @Min(1)
   quantity: number;
-
-  @ApiProperty({ example: 12000 })
-  @IsNumber()
-  @Min(0)
-  unitPrice: number;
 }
 
 export class CreateOrderDto {

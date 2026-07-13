@@ -11,6 +11,7 @@ import {
 import { CreateBatchDto } from "../dto/create-batch.dto";
 import { UpdateBatchStatusDto } from "../dto/update-batch-status.dto";
 import { BatchStatus, COST_PER_PORTION_STANDARD } from "@sigizi/shared";
+import { InsufficientStockException } from "../../../common/exceptions/insufficient-stock.exception";
 
 const BS = BatchStatus;
 
@@ -55,7 +56,12 @@ export class BatchService {
     const batch = await this.prisma.batch.findUnique({
       where: { id },
       include: {
-        batchItems: { include: { item: { include: { supplier: true } } } },
+        batchItems: {
+          include: {
+            item: { include: { supplier: true } },
+            inventoryStock: true,
+          },
+        },
         sppg: true,
         complaints: true,
       },
@@ -68,7 +74,7 @@ export class BatchService {
     const batch = await this.prisma.batch.findUnique({
       where: { batchNumber },
       include: {
-        batchItems: { include: { item: true } },
+        batchItems: { include: { item: true, inventoryStock: true } },
         sppg: true,
       },
     });
@@ -80,7 +86,7 @@ export class BatchService {
     const batch = await this.prisma.batch.findUnique({
       where: { reportKey },
       include: {
-        batchItems: { include: { item: true } },
+        batchItems: { include: { item: true, inventoryStock: true } },
         sppg: true,
       },
     });
@@ -91,48 +97,131 @@ export class BatchService {
     return batch;
   }
 
+  /**
+   * Create batch dengan FIFO inventory consumption.
+   * Setiap BatchItem unitPrice dikunci dari InventoryStock.purchasePrice.
+   * Jika satu item batch memotong 2 lot berbeda, dibuat 2 BatchItem terpisah.
+   */
   async create(dto: CreateBatchDto, sppgId: string, createdById: string) {
-    let totalCost = 0;
-    const itemsData = dto.items.map((item) => {
-      const subtotal = item.quantity * item.unitPrice;
-      totalCost += subtotal;
-      return {
-        item: { connect: { id: item.itemId } },
-        name: item.name,
-        unit: item.unit,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        subtotal,
-        createdBy: { connect: { id: createdById } },
-      };
-    });
+    return this.prisma.$transaction(async (tx) => {
+      let totalCost = 0;
+      const batchItemsData: {
+        itemId: string;
+        inventoryStockId: string;
+        name?: string;
+        unit?: string;
+        quantity: number;
+        unitPrice: number;
+        subtotal: number;
+        createdById: string;
+      }[] = [];
 
-    const beneficiaryCount = dto.beneficiaryCount ?? 1;
-    const costPerPortion = totalCost / beneficiaryCount;
-    const totalBudget = COST_PER_PORTION_STANDARD * beneficiaryCount;
-    const budgetVariance = totalCost - totalBudget;
+      for (const request of dto.items) {
+        // 1. Cari InventoryStock: FIFO (createdAt ASC) dengan remainingQty > 0
+        const lots = await tx.inventoryStock.findMany({
+          where: {
+            sppgId,
+            itemId: request.itemId,
+            remainingQty: { gt: 0 },
+          },
+          orderBy: { createdAt: "asc" },
+        });
 
-    const batchNumber = await this.generateBatchNumber();
+        // 2. Validasi stok mencukupi
+        const totalAvailable = lots.reduce(
+          (sum, lot) => sum + lot.remainingQty,
+          0,
+        );
+        if (totalAvailable < request.quantity) {
+          const item = await tx.supplierItem.findUnique({
+            where: { id: request.itemId },
+            select: { name: true },
+          });
+          throw new InsufficientStockException(
+            item?.name ?? request.itemId,
+            request.quantity,
+            totalAvailable,
+          );
+        }
 
-    return this.prisma.batch.create({
-      data: {
-        batchNumber,
-        reportKey: this.generateReportKey(),
-        menu: dto.menu,
-        nutrition: dto.nutrition as any,
-        allergens: dto.allergens ?? [],
-        beneficiaryCount,
-        costPerPortion,
-        totalCost,
-        costPerPortionStandard: COST_PER_PORTION_STANDARD,
-        totalBudget,
-        budgetVariance,
-        sppgId,
-        status: BS.ACTIVE,
-        createdById,
-        batchItems: { create: itemsData },
-      },
-      include: { batchItems: true },
+        // 3. FIFO: Kurangi dari lot tertua
+        let quantityNeeded = request.quantity;
+
+        for (const lot of lots) {
+          if (quantityNeeded <= 0) break;
+
+          const consumeQty = Math.min(lot.remainingQty, quantityNeeded);
+          const unitPrice = lot.purchasePrice; // LOCK harga dari lot
+          const subtotal = consumeQty * unitPrice;
+
+          // Kurangi remainingQty lot
+          await tx.inventoryStock.update({
+            where: { id: lot.id },
+            data: { remainingQty: { decrement: consumeQty } },
+          });
+
+          // Buat BatchItem
+          batchItemsData.push({
+            itemId: request.itemId,
+            inventoryStockId: lot.id,
+            name: request.name,
+            unit: request.unit,
+            quantity: consumeQty,
+            unitPrice,
+            subtotal,
+            createdById,
+          });
+
+          totalCost += subtotal;
+          quantityNeeded -= consumeQty;
+        }
+      }
+
+      // 4. Hitung budget
+      const beneficiaryCount = dto.beneficiaryCount ?? 1;
+      const costPerPortion = totalCost / beneficiaryCount;
+      const totalBudget = COST_PER_PORTION_STANDARD * beneficiaryCount;
+      const budgetVariance = totalCost - totalBudget;
+
+      // 5. Generate batch number (dalam transaction)
+      const batchNumber = await this.generateBatchNumber(tx);
+
+      // 6. Buat Batch + BatchItems
+      const batch = await tx.batch.create({
+        data: {
+          batchNumber,
+          reportKey: this.generateReportKey(),
+          menu: dto.menu,
+          nutrition: dto.nutrition as any,
+          allergens: dto.allergens ?? [],
+          beneficiaryCount,
+          costPerPortion,
+          totalCost,
+          costPerPortionStandard: COST_PER_PORTION_STANDARD,
+          totalBudget,
+          budgetVariance,
+          sppgId,
+          status: BS.ACTIVE,
+          createdById,
+          batchItems: {
+            create: batchItemsData.map((bi) => ({
+              itemId: bi.itemId,
+              inventoryStockId: bi.inventoryStockId,
+              name: bi.name,
+              unit: bi.unit,
+              quantity: bi.quantity,
+              unitPrice: bi.unitPrice,
+              subtotal: bi.subtotal,
+              createdById: bi.createdById,
+            })),
+          },
+        },
+        include: {
+          batchItems: { include: { inventoryStock: true, item: true } },
+        },
+      });
+
+      return batch;
     });
   }
 
@@ -172,10 +261,12 @@ export class BatchService {
     });
   }
 
-  private async generateBatchNumber(): Promise<string> {
+  private async generateBatchNumber(tx: {
+    batch: { count: (args: any) => Promise<number> };
+  }): Promise<string> {
     const today = new Date();
     const dateStr = today.toISOString().slice(0, 10).replace(/-/g, "");
-    const count = await this.prisma.batch.count({
+    const count = await tx.batch.count({
       where: {
         createdAt: {
           gte: new Date(today.toISOString().slice(0, 10)),

@@ -12,3 +12,6 @@ export { PrismaExceptionFilter } from "./filters/prisma-exception.filter";
 
 // Interceptors
 export { ResponseTransformInterceptor } from "./interceptors/response-transform.interceptor";
+
+// Exceptions
+export { InsufficientStockException } from "./exceptions/insufficient-stock.exception";

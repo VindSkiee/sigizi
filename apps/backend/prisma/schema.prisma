@@ -101,11 +101,12 @@ model Sppg {
   latitude    Float?   // -90 to 90
   longitude   Float?   // -180 to 180
 
-  users        User[]
-  beneficiaries Beneficiary[]
-  batches      Batch[]
-  orders       Order[]
-  mous         Mou[]
+  users           User[]
+  beneficiaries   Beneficiary[]
+  batches         Batch[]
+  orders          Order[]
+  mous            Mou[]
+  inventoryStocks InventoryStock[]
 }
 
 // ----------------------------------------------------------------------------
@@ -157,9 +158,10 @@ model SupplierItem {
   supplier     Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
   supplierId   String
   createdAt    DateTime @default(now())
-  orderItems   OrderItem[]
-  batchItems   BatchItem[]
-  mouItems     MouItem[]
+  orderItems    OrderItem[]
+  batchItems    BatchItem[]
+  mouItems      MouItem[]
+  inventoryStocks InventoryStock[]
 
   @@index([supplierId])
   @@index([name])
@@ -307,7 +309,38 @@ model OrderItem {
   unitPrice   Float
   subtotal    Float
 
+  inventoryStocks InventoryStock[]
+
   @@index([orderId])
+}
+
+// ----------------------------------------------------------------------------
+// 9A. INVENTORY STOCK — Lot-based stok bahan baku per SPPG
+// Harga purchasePrice dikunci dari OrderItem.unitPrice saat order COMPLETED
+// Mendukung FIFO (First-In, First-Out) untuk konsumsi stok
+// ----------------------------------------------------------------------------
+
+model InventoryStock {
+  id            String       @id @default(cuid())
+
+  sppg          Sppg         @relation(fields: [sppgId], references: [id], onDelete: Restrict)
+  sppgId        String
+  item          SupplierItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  itemId        String
+  orderItem     OrderItem?   @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  orderItemId   String?
+
+  purchasePrice Float        // Harga lock saat dibeli dari supplier
+  initialQty    Float        // Jumlah total yang dibeli di awal
+  remainingQty  Float        // Sisa stok aktif yang bisa dipakai untuk Batch
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  batchItems    BatchItem[]
+
+  @@index([sppgId, itemId])
+  @@index([remainingQty])
 }
 
 // ----------------------------------------------------------------------------
@@ -373,6 +406,9 @@ model BatchItem {
   item        SupplierItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
   itemId      String
 
+  inventoryStock   InventoryStock? @relation(fields: [inventoryStockId], references: [id], onDelete: Restrict)
+  inventoryStockId String?
+
   name        String?   // Nama item (e.g., "Nasi 100g", "Ayam Paha 100g")
   unit        String?   // Satuan (e.g., "kg", "pcs", "liter")
   quantity    Float
@@ -385,6 +421,7 @@ model BatchItem {
 
   @@index([batchId])
   @@index([itemId])
+  @@index([inventoryStockId])
 }
 
 // ----------------------------------------------------------------------------

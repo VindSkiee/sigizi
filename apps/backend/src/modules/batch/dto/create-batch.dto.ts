@@ -28,11 +28,6 @@ class BatchItemRequestDto {
   @IsNumber()
   @Min(0.01)
   quantity!: number;
-
-  @ApiProperty({ example: 12000 })
-  @IsNumber()
-  @Min(0)
-  unitPrice!: number;
 }
 
 export class CreateBatchDto {

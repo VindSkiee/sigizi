@@ -53,24 +53,54 @@ export class OrderService {
   async findOne(id: string) {
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: { items: true, supplier: true, sppg: true },
+      include: {
+        items: {
+          include: { inventoryStocks: true },
+        },
+        supplier: true,
+        sppg: true,
+      },
     });
     if (!order) throw new NotFoundException(`Order with ID ${id} not found`);
     return order;
   }
 
   async create(dto: CreateOrderDto, sppgId: string, createdById: string) {
+    // 1. Resolve unitPrice untuk setiap item
+    //    - Jika ada mouId: ambil dari MouItem.agreedPrice
+    //    - Jika tidak: ambil dari SupplierItem.basePrice
+    let mouItems: Map<string, number> = new Map();
+
+    if (dto.mouId) {
+      const mouItemsData = await this.prisma.mouItem.findMany({
+        where: { mouId: dto.mouId },
+      });
+      for (const mi of mouItemsData) {
+        mouItems.set(mi.itemId, mi.agreedPrice);
+      }
+    }
+
     let total = 0;
-    const itemsData = dto.items.map((item) => {
-      const subtotal = item.quantity * item.unitPrice;
+    const itemsData: {
+      itemId: string;
+      quantity: number;
+      unitPrice: number;
+      subtotal: number;
+    }[] = [];
+
+    for (const item of dto.items) {
+      const unitPrice =
+        mouItems.get(item.itemId) ?? (await this.getBasePrice(item.itemId));
+      const subtotal = item.quantity * unitPrice;
       total += subtotal;
-      return {
+
+      itemsData.push({
         itemId: item.itemId,
         quantity: item.quantity,
-        unitPrice: item.unitPrice,
+        unitPrice,
         subtotal,
-      };
-    });
+      });
+    }
 
     return this.prisma.order.create({
       data: {
@@ -95,9 +125,51 @@ export class OrderService {
         `Cannot transition from ${order.status} to ${newStatus}`,
       );
     }
+
+    // Ketika Order → COMPLETED: buat InventoryStock dari setiap OrderItem
+    if (newStatus === OS.COMPLETED) {
+      return this.prisma.$transaction(async (tx) => {
+        // Update status order
+        await tx.order.update({
+          where: { id },
+          data: { status: newStatus },
+        });
+
+        // Buat InventoryStock untuk setiap OrderItem
+        for (const orderItem of order.items!) {
+          await tx.inventoryStock.create({
+            data: {
+              sppgId: order.sppgId,
+              itemId: orderItem.itemId,
+              orderItemId: orderItem.id,
+              purchasePrice: orderItem.unitPrice,
+              initialQty: orderItem.quantity,
+              remainingQty: orderItem.quantity,
+            },
+          });
+        }
+
+        return tx.order.findUnique({
+          where: { id },
+          include: { items: true },
+        });
+      });
+    }
+
     return this.prisma.order.update({
       where: { id },
       data: { status: newStatus },
     });
+  }
+
+  private async getBasePrice(itemId: string): Promise<number> {
+    const item = await this.prisma.supplierItem.findUnique({
+      where: { id: itemId },
+      select: { basePrice: true },
+    });
+    if (!item) {
+      throw new NotFoundException(`SupplierItem with ID ${itemId} not found`);
+    }
+    return item.basePrice;
   }
 }
