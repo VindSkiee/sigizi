@@ -1,6 +1,7 @@
 import { Module, MiddlewareConsumer, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { EventEmitterModule } from "@nestjs/event-emitter";
+import { ScheduleModule } from "@nestjs/schedule";
 import { AuthModule } from "./modules/auth/auth.module";
 import { SppgModule } from "./modules/sppg/sppg.module";
 import { SupplierModule } from "./modules/supplier/supplier.module";
@@ -27,6 +28,7 @@ import { HealthModule } from "./health/health.module";
       envFilePath: "../../.env",
     }),
     EventEmitterModule.forRoot(),
+    ScheduleModule.forRoot(),
     LoggerModule,
     PrismaModule,
     AuthModule,

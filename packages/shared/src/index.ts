@@ -41,6 +41,26 @@ export enum StockSource {
   BATCH_RETURN = "BATCH_RETURN",
 }
 
+export enum OperationalExpenseCategory {
+  TRANSPORTATION = "TRANSPORTATION",
+  FUEL = "FUEL",
+  VEHICLE_MAINTENANCE = "VEHICLE_MAINTENANCE",
+  ADMINISTRATIVE = "ADMINISTRATIVE",
+  UTILITIES = "UTILITIES",
+  OTHER = "OTHER",
+}
+
+export enum ReportType {
+  DAILY = "DAILY",
+  WEEKLY = "WEEKLY",
+  MONTHLY = "MONTHLY",
+}
+
+export enum ReportSnapshotStatus {
+  DRAFT = "DRAFT",
+  FINAL = "FINAL",
+}
+
 // ============================================================================
 // Core Models
 // ============================================================================
@@ -365,6 +385,93 @@ export interface Complaint {
 }
 
 // ============================================================================
+// Financial Reporting
+// ============================================================================
+
+export type ExpenseSource = "COGS" | "PROCUREMENT" | "OPEX" | "ALL";
+
+export interface FinancialLogEntry {
+  source: Exclude<ExpenseSource, "ALL">;
+  date: string;
+  referenceId: string;
+  title: string;
+  description?: string | null;
+  amount: number;
+  meta?: Record<string, unknown>;
+}
+
+export interface ReportBreakdownSection {
+  total: number;
+  items: FinancialLogEntry[];
+}
+
+export interface OfficialReportTotals {
+  totalPortions: number;
+  totalCogs: number;
+  totalProcured: number;
+  totalOpex: number;
+  budgetVariance: number;
+}
+
+export interface OfficialReportPayload {
+  id: string;
+  sppgId: string;
+  sppgName: string | null;
+  type: ReportType;
+  periodKey: string;
+  startDate: string;
+  endDate: string;
+  status: ReportSnapshotStatus;
+  totals: OfficialReportTotals;
+  breakdown: {
+    cogs: ReportBreakdownSection;
+    procurement: ReportBreakdownSection;
+    opex: ReportBreakdownSection;
+  };
+  pdfPath?: string | null;
+  pdfHash?: string | null;
+  generatedAt: string;
+  finalizedAt: string;
+}
+
+export interface OperationalExpense {
+  id: string;
+  sppgId: string;
+  category: OperationalExpenseCategory;
+  amount: number;
+  expenseDate: Date;
+  description: string;
+  evidenceUrl?: string;
+  notes?: string;
+  createdById: string;
+  updatedById?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ReportSnapshot {
+  id: string;
+  sppgId: string;
+  type: ReportType;
+  periodKey: string;
+  startDate: Date;
+  endDate: Date;
+  status: ReportSnapshotStatus;
+  totalPortions: number;
+  totalCogs: number;
+  totalProcured: number;
+  totalOpex: number;
+  budgetVariance: number;
+  payload?: OfficialReportPayload;
+  pdfPath?: string;
+  pdfHash?: string;
+  generatedById: string;
+  generatedAt: Date;
+  finalizedAt: Date;
+  updatedAt: Date;
+}
+
+// ============================================================================
 // Market Analytics
 // ============================================================================
 
@@ -452,6 +559,22 @@ export interface ReportSummary {
   totalCost: number;
   totalPortions: number;
   avgCostPerPortion: number;
+}
+
+export interface FinancialReportSummary {
+  totalPortions: number;
+  totalCogs: number;
+  totalProcured: number;
+  totalOpex: number;
+  budgetVariance: number;
+}
+
+export interface ReportExpenseBreakdown {
+  source: ExpenseSource;
+  startDate: string;
+  endDate: string;
+  items: FinancialLogEntry[];
+  summary: FinancialReportSummary;
 }
 
 export interface ComplaintSummary {
@@ -703,6 +826,7 @@ export const COMPLAINT_MAX_DESCRIPTION_LENGTH = 1000;
 
 export const DAILY_REPORT_NAME = "Laporan Harian";
 export const WEEKLY_REPORT_NAME = "Laporan Mingguan";
+export const MONTHLY_REPORT_NAME = "Laporan Bulanan";
 
 // ============================================================================
 // Role Permissions

@@ -556,12 +556,43 @@ Content-Type: application/json
 
 ## Reports
 
-### Get Daily Report
+All report endpoints require `Role.SPPG_ADMIN`.
+
+### Get Daily Official Report
 
 ```
 GET /api/reports/daily?date=2026-07-09
 Authorization: Bearer <token>
 ```
+
+### Get Weekly Official Report
+
+```
+GET /api/reports/weekly?week=2026-W28
+Authorization: Bearer <token>
+```
+
+### Get Monthly Official Report
+
+```
+GET /api/reports/monthly?month=2026-07
+Authorization: Bearer <token>
+```
+
+### Get Granular Expense Breakdown
+
+```
+GET /api/reports/expenses?source=ALL&startDate=2026-07-01&endDate=2026-07-31
+Authorization: Bearer <token>
+```
+
+**Query Params:**
+
+| Param       | Type   | Required | Description |
+| ----------- | ------ | -------- | ----------- |
+| `source`    | string | No       | `COGS`, `PROCUREMENT`, `OPEX`, `ALL` (default: `ALL`) |
+| `startDate` | string | Ya       | ISO date `YYYY-MM-DD` |
+| `endDate`   | string | Ya       | ISO date `YYYY-MM-DD` |
 
 **Response:**
 
@@ -569,39 +600,78 @@ Authorization: Bearer <token>
 {
   "success": true,
   "data": {
-    "date": "2026-07-09",
-    "sppg": "SPPG Purwakarta",
+    "source": "ALL",
+    "sppgId": "clx...",
+    "startDate": "2026-07-01T00:00:00.000Z",
+    "endDate": "2026-07-31T00:00:00.000Z",
+    "items": [
+      {
+        "source": "COGS",
+        "date": "2026-07-09T00:00:00.000Z",
+        "referenceId": "clx...",
+        "title": "Beras Premium",
+        "description": "Batch BATCH-20260709-001",
+        "amount": 230000,
+        "meta": {
+          "batchId": "clx...",
+          "batchNumber": "BATCH-20260709-001"
+        }
+      }
+    ],
     "summary": {
-      "totalBatches": 5,
-      "totalCost": 4000000,
-      "totalPortions": 500,
-      "avgCostPerPortion": 8000
-    },
-    "batches": [...],
-    "complaints": {
-      "total": 2,
-      "pending": 1,
-      "resolved": 1
+      "totalCogs": 4000000,
+      "totalProcured": 1850000,
+      "totalOpex": 250000,
+      "grandTotal": 6100000
     }
   }
 }
 ```
 
-### Get Weekly Report
+### Report Snapshot Download
 
 ```
-GET /api/reports/weekly?week=2026-W28
+GET /api/reports/:id/download
 Authorization: Bearer <token>
 ```
 
-### Download Report PDF
+**Response:** PDF file streamed from local storage
+
+### Operational Expense CRUD
 
 ```
-GET /api/reports/download/:reportId
-Authorization: Bearer <token>
+GET /api/reports/operational-expenses
+POST /api/reports/operational-expenses
+GET /api/reports/operational-expenses/:id
+PUT /api/reports/operational-expenses/:id
+DELETE /api/reports/operational-expenses/:id
 ```
 
-**Response:** PDF file (binary)
+**Access:** `SPPG_ADMIN` only
+
+**Create / Update Request Body:**
+
+```json
+{
+  "category": "FUEL",
+  "amount": 150000,
+  "expenseDate": "2026-07-13",
+  "description": "Bensin pengantaran harian",
+  "evidenceUrl": "https://storage.local/evidence/expense-1.jpg",
+  "notes": "Disetujui bendahara"
+}
+```
+
+**Category values:** `TRANSPORTATION`, `FUEL`, `VEHICLE_MAINTENANCE`, `ADMINISTRATIVE`, `UTILITIES`, `OTHER`
+
+**Financial taxonomy used by reports:**
+
+| Metric | Source | Formula |
+| ------ | ------ | ------- |
+| `totalCogs` | BatchItem | Sum of `subtotal` |
+| `totalProcured` | Order COMPLETED | Sum of `total` |
+| `totalOpex` | OperationalExpense | Sum of `amount` |
+| `budgetVariance` | Official report | `(totalPortions * 10000) - totalCogs` |
 
 ---
 
@@ -1467,6 +1537,7 @@ All protected endpoints require `Authorization: Bearer <token>` header.
 | Complaint Submit  |      ❌       |     ❌      |     ✅      |
 | Complaint View    |   ✅ (own)    |     ❌      |     ❌      |
 | Reports           |   ✅ (own)    |     ❌      |     ❌      |
+| OpEx Reports      |   ✅ (own)    |     ❌      |     ❌      |
 | Order Create      |      ✅       |     ❌      |     ❌      |
 | Order View        |   ✅ (own)    |  ✅ (own)   |     ❌      |
 | Order Confirm     |      ❌       |  ✅ (own)   |     ❌      |

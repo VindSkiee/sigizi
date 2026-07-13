@@ -50,6 +50,26 @@ enum StockSource {
   BATCH_RETURN
 }
 
+enum OperationalExpenseCategory {
+  TRANSPORTATION
+  FUEL
+  VEHICLE_MAINTENANCE
+  ADMINISTRATIVE
+  UTILITIES
+  OTHER
+}
+
+enum ReportType {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum ReportSnapshotStatus {
+  DRAFT
+  FINAL
+}
+
 // ============================================================================
 // MODELS
 // ============================================================================
@@ -81,6 +101,9 @@ model User {
   updatedBatches     Batch[]              @relation("BatchUpdatedBy")
   createdBatchItems  BatchItem[]
   createdMous        Mou[]                @relation("MouCreatedBy")
+  createdOperationalExpenses OperationalExpense[] @relation("OperationalExpenseCreatedBy")
+  updatedOperationalExpenses OperationalExpense[] @relation("OperationalExpenseUpdatedBy")
+  generatedReportSnapshots   ReportSnapshot[]     @relation("ReportSnapshotGeneratedBy")
 
   // Inventory audit relationships
   createdInventoryStocks InventoryStock[]
@@ -121,6 +144,8 @@ model Sppg {
   orders          Order[]
   mous            Mou[]
   inventoryStocks InventoryStock[]
+  operationalExpenses OperationalExpense[]
+  reportSnapshots     ReportSnapshot[]
 }
 
 // ----------------------------------------------------------------------------
@@ -534,4 +559,71 @@ model Complaint {
   @@index([batchId])
   @@index([status])
   @@index([reportKey])
+}
+
+// ----------------------------------------------------------------------------
+// 13. OPERATIONAL EXPENSE — Pengeluaran operasional non-batch/non-order
+// ----------------------------------------------------------------------------
+
+model OperationalExpense {
+  id          String                     @id @default(cuid())
+  sppg        Sppg                       @relation(fields: [sppgId], references: [id], onDelete: Restrict)
+  sppgId      String
+
+  category    OperationalExpenseCategory
+  amount      Float
+  expenseDate DateTime
+  description String
+  evidenceUrl String?
+  notes       String?
+
+  createdBy   User   @relation("OperationalExpenseCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById String
+  updatedBy   User?  @relation("OperationalExpenseUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedById String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([sppgId, expenseDate])
+  @@index([category])
+  @@index([createdById])
+}
+
+// ----------------------------------------------------------------------------
+// 14. REPORT SNAPSHOT — Immutable report result + PDF pointer
+// ----------------------------------------------------------------------------
+
+model ReportSnapshot {
+  id           String               @id @default(cuid())
+  sppg         Sppg                 @relation(fields: [sppgId], references: [id], onDelete: Restrict)
+  sppgId       String
+
+  type         ReportType
+  periodKey    String
+  startDate    DateTime
+  endDate      DateTime
+  status       ReportSnapshotStatus @default(FINAL)
+
+  totalPortions Int    @default(0)
+  totalCogs     Float  @default(0)
+  totalProcured Float  @default(0)
+  totalOpex     Float  @default(0)
+  budgetVariance Float @default(0)
+
+  payload      Json?
+  pdfPath      String?
+  pdfHash      String?
+
+  generatedBy   User   @relation("ReportSnapshotGeneratedBy", fields: [generatedById], references: [id], onDelete: Restrict)
+  generatedById String
+
+  generatedAt  DateTime @default(now())
+  finalizedAt  DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([sppgId, type, periodKey])
+  @@index([sppgId, type, status])
+  @@index([startDate])
+  @@index([endDate])
 }
