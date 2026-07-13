@@ -127,7 +127,7 @@ async function main() {
   });
 
   // ============================================================================
-  // 4. Create Supplier Items (with minThreshold for low stock alerts)
+  // 4. Create Supplier Items
   // ============================================================================
 
   const items = [
@@ -138,7 +138,6 @@ async function main() {
       description: "Beras premium kualitas terbaik untuk masakan sehari-hari",
       minOrderQty: 5,
       orderStep: 0.5,
-      minThreshold: 50, // Low stock alert jika sisa < 50 kg
       supplierId: supplier1.id,
     },
     {
@@ -148,7 +147,6 @@ async function main() {
       description: "Ayam potong segar pilihan",
       minOrderQty: 2,
       orderStep: 0.5,
-      minThreshold: 20, // Low stock alert jika sisa < 20 kg
       supplierId: supplier1.id,
     },
     {
@@ -158,7 +156,6 @@ async function main() {
       description: "Bayam segar dari petani lokal",
       minOrderQty: 1,
       orderStep: 0.5,
-      minThreshold: 10, // Low stock alert jika sisa < 10 kg
       supplierId: supplier1.id,
     },
     {
@@ -168,7 +165,6 @@ async function main() {
       description: "Beras premium harga bersaing",
       minOrderQty: 10,
       orderStep: 1,
-      minThreshold: 50,
       supplierId: supplier2.id,
     },
     {
@@ -178,7 +174,6 @@ async function main() {
       description: "Ayam potong segar",
       minOrderQty: 3,
       orderStep: 0.5,
-      minThreshold: 20,
       supplierId: supplier2.id,
     },
     {
@@ -188,7 +183,6 @@ async function main() {
       description: "Telur ayam kampung segar",
       minOrderQty: 1,
       orderStep: 0.5,
-      minThreshold: 30,
       supplierId: supplier2.id,
     },
     {
@@ -198,7 +192,6 @@ async function main() {
       description: "Beras organik premium",
       minOrderQty: 5,
       orderStep: 1,
-      minThreshold: 50,
       supplierId: supplier3.id,
     },
     {
@@ -208,7 +201,6 @@ async function main() {
       description: "Kangkung segar dari kebun",
       minOrderQty: 1,
       orderStep: 0.5,
-      minThreshold: 10,
       supplierId: supplier3.id,
     },
     {
@@ -218,7 +210,6 @@ async function main() {
       description: "Wortel segar kaya vitamin A",
       minOrderQty: 2,
       orderStep: 0.5,
-      minThreshold: 15,
       supplierId: supplier3.id,
     },
   ];
@@ -231,21 +222,10 @@ async function main() {
     supplierId: string;
   }[] = [];
   for (const item of items) {
-    const created = await prisma.supplierItem.upsert({
-      where: { id: `clx00000000000000000000i${createdItems.length + 1}` },
-      update: {},
-      create: {
-        id: `clx00000000000000000000i${createdItems.length + 1}`,
-        ...item,
-      },
-    });
+    const created = await prisma.supplierItem.create({ data: item });
     createdItems.push(created);
   }
-  console.log(
-    "✅ Supplier items created:",
-    createdItems.length,
-    "items (with minThreshold)",
-  );
+  console.log("✅ Supplier items created:", createdItems.length, "items");
 
   // ============================================================================
   // 5. Create Beneficiaries
@@ -367,19 +347,15 @@ async function main() {
   console.log("✅ MoU upserted:", mou.mouNumber, "- Status:", mou.status);
 
   // ============================================================================
-  // 7. Create Orders
+  // 7. Create Order (linked to MoU)
   // ============================================================================
 
-  // Order 1: PENDING (untuk demo pending state)
   const order1 = await prisma.order.upsert({
     where: { id: "clx00000000000000000000o1" },
     update: {},
     create: {
       id: "clx00000000000000000000o1",
-      status: "PENDING",
       total: 615000,
-      notes: "Pesanan bahan baku minggu ini",
-      expectedDeliveryDate: new Date("2026-07-15"),
       sppgId: sppg.id,
       supplierId: supplier1.id,
       createdById: admin.id,
@@ -412,209 +388,14 @@ async function main() {
   console.log(
     "✅ Order 1 upserted:",
     order1.id,
-    "Status:",
-    order1.status,
     "linked to MoU:",
     mou.mouNumber,
   );
 
-  // Order 2: COMPLETED (untuk demo flow + InventoryStock creation)
-  const order2 = await prisma.order.upsert({
-    where: { id: "clx00000000000000000000o2" },
-    update: {},
-    create: {
-      id: "clx00000000000000000000o2",
-      status: "COMPLETED",
-      total: 567500,
-      notes: "Pesanan sudah selesai dan dibayar",
-      expectedDeliveryDate: new Date("2026-07-12"),
-      actualDeliveryDate: new Date("2026-07-12"),
-      paidAt: new Date("2026-07-13T08:00:00Z"),
-      paymentEvidenceUrl: "/uploads/bukti-bayar/order2.jpg",
-      sppgId: sppg.id,
-      supplierId: supplier1.id,
-      createdById: admin.id,
-      mouId: mou.id,
-      items: {
-        create: [
-          {
-            itemId: createdItems[0].id, // Beras Premium
-            quantity: 15,
-            unitPrice: 11500,
-            subtotal: 172500,
-          },
-          {
-            itemId: createdItems[1].id, // Ayam Potong
-            quantity: 5,
-            unitPrice: 34000,
-            subtotal: 170000,
-          },
-          {
-            itemId: createdItems[2].id, // Sayur Bayam
-            quantity: 29,
-            unitPrice: 7500,
-            subtotal: 217500,
-          },
-        ],
-      },
-    },
-    include: { items: true },
-  });
-  console.log(
-    "✅ Order 2 upserted:",
-    order2.id,
-    "Status:",
-    order2.status,
-    "(COMPLETED with payment)",
-  );
-
-  // Create OrderStatusHistory for Order 2 (COMPLETED)
-  await prisma.orderStatusHistory.upsert({
-    where: { id: "clx00000000000000000000osh1" },
-    update: {},
-    create: {
-      id: "clx00000000000000000000osh1",
-      orderId: order2.id,
-      fromStatus: null,
-      toStatus: "PENDING",
-      changedById: admin.id,
-      notes: "Order berhasil dibuat dan menunggu konfirmasi dari supplier",
-      createdAt: new Date("2026-07-10T08:00:00Z"),
-    },
-  });
-  await prisma.orderStatusHistory.upsert({
-    where: { id: "clx00000000000000000000osh2" },
-    update: {},
-    create: {
-      id: "clx00000000000000000000osh2",
-      orderId: order2.id,
-      fromStatus: "PENDING",
-      toStatus: "CONFIRMED",
-      changedById: supplierUser.id,
-      notes: "Konfirmasi dari supplier, barang akan dikirim sesuai jadwal",
-      createdAt: new Date("2026-07-10T10:00:00Z"),
-    },
-  });
-  await prisma.orderStatusHistory.upsert({
-    where: { id: "clx00000000000000000000osh3" },
-    update: {},
-    create: {
-      id: "clx00000000000000000000osh3",
-      orderId: order2.id,
-      fromStatus: "CONFIRMED",
-      toStatus: "DELIVERED",
-      changedById: supplierUser.id,
-      notes: "Barang sudah dikirim, menunggu verifikasi dan pembayaran",
-      createdAt: new Date("2026-07-12T07:00:00Z"),
-    },
-  });
-  await prisma.orderStatusHistory.upsert({
-    where: { id: "clx00000000000000000000osh4" },
-    update: {},
-    create: {
-      id: "clx00000000000000000000osh4",
-      orderId: order2.id,
-      fromStatus: "DELIVERED",
-      toStatus: "COMPLETED",
-      changedById: admin.id,
-      notes: "Pembayaran telah diverifikasi dan diselesaikan",
-      evidenceUrl: "/uploads/bukti-bayar/order2.jpg",
-      createdAt: new Date("2026-07-13T08:00:00Z"),
-    },
-  });
-  console.log(
-    "✅ Order 2 status history created (4 entries: PENDING → CONFIRMED → DELIVERED → COMPLETED)",
-  );
-
   // ============================================================================
-  // 8. Create InventoryStock lots
+  // 8. Create Batch (with BatchItems)
   // ============================================================================
 
-  // Lot 1: SYSTEM_ORDER dari Order 2 - Beras Premium
-  const invLot1 = await prisma.inventoryStock.upsert({
-    where: { id: "clx00000000000000000000inv1" },
-    update: {},
-    create: {
-      id: "clx00000000000000000000inv1",
-      sppgId: sppg.id,
-      itemId: createdItems[0].id, // Beras Premium
-      orderItemId: order2.items[0].id,
-      source: "SYSTEM_ORDER",
-      purchasePrice: 11500, // Harga lock dari MoU
-      initialQty: 15,
-      remainingQty: 15, // Belum terpakai
-      createdById: admin.id,
-      notes: "Stok dari order ORDER-20260710-002 (Beras Premium 15kg)",
-    },
-  });
-  console.log(
-    "✅ Inventory lot 1 created: Beras Premium (SYSTEM_ORDER, 15kg @ Rp11,500)",
-  );
-
-  // Lot 2: SYSTEM_ORDER dari Order 2 - Ayam Potong
-  const invLot2 = await prisma.inventoryStock.upsert({
-    where: { id: "clx00000000000000000000inv2" },
-    update: {},
-    create: {
-      id: "clx00000000000000000000inv2",
-      sppgId: sppg.id,
-      itemId: createdItems[1].id, // Ayam Potong
-      orderItemId: order2.items[1].id,
-      source: "SYSTEM_ORDER",
-      purchasePrice: 34000, // Harga lock dari MoU
-      initialQty: 5,
-      remainingQty: 5, // Belum terpakai
-      createdById: admin.id,
-      notes: "Stok dari order ORDER-20260710-002 (Ayam Potong 5kg)",
-    },
-  });
-  console.log(
-    "✅ Inventory lot 2 created: Ayam Potong (SYSTEM_ORDER, 5kg @ Rp34,000)",
-  );
-
-  // Lot 3: MANUAL_ADJUSTMENT - Sayur Bayam (stok manual dari supplier)
-  const invLot3 = await prisma.inventoryStock.upsert({
-    where: { id: "clx00000000000000000000inv3" },
-    update: {},
-    create: {
-      id: "clx00000000000000000000inv3",
-      sppgId: sppg.id,
-      itemId: createdItems[2].id, // Sayur Bayam
-      source: "MANUAL_ADJUSTMENT",
-      purchasePrice: 7500,
-      initialQty: 30,
-      remainingQty: 15, // Sebagian sudah terpakai (15kg untuk batch1)
-      expiredAt: new Date("2026-07-20"), // Perishable: expired dalam 7 hari
-      createdById: admin.id,
-      notes: "Stok manual dari petani lokal (bayam segar)",
-    },
-  });
-  console.log(
-    "✅ Inventory lot 3 created: Sayur Bayam (MANUAL_ADJUSTMENT, 30kg @ Rp7,500, expired 20 Juli)",
-  );
-
-  // Create InventoryAdjustmentLog untuk lot 3 (pengurangan karena batch1)
-  await prisma.inventoryAdjustmentLog.upsert({
-    where: { id: "clx00000000000000000000adj1" },
-    update: {},
-    create: {
-      id: "clx00000000000000000000adj1",
-      inventoryStockId: invLot3.id,
-      adjustmentQty: -15, // Pengurangan 15kg untuk batch1
-      reason: "BATCH_CONSUMPTION",
-      description:
-        "Penggunaan stok untuk batch BATCH-20260710-001 (Nasi Ayam Bakar + Sayur Bayam)",
-      changedById: admin.id,
-      createdAt: new Date("2026-07-10T14:00:00Z"),
-    },
-  });
-  console.log("✅ Inventory adjustment log created: -15kg Bayam untuk batch1");
-
-  // ============================================================================
-  // 9. Create Batches
-  // ============================================================================
-
-  // Batch 1: ACTIVE (menggunakan stok dari lot3 - Sayur Bayam)
   const batch1 = await prisma.batch.upsert({
     where: { id: "clx00000000000000000000bt1" },
     update: {},
@@ -632,7 +413,6 @@ async function main() {
       totalBudget: 1500000, // 10000 * 150
       budgetVariance: 0, // Will be computed after creation
       sppgId: sppg.id,
-      status: "ACTIVE",
       createdById: admin.id,
       batchItems: {
         create: [
@@ -641,7 +421,7 @@ async function main() {
             name: "Beras Premium 15kg",
             unit: "kg",
             quantity: 15,
-            unitPrice: 11500, // Hardcoded untuk batch active (bypass FIFO untuk seed)
+            unitPrice: 11500,
             subtotal: 172500,
             createdById: admin.id,
           },
@@ -661,7 +441,6 @@ async function main() {
             quantity: 15,
             unitPrice: 7500,
             subtotal: 112500,
-            inventoryStockId: invLot3.id, // Linked ke lot3
             createdById: admin.id,
           },
         ],
@@ -676,136 +455,22 @@ async function main() {
   });
   if (!batch1WithItems) throw new Error("Batch not found");
 
-  const totalCost1 = batch1WithItems.batchItems.reduce(
+  const totalCost = batch1WithItems.batchItems.reduce(
     (sum, item) => sum + item.subtotal,
     0,
   );
-  const costPerPortion1 = batch1WithItems.beneficiaryCount
-    ? totalCost1 / batch1WithItems.beneficiaryCount
+  const costPerPortion = batch1WithItems.beneficiaryCount
+    ? totalCost / batch1WithItems.beneficiaryCount
     : 0;
 
   await prisma.batch.update({
     where: { id: batch1.id },
-    data: {
-      totalCost: totalCost1,
-      costPerPortion: costPerPortion1,
-      budgetVariance: totalCost1 - 1500000,
-    },
+    data: { totalCost, costPerPortion, budgetVariance: totalCost - 1500000 },
   });
-  console.log(
-    "✅ Batch 1 upserted:",
-    batch1.batchNumber,
-    "Status:",
-    batch1.status,
-    "Total:",
-    totalCost1,
-  );
-
-  // Batch 2: COMPLETED (menggunakan FIFO dari lot1 & lot2)
-  const batch2 = await prisma.batch.upsert({
-    where: { id: "clx00000000000000000000bt2" },
-    update: {},
-    create: {
-      id: "clx00000000000000000000bt2",
-      batchNumber: "BATCH-20260711-001",
-      reportKey: "B8Y3L5N7",
-      menu: "Nasi Putih + Ayam Goreng + Bayam Cah",
-      nutrition: { calories: 520, protein: 30, fat: 18, carbs: 55 },
-      allergens: [],
-      beneficiaryCount: 100,
-      costPerPortion: 0,
-      totalCost: 0,
-      costPerPortionStandard: 10000,
-      totalBudget: 1000000, // 10000 * 100
-      budgetVariance: 0,
-      sppgId: sppg.id,
-      status: "COMPLETED",
-      createdById: admin.id,
-      batchItems: {
-        create: [
-          {
-            itemId: createdItems[0].id, // Beras Premium
-            name: "Beras Premium 10kg",
-            unit: "kg",
-            quantity: 10,
-            unitPrice: 11500, // Harga dari lot1 (FIFO)
-            subtotal: 115000,
-            inventoryStockId: invLot1.id, // Linked ke lot1
-            createdById: admin.id,
-          },
-          {
-            itemId: createdItems[1].id, // Ayam Potong
-            name: "Ayam Potong 4kg",
-            unit: "kg",
-            quantity: 4,
-            unitPrice: 34000, // Harga dari lot2 (FIFO)
-            subtotal: 136000,
-            inventoryStockId: invLot2.id, // Linked ke lot2
-            createdById: admin.id,
-          },
-          {
-            itemId: createdItems[2].id, // Sayur Bayam
-            name: "Sayur Bayam 10kg",
-            unit: "kg",
-            quantity: 10,
-            unitPrice: 7500,
-            subtotal: 75000,
-            createdById: admin.id,
-          },
-        ],
-      },
-    },
-  });
-
-  // Compute totalCost from BatchItems
-  const batch2WithItems = await prisma.batch.findUnique({
-    where: { id: batch2.id },
-    include: { batchItems: true },
-  });
-  if (!batch2WithItems) throw new Error("Batch not found");
-
-  const totalCost2 = batch2WithItems.batchItems.reduce(
-    (sum, item) => sum + item.subtotal,
-    0,
-  );
-  const costPerPortion2 = batch2WithItems.beneficiaryCount
-    ? totalCost2 / batch2WithItems.beneficiaryCount
-    : 0;
-
-  await prisma.batch.update({
-    where: { id: batch2.id },
-    data: {
-      totalCost: totalCost2,
-      costPerPortion: costPerPortion2,
-      budgetVariance: totalCost2 - 1000000,
-    },
-  });
-  console.log(
-    "✅ Batch 2 upserted:",
-    batch2.batchNumber,
-    "Status:",
-    batch2.status,
-    "Total:",
-    totalCost2,
-  );
-
-  // Update InventoryStock remainingQty setelah batch2 menggunakan stok
-  // Lot 1: 15 - 10 = 5 kg tersisa
-  await prisma.inventoryStock.update({
-    where: { id: invLot1.id },
-    data: { remainingQty: 5 },
-  });
-  // Lot 2: 5 - 4 = 1 kg tersisa
-  await prisma.inventoryStock.update({
-    where: { id: invLot2.id },
-    data: { remainingQty: 1 },
-  });
-  console.log(
-    "✅ Inventory stock updated: Lot1 (Beras) remaining 5kg, Lot2 (Ayam) remaining 1kg",
-  );
+  console.log("✅ Batch 1 upserted:", batch1.batchNumber, "Total:", totalCost);
 
   // ============================================================================
-  // 10. Create Sample Complaint
+  // 9. Create Sample Complaint
   // ============================================================================
 
   await prisma.complaint.upsert({
@@ -822,74 +487,6 @@ async function main() {
   console.log("✅ Complaint upserted");
 
   // ============================================================================
-  // 11. Create Operational Expenses (for financial report demo)
-  // ============================================================================
-
-  await prisma.operationalExpense.upsert({
-    where: { id: "clx00000000000000000000ope1" },
-    update: {},
-    create: {
-      id: "clx00000000000000000000ope1",
-      sppgId: sppg.id,
-      category: "TRANSPORTATION",
-      amount: 125000,
-      expenseDate: new Date("2026-07-10T09:00:00Z"),
-      description: "Biaya transportasi pengambilan bahan baku ke supplier",
-      evidenceUrl: "/uploads/opex/transport-20260710.jpg",
-      notes: "Demo biaya transportasi harian",
-      createdById: admin.id,
-    },
-  });
-
-  await prisma.operationalExpense.upsert({
-    where: { id: "clx00000000000000000000ope2" },
-    update: {},
-    create: {
-      id: "clx00000000000000000000ope2",
-      sppgId: sppg.id,
-      category: "FUEL",
-      amount: 175000,
-      expenseDate: new Date("2026-07-11T14:00:00Z"),
-      description: "Pengeluaran bensin mobil pengantar",
-      evidenceUrl: "/uploads/opex/fuel-20260711.jpg",
-      notes: "Demo biaya bensin mingguan",
-      createdById: admin.id,
-    },
-  });
-
-  await prisma.operationalExpense.upsert({
-    where: { id: "clx00000000000000000000ope3" },
-    update: {},
-    create: {
-      id: "clx00000000000000000000ope3",
-      sppgId: sppg.id,
-      category: "VEHICLE_MAINTENANCE",
-      amount: 350000,
-      expenseDate: new Date("2026-07-12T11:30:00Z"),
-      description: "Maintenance kendaraan pengantaran",
-      evidenceUrl: "/uploads/opex/maintenance-20260712.jpg",
-      notes: "Servis berkala mobil pengantar",
-      createdById: admin.id,
-    },
-  });
-
-  await prisma.operationalExpense.upsert({
-    where: { id: "clx00000000000000000000ope4" },
-    update: {},
-    create: {
-      id: "clx00000000000000000000ope4",
-      sppgId: sppg.id,
-      category: "ADMINISTRATIVE",
-      amount: 90000,
-      expenseDate: new Date("2026-07-13T08:30:00Z"),
-      description: "Pengeluaran administrasi operasional",
-      notes: "ATK dan fotokopi dokumen laporan",
-      createdById: admin.id,
-    },
-  });
-  console.log("✅ Operational expenses upserted: 4 demo records");
-
-  // ============================================================================
   // Summary
   // ============================================================================
 
@@ -898,18 +495,14 @@ async function main() {
   console.log("   - 1 SPPG (SPPG Purwakarta) — with GPS coordinates");
   console.log("   - 2 Users (1 admin, 1 supplier)");
   console.log("   - 3 Suppliers — with NIB + structured address + GPS");
-  console.log("   - 9 Supplier Items (with minThreshold for low stock alerts)");
+  console.log(
+    "   - 9 Supplier Items (with description, minOrderQty, orderStep)",
+  );
   console.log("   - 4 Beneficiaries");
   console.log("   - 1 MoU (ACTIVE) — partnership with agreed prices");
-  console.log("   - 2 Orders (1 PENDING, 1 COMPLETED with payment)");
-  console.log(
-    "   - 3 InventoryStock lots (2 SYSTEM_ORDER, 1 MANUAL_ADJUSTMENT)",
-  );
-  console.log("   - 1 InventoryAdjustmentLog entry");
-  console.log("   - 4 OrderStatusHistory entries (for COMPLETED order)");
-  console.log("   - 2 Batches (1 ACTIVE, 1 COMPLETED)");
+  console.log("   - 1 Order (3 items, linked to MoU)");
+  console.log("   - 1 Batch (3 BatchItems)");
   console.log("   - 1 Complaint");
-  console.log("   - 4 OperationalExpense records (transport, fuel, maintenance, admin)");
   console.log("\n📍 GPS Data:");
   console.log("   - SPPG Purwakarta: -6.5547, 107.4461");
   console.log("   - Supplier 1 (Wanayasa): -6.5025, 107.4523 (~6km)");
@@ -917,42 +510,13 @@ async function main() {
   console.log("   - Supplier 3 (Subang): -6.5703, 107.7634 (~34km)");
   console.log("\n💰 Cost Verification:");
   console.log(
-    "   - Batch 1 (ACTIVE) totalCost computed from BatchItems: Rp",
-    totalCost1.toLocaleString(),
+    "   - Batch totalCost computed from BatchItems: Rp",
+    totalCost.toLocaleString(),
   );
   console.log(
-    "   - Batch 1 costPerPortion computed: Rp",
-    costPerPortion1.toLocaleString(),
+    "   - costPerPortion computed: Rp",
+    costPerPortion.toLocaleString(),
   );
-  console.log(
-    "   - Batch 2 (COMPLETED) totalCost computed from BatchItems: Rp",
-    totalCost2.toLocaleString(),
-  );
-  console.log(
-    "   - Batch 2 costPerPortion computed: Rp",
-    costPerPortion2.toLocaleString(),
-  );
-  console.log("\n📦 Inventory Stock Status:");
-  console.log(
-    "   - Lot 1 (Beras Premium): 5kg remaining dari 15kg (10kg terpakai untuk batch2)",
-  );
-  console.log(
-    "   - Lot 2 (Ayam Potong): 1kg remaining dari 5kg (4kg terpakai untuk batch2)",
-  );
-  console.log(
-    "   - Lot 3 (Sayur Bayam): 15kg remaining dari 30kg (15kg terpakai untuk batch1)",
-  );
-  console.log("   - Lot 3 expiredAt: 20 Juli 2026 (perishable)");
-  console.log("\n🔄 Order Workflow Demo:");
-  console.log("   - Order 1 (PENDING): Menunggu konfirmasi supplier");
-  console.log(
-    "   - Order 2 (COMPLETED): Full flow PENDING → CONFIRMED → DELIVERED → COMPLETED",
-  );
-  console.log("     → InventoryStock otomatis dibuat saat COMPLETED");
-  console.log("     → Status history: 4 entries tercatat");
-  console.log("\n📄 Report Demo Data:");
-  console.log("   - Daily / weekly / monthly reports now have COGS, procurement, and OPEX samples");
-  console.log("   - ReportSnapshot will be created at runtime by the report flow or scheduler");
 }
 
 main()

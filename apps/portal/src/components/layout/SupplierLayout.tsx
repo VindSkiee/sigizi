@@ -9,7 +9,7 @@ import {
   Package,
   ShoppingCart,
   FileText,
-  Network,
+  Building2,
   LogOut,
 } from "lucide-react";
 
@@ -22,7 +22,7 @@ const navItems = [
   { name: "Katalog Produk", href: "/supplier/katalog", icon: Package },
   { name: "Pesanan Masuk", href: "/supplier/pesanan", icon: ShoppingCart },
   { name: "MoU & Kontrak", href: "/supplier/mou", icon: FileText },
-  { name: "Profil", href: "/supplier/profil", icon: Network },
+  { name: "Profil", href: "/supplier/profil", icon: Building2 },
 ];
 
 export default function SupplierLayout({ children }: SupplierLayoutProps) {

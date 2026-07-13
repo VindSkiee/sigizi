@@ -28,6 +28,7 @@ const MOCK_BATCHES: BatchManagement[] = [
   {
     id: '1',
     batchNumber: '#BTCH-003',
+    reportKey: 'A7X9K2M4',
     status: 'ACTIVE',
     beneficiaryId: '3',
     beneficiaryName: 'SMPN 03 Jakarta',
@@ -47,6 +48,7 @@ const MOCK_BATCHES: BatchManagement[] = [
   {
     id: '2',
     batchNumber: '#BTCH-002',
+    reportKey: 'B3F7N1P5',
     status: 'COMPLETED',
     beneficiaryId: '2',
     beneficiaryName: 'SDN 02 Palmerah',
@@ -66,6 +68,7 @@ const MOCK_BATCHES: BatchManagement[] = [
   {
     id: '3',
     batchNumber: '#BTCH-001',
+    reportKey: 'C5H2R8X1',
     status: 'CANCELLED',
     beneficiaryId: '1',
     beneficiaryName: 'SDN 01 Kebon Jeruk',
@@ -123,13 +126,19 @@ export default function BatchManagementPage() {
   };
 
   const handleCreateBatch = (
-    newBatch: Omit<BatchManagement, 'id' | 'batchNumber' | 'createdAt'>
+    newBatch: Omit<BatchManagement, 'id' | 'batchNumber' | 'reportKey' | 'createdAt'>
   ) => {
     const batchNumber = `#BTCH-${String(batches.length).padStart(3, '0')}`;
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let reportKey = '';
+    for (let i = 0; i < 8; i++) {
+      reportKey += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
     const batch: BatchManagement = {
       ...newBatch,
       id: String(batches.length + 1),
       batchNumber,
+      reportKey,
       createdAt: new Date().toISOString(),
     };
     setBatches((prev) => [batch, ...prev]);

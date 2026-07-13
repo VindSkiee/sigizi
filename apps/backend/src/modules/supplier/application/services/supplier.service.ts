@@ -47,7 +47,7 @@ export class SupplierService {
   async findOne(id: string) {
     const supplier = await this.repository.findById(id);
     if (!supplier) {
-      throw new NotFoundException(`Supplier dengan ID ${id} tidak ditemukan`);
+      throw new NotFoundException(`Supplier with ID ${id} not found`);
     }
     return supplier;
   }
@@ -67,7 +67,7 @@ export class SupplierService {
   async update(id: string, dto: UpdateSupplierDto) {
     const existing = await this.repository.findById(id);
     if (!existing) {
-      throw new NotFoundException(`Supplier dengan ID ${id} tidak ditemukan`);
+      throw new NotFoundException(`Supplier with ID ${id} not found`);
     }
     return this.repository.update(id, dto);
   }
@@ -75,9 +75,7 @@ export class SupplierService {
   async updateProfile(supplierId: string, dto: UpdateSupplierProfileDto) {
     const existing = await this.repository.findById(supplierId);
     if (!existing) {
-      throw new NotFoundException(
-        `Supplier dengan ID ${supplierId} tidak ditemukan`,
-      );
+      throw new NotFoundException(`Supplier with ID ${supplierId} not found`);
     }
     return this.repository.update(supplierId, dto);
   }
@@ -85,7 +83,7 @@ export class SupplierService {
   async remove(id: string) {
     const existing = await this.repository.findById(id);
     if (!existing) {
-      throw new NotFoundException(`Supplier dengan ID ${id} tidak ditemukan`);
+      throw new NotFoundException(`Supplier with ID ${id} not found`);
     }
     await this.repository.delete(id);
   }

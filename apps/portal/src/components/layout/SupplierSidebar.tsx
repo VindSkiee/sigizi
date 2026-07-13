@@ -3,14 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Package, ClipboardList, FileText, User, Zap, Globe } from 'lucide-react';
+import { Home, Package, ClipboardList, FileText, Building2, Zap, Globe } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: '/supplier', icon: Home },
   { name: 'Katalog Produk', href: '/supplier/katalog', icon: Package },
   { name: 'Pesanan Baru', href: '/supplier/pesanan', icon: ClipboardList },
   { name: 'MoU Aktif', href: '/supplier/mou', icon: FileText },
-  { name: 'Profil', href: '/supplier/profil', icon: User },
+  { name: 'Profil', href: '/supplier/profil', icon: Building2 },
 ];
 
 export function SupplierSidebar() {

@@ -1,16 +1,25 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
+import { MapPin } from "lucide-react";
 import { MarketFilter, DEFAULT_FILTER } from "./types";
 import { REGIONS } from "./regions";
 import { MOCK_ITEM_NAMES } from "./mockData";
 
+interface AdminLocation {
+  latitude: number;
+  longitude: number;
+  name: string;
+}
+
 interface MarketFilterBarProps {
   onSearch: (filter: MarketFilter) => void;
   isLoading: boolean;
+  adminLocation?: AdminLocation;
 }
 
-export function MarketFilterBar({ onSearch, isLoading }: MarketFilterBarProps) {
+export function MarketFilterBar({ onSearch, isLoading, adminLocation }: MarketFilterBarProps) {
   const [filter, setFilter] = useState<MarketFilter>(DEFAULT_FILTER);
 
   const selectedRegion = useMemo(
@@ -46,7 +55,26 @@ export function MarketFilterBar({ onSearch, isLoading }: MarketFilterBarProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+    <div className="mb-6">
+      {adminLocation && (
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
+          <MapPin className="w-4 h-4 text-primary-600" />
+          <span>
+            Lokasi: <strong>{adminLocation.name}</strong>
+          </span>
+          <span className="text-gray-300">|</span>
+          <span className="font-mono text-xs text-gray-500">
+            {adminLocation.latitude.toFixed(4)}, {adminLocation.longitude.toFixed(4)}
+          </span>
+          <Link
+            href="/admin/profile"
+            className="text-primary-600 hover:underline text-xs ml-1"
+          >
+            [Ganti]
+          </Link>
+        </div>
+      )}
+      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Provinsi */}
         <div>
@@ -173,5 +201,6 @@ export function MarketFilterBar({ onSearch, isLoading }: MarketFilterBarProps) {
         </button>
       </div>
     </form>
+    </div>
   );
 }

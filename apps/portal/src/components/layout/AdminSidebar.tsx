@@ -12,6 +12,7 @@ import {
   Users, 
   FileText, 
   BarChart3,
+  UserCircle,
   LogOut
 } from 'lucide-react';
 
@@ -23,6 +24,7 @@ const navigation = [
   { name: 'Penerima Manfaat', href: '/admin/beneficiaries', icon: Users },
   { name: 'Laporan BGN & Ekspor', href: '/admin/reports', icon: FileText },
   { name: 'Analitik Pasar', href: '/admin/market', icon: BarChart3 },
+  { name: 'Profil', href: '/admin/profile', icon: UserCircle },
 ];
 
 export function AdminSidebar() {

@@ -3,7 +3,6 @@ import {
   NotFoundException,
   BadRequestException,
 } from "@nestjs/common";
-import { EventEmitter2 } from "@nestjs/event-emitter";
 import { PrismaService } from "../../../database/prisma.service";
 import {
   PaginationDto,
@@ -13,16 +12,12 @@ import { CreateBatchDto } from "../dto/create-batch.dto";
 import { UpdateBatchStatusDto } from "../dto/update-batch-status.dto";
 import { BatchStatus, COST_PER_PORTION_STANDARD } from "@sigizi/shared";
 import { InsufficientStockException } from "../../../common/exceptions/insufficient-stock.exception";
-import { BatchCancelledEvent, BatchFailedEvent } from "../events/batch.events";
 
 const BS = BatchStatus;
 
 @Injectable()
 export class BatchService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly eventEmitter: EventEmitter2,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   private readonly VALID_TRANSITIONS: Record<BatchStatus, BatchStatus[]> = {
     [BS.ACTIVE]: [BS.COMPLETED, BS.CANCELLED, BS.FAILED],
@@ -71,8 +66,7 @@ export class BatchService {
         complaints: true,
       },
     });
-    if (!batch)
-      throw new NotFoundException(`Batch dengan ID ${id} tidak ditemukan`);
+    if (!batch) throw new NotFoundException(`Batch with ID ${id} not found`);
     return batch;
   }
 
@@ -84,8 +78,7 @@ export class BatchService {
         sppg: true,
       },
     });
-    if (!batch)
-      throw new NotFoundException(`Batch ${batchNumber} tidak ditemukan`);
+    if (!batch) throw new NotFoundException(`Batch ${batchNumber} not found`);
     return batch;
   }
 
@@ -99,7 +92,7 @@ export class BatchService {
     });
     if (!batch)
       throw new NotFoundException(
-        `Batch dengan report key ${reportKey} tidak ditemukan`,
+        `Batch with report key ${reportKey} not found`,
       );
     return batch;
   }
@@ -237,19 +230,19 @@ export class BatchService {
     const allowed = this.VALID_TRANSITIONS[batch.status as BatchStatus] ?? [];
     if (!allowed.includes(dto.status)) {
       throw new BadRequestException(
-        `Tidak dapat transisi dari ${batch.status} ke ${dto.status}`,
+        `Cannot transition from ${batch.status} to ${dto.status}`,
       );
     }
 
     if (dto.status === BS.FAILED) {
       if (!dto.failedReason) {
         throw new BadRequestException(
-          "failedReason wajib diisi ketika menandai batch sebagai FAILED",
+          "failedReason is required when marking batch as FAILED",
         );
       }
       if (!dto.failedEvidence) {
         throw new BadRequestException(
-          "failedEvidence wajib diisi ketika menandai batch sebagai FAILED",
+          "failedEvidence is required when marking batch as FAILED",
         );
       }
     }
@@ -262,59 +255,10 @@ export class BatchService {
       updateData.failedAt = new Date();
     }
 
-    const updatedBatch = await this.prisma.batch.update({
+    return this.prisma.batch.update({
       where: { id },
       data: updateData,
     });
-
-    // Emit events for inventory rollback
-    if (dto.status === BS.CANCELLED || dto.status === BS.FAILED) {
-      const batchWithItems = await this.prisma.batch.findUnique({
-        where: { id },
-        include: {
-          batchItems: {
-            include: { inventoryStock: true },
-          },
-        },
-      });
-
-      const items = (batchWithItems?.batchItems ?? []).map((bi) => ({
-        batchItemId: bi.id,
-        itemId: bi.itemId,
-        inventoryStockId: bi.inventoryStockId ?? null,
-        quantity: bi.quantity,
-        unitPrice: bi.unitPrice,
-      }));
-
-      if (dto.status === BS.CANCELLED) {
-        this.eventEmitter.emit(
-          "batch.cancelled",
-          new BatchCancelledEvent(
-            id,
-            batch.batchNumber,
-            batch.sppgId,
-            batch.createdById,
-            items,
-            "Batch dibatalkan",
-          ),
-        );
-      } else if (dto.status === BS.FAILED) {
-        this.eventEmitter.emit(
-          "batch.failed",
-          new BatchFailedEvent(
-            id,
-            batch.batchNumber,
-            batch.sppgId,
-            batch.createdById,
-            items,
-            dto.failedReason!,
-            dto.failedEvidence!,
-          ),
-        );
-      }
-    }
-
-    return updatedBatch;
   }
 
   private async generateBatchNumber(tx: {

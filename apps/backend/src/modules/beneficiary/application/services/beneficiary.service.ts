@@ -42,9 +42,7 @@ export class BeneficiaryService {
   async findOne(id: string) {
     const beneficiary = await this.repository.findById(id);
     if (!beneficiary) {
-      throw new NotFoundException(
-        `Penerima manfaat dengan ID ${id} tidak ditemukan`,
-      );
+      throw new NotFoundException(`Beneficiary with ID ${id} not found`);
     }
     return beneficiary;
   }
@@ -56,9 +54,7 @@ export class BeneficiaryService {
   async update(id: string, dto: UpdateBeneficiaryDto) {
     const existing = await this.repository.findById(id);
     if (!existing) {
-      throw new NotFoundException(
-        `Penerima manfaat dengan ID ${id} tidak ditemukan`,
-      );
+      throw new NotFoundException(`Beneficiary with ID ${id} not found`);
     }
     return this.repository.update(id, dto);
   }
@@ -66,9 +62,7 @@ export class BeneficiaryService {
   async remove(id: string) {
     const existing = await this.repository.findById(id);
     if (!existing) {
-      throw new NotFoundException(
-        `Penerima manfaat dengan ID ${id} tidak ditemukan`,
-      );
+      throw new NotFoundException(`Beneficiary with ID ${id} not found`);
     }
     await this.repository.delete(id);
   }

@@ -38,7 +38,7 @@ export default function BatchPage() {
     const fetchBatch = async () => {
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-        const response = await fetch(`${apiUrl}/api/public/batch/${batchNumber}`);
+        const response = await fetch(`${apiUrl}/api/batches/by-number/${batchNumber}`);
 
         if (!response.ok) {
           throw new Error('Batch tidak ditemukan');

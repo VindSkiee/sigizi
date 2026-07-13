@@ -8,6 +8,7 @@ export interface BatchMenuItem {
 export interface BatchManagement {
   id: string;
   batchNumber: string;
+  reportKey: string;
   status: BatchStatus;
 
   // Delivery info

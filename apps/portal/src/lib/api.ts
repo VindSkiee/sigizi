@@ -172,6 +172,16 @@ export async function updateSupplier(token: string, id: string, data: any) {
   });
 }
 
+export async function updateSupplierProfile(token: string, data: any) {
+  return fetchApi("/api/suppliers/me/profile", {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+}
+
 export async function deleteSupplier(token: string, id: string) {
   return fetchApi(`/api/suppliers/${id}`, {
     method: "DELETE",
@@ -583,7 +593,21 @@ export async function createSppg(token: string, data: any) {
   });
 }
 
-export async function updateSppg(token: string, id: string, data: any) {
+export async function updateSppg(
+  token: string,
+  id: string,
+  data: {
+    name?: string;
+    address?: string;
+    province?: string;
+    regency?: string;
+    district?: string;
+    village?: string;
+    postalCode?: string;
+    latitude?: number;
+    longitude?: number;
+  },
+) {
   return fetchApi(`/api/sppg/${id}`, {
     method: "PUT",
     headers: {

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   MarketFilter,
   MarketSupplierItem,
   MarketStats,
-  SPPG_DEFAULT_LOCATION,
 } from "@/components/features/admin/market/types";
 import { MOCK_MARKET_ITEMS } from "@/components/features/admin/market/mockData";
 import { MarketFilterBar } from "@/components/features/admin/market/MarketFilterBar";
@@ -44,27 +44,37 @@ function calculateDistanceKm(
 }
 
 export default function MarketPage() {
+  const { user } = useAuth();
   const [items, setItems] = useState<MarketSupplierItem[]>(MOCK_MARKET_ITEMS);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Draft state
   const [draftItems, setDraftItems] = useState<DraftItem[]>([]);
   const [showDraftModal, setShowDraftModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
-  // Load draft from localStorage on mount
   useEffect(() => {
     setDraftItems(getDraftItems());
   }, []);
+
+  const adminLocation = useMemo(() => {
+    if (user?.sppg?.latitude != null && user?.sppg?.longitude != null) {
+      return {
+        latitude: user.sppg.latitude,
+        longitude: user.sppg.longitude,
+        name: user.sppg.name,
+      };
+    }
+    return { latitude: -6.5569, longitude: 107.4448, name: "Lokasi Default" };
+  }, [user]);
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
       if (item.latitude && item.longitude) {
         const dist = calculateDistanceKm(
-          SPPG_DEFAULT_LOCATION.latitude,
-          SPPG_DEFAULT_LOCATION.longitude,
+          adminLocation.latitude,
+          adminLocation.longitude,
           item.latitude,
           item.longitude
         );
@@ -72,7 +82,7 @@ export default function MarketPage() {
       }
       return true;
     });
-  }, [items]);
+  }, [items, adminLocation]);
 
   const stats: MarketStats = useMemo(() => {
     if (filteredItems.length === 0) {
@@ -107,8 +117,8 @@ export default function MarketPage() {
       result = result.filter((item) => {
         if (!item.latitude || !item.longitude) return true;
         const dist = calculateDistanceKm(
-          SPPG_DEFAULT_LOCATION.latitude,
-          SPPG_DEFAULT_LOCATION.longitude,
+          adminLocation.latitude,
+          adminLocation.longitude,
           item.latitude,
           item.longitude
         );
@@ -120,8 +130,8 @@ export default function MarketPage() {
         distance:
           item.latitude && item.longitude
             ? calculateDistanceKm(
-                SPPG_DEFAULT_LOCATION.latitude,
-                SPPG_DEFAULT_LOCATION.longitude,
+                adminLocation.latitude,
+                adminLocation.longitude,
                 item.latitude,
                 item.longitude
               )
@@ -164,7 +174,6 @@ export default function MarketPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Analitik Pasar</h1>
         <p className="text-sm text-gray-500 mt-1">
@@ -172,13 +181,14 @@ export default function MarketPage() {
         </p>
       </div>
 
-      {/* Filter Bar */}
-      <MarketFilterBar onSearch={handleSearch} isLoading={isLoading} />
+      <MarketFilterBar
+        onSearch={handleSearch}
+        isLoading={isLoading}
+        adminLocation={adminLocation}
+      />
 
-      {/* Stats */}
       {hasSearched && !isLoading && <MarketStatsBar stats={stats} />}
 
-      {/* Results */}
       {hasSearched ? (
         <>
           <MarketCardGrid items={paginatedItems} onAddToDraft={handleAddToDraft} />
@@ -219,7 +229,6 @@ export default function MarketPage() {
         </div>
       )}
 
-      {/* Floating Draft Button */}
       <button
         onClick={() => setShowDraftModal(true)}
         className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 px-5 py-3 bg-primary-600 text-white text-sm font-medium rounded-full shadow-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all hover:scale-105"
@@ -235,7 +244,6 @@ export default function MarketPage() {
         )}
       </button>
 
-      {/* Draft Modal */}
       <DraftOrderModal
         isOpen={showDraftModal}
         onClose={() => setShowDraftModal(false)}
@@ -244,7 +252,6 @@ export default function MarketPage() {
         onRemove={handleRemove}
       />
 
-      {/* Toast */}
       <Toast
         message="Berhasil ditambahkan ke draft"
         isVisible={showToast}
