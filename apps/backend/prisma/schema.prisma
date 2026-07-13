@@ -44,6 +44,12 @@ enum MouStatus {
   TERMINATED
 }
 
+enum StockSource {
+  SYSTEM_ORDER
+  MANUAL_ADJUSTMENT
+  BATCH_RETURN
+}
+
 // ============================================================================
 // MODELS
 // ============================================================================
@@ -75,6 +81,10 @@ model User {
   updatedBatches     Batch[]              @relation("BatchUpdatedBy")
   createdBatchItems  BatchItem[]
   createdMous        Mou[]                @relation("MouCreatedBy")
+
+  // Inventory audit relationships
+  createdInventoryStocks InventoryStock[]
+  adjustedStockLogs      InventoryAdjustmentLog[]
 
   @@index([sppgId])
   @@index([supplierId])
@@ -159,6 +169,7 @@ model SupplierItem {
   description  String?
   minOrderQty  Float?
   orderStep    Float?
+  minThreshold Float?   // Batas ambang stok rendah per item (null = gunakan default sistem)
   supplier     Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
   supplierId   String
   createdAt    DateTime @default(now())
@@ -340,7 +351,69 @@ model OrderItem {
 }
 
 // ----------------------------------------------------------------------------
-// 9B. ORDER STATUS HISTORY — Audit trail perubahan status order
+// 9A. INVENTORY STOCK — Lot-based stok bahan baku per SPPG
+// Harga purchasePrice dikunci dari OrderItem.unitPrice saat order COMPLETED
+// Mendukung FIFO (First-In, First-Out) untuk konsumsi stok
+// ----------------------------------------------------------------------------
+
+model InventoryStock {
+  id            String       @id @default(cuid())
+
+  sppg          Sppg         @relation(fields: [sppgId], references: [id], onDelete: Restrict)
+  sppgId        String
+  item          SupplierItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  itemId        String
+  orderItem     OrderItem?   @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
+  orderItemId   String?
+
+  source        StockSource  @default(SYSTEM_ORDER)
+  purchasePrice Float        // Harga lock saat dibeli dari supplier
+  initialQty    Float        // Jumlah total yang dibeli di awal
+  remainingQty  Float        // Sisa stok aktif yang bisa dipakai untuk Batch
+
+  // Pelacakan masa berlaku untuk perishable goods (Mendukung FEFO di masa depan)
+  expiredAt     DateTime?
+
+  // Audit Fields
+  createdById   String
+  createdBy     User         @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  notes         String?
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  batchItems    BatchItem[]
+  adjustments   InventoryAdjustmentLog[]
+
+  @@index([sppgId, itemId])
+  @@index([remainingQty])
+  @@index([expiredAt])
+}
+
+// ----------------------------------------------------------------------------
+// 9B. INVENTORY ADJUSTMENT LOG — Audit trail penyesuaian stok
+// Catatan setiap perubahan manual pada InventoryStock
+// ----------------------------------------------------------------------------
+
+model InventoryAdjustmentLog {
+  id               String         @id @default(cuid())
+  inventoryStock   InventoryStock @relation(fields: [inventoryStockId], references: [id], onDelete: Restrict)
+  inventoryStockId String
+
+  adjustmentQty    Float          // Negatif untuk pengurangan, positif untuk penambahan
+  reason           String         // SPOILAGE, THEFT, DISCREPANCY, dll
+  description      String?
+
+  changedById      String
+  changedBy        User           @relation(fields: [changedById], references: [id], onDelete: Restrict)
+  createdAt        DateTime       @default(now())
+
+  @@index([inventoryStockId])
+  @@index([createdAt])
+}
+
+// ----------------------------------------------------------------------------
+// 9C. ORDER STATUS HISTORY — Audit trail perubahan status order
 // Append-only: tidak bisa dihapus atau diubah
 // ----------------------------------------------------------------------------
 
@@ -359,35 +432,6 @@ model OrderStatusHistory {
   @@index([orderId])
   @@index([toStatus])
   @@index([createdAt])
-}
-
-// ----------------------------------------------------------------------------
-// 9A. INVENTORY STOCK — Lot-based stok bahan baku per SPPG
-// Harga purchasePrice dikunci dari OrderItem.unitPrice saat order COMPLETED
-// Mendukung FIFO (First-In, First-Out) untuk konsumsi stok
-// ----------------------------------------------------------------------------
-
-model InventoryStock {
-  id            String       @id @default(cuid())
-
-  sppg          Sppg         @relation(fields: [sppgId], references: [id], onDelete: Restrict)
-  sppgId        String
-  item          SupplierItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
-  itemId        String
-  orderItem     OrderItem?   @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
-  orderItemId   String?
-
-  purchasePrice Float        // Harga lock saat dibeli dari supplier
-  initialQty    Float        // Jumlah total yang dibeli di awal
-  remainingQty  Float        // Sisa stok aktif yang bisa dipakai untuk Batch
-
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-
-  batchItems    BatchItem[]
-
-  @@index([sppgId, itemId])
-  @@index([remainingQty])
 }
 
 // ----------------------------------------------------------------------------
@@ -428,7 +472,7 @@ model Batch {
   // Audit trail
   createdBy        User     @relation("BatchCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   createdById      String
-  updatedBy        User?    @relation("BatchUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  updatedBy        User?    @relation("BatchUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   updatedById      String?
 
   createdAt        DateTime  @default(now())

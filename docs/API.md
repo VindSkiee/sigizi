@@ -1136,25 +1136,345 @@ Ketika order yang statusnya `COMPLETED` dibatalkan menjadi `CANCELLED`, sistem a
 
 ---
 
+## Inventory Management
+
+### Create Manual Stock
+
+```
+POST /api/inventory/manual
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Access:** SPPG_ADMIN only
+
+**Request Body:**
+
+```json
+{
+  "itemId": "clx...",
+  "quantity": 100,
+  "purchasePrice": 12000,
+  "expiredAt": "2026-08-15T00:00:00Z",
+  "notes": "Stok awal dari supplier"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx...",
+    "sppgId": "clx...",
+    "itemId": "clx...",
+    "source": "MANUAL_ADJUSTMENT",
+    "purchasePrice": 12000,
+    "initialQty": 100,
+    "remainingQty": 100,
+    "expiredAt": "2026-08-15T00:00:00Z",
+    "notes": "Stok awal dari supplier",
+    "item": {
+      "name": "Beras Premium",
+      "unit": "kg"
+    },
+    "createdBy": {
+      "name": "Admin SPPG"
+    },
+    "createdAt": "2026-07-13T00:00:00Z"
+  }
+}
+```
+
+### Adjust Stock Lot
+
+```
+PATCH /api/inventory/:id/adjust
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Access:** SPPG_ADMIN only
+
+**Request Body:**
+
+```json
+{
+  "adjustmentQty": -5,
+  "reason": "SPOILAGE",
+  "description": "Beras rusak akibat kelembaban tinggi"
+}
+```
+
+**Field Descriptions:**
+
+| Field           | Type   | Required | Description                                             |
+| --------------- | ------ | -------- | ------------------------------------------------------- |
+| `adjustmentQty` | number | Ya       | Negatif untuk pengurangan, positif untuk penambahan     |
+| `reason`        | string | Ya       | Alasan: SPOILAGE, THEFT, DISCREPANCY, CORRECTION, OTHER |
+| `description`   | string | Tidak    | Deskripsi detail                                        |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "stock": {
+      "id": "clx...",
+      "remainingQty": 95,
+      "updatedAt": "2026-07-13T00:00:00Z"
+    },
+    "adjustment": {
+      "id": "clx...",
+      "adjustmentQty": -5,
+      "reason": "SPOILAGE",
+      "description": "Beras rusak akibat kelembaban tinggi",
+      "createdAt": "2026-07-13T00:00:00Z"
+    }
+  }
+}
+```
+
+### List Inventory Stocks
+
+```
+GET /api/inventory
+Authorization: Bearer <token>
+```
+
+**Access:** SPPG_ADMIN only
+
+**Query Params:**
+
+| Param          | Type   | Required | Description                                   |
+| -------------- | ------ | -------- | --------------------------------------------- |
+| `itemId`       | string | Tidak    | Filter berdasarkan ID item                    |
+| `source`       | string | Tidak    | SYSTEM_ORDER, MANUAL_ADJUSTMENT, BATCH_RETURN |
+| `minRemaining` | number | Tidak    | Minimum remainingQty (default: 0)             |
+| `page`         | number | Tidak    | Page number (default: 1)                      |
+| `limit`        | number | Tidak    | Items per page (default: 20)                  |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "clx...",
+        "sppgId": "clx...",
+        "itemId": "clx...",
+        "source": "SYSTEM_ORDER",
+        "purchasePrice": 11500,
+        "initialQty": 20,
+        "remainingQty": 15,
+        "expiredAt": null,
+        "notes": "Stok dari order ORDER-20260713-001",
+        "item": {
+          "id": "clx...",
+          "name": "Beras Premium",
+          "unit": "kg"
+        },
+        "createdBy": {
+          "id": "clx...",
+          "name": "Admin SPPG"
+        },
+        "adjustments": []
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 10,
+      "totalPages": 1
+    }
+  }
+}
+```
+
+### Get Stock Balance
+
+```
+GET /api/inventory/balance
+Authorization: Bearer <token>
+```
+
+**Access:** SPPG_ADMIN only
+
+**Query Params:**
+
+| Param    | Type   | Required | Description                |
+| -------- | ------ | -------- | -------------------------- |
+| `itemId` | string | Tidak    | Filter berdasarkan ID item |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "item": {
+        "id": "clx...",
+        "name": "Beras Premium",
+        "unit": "kg",
+        "minThreshold": 50
+      },
+      "totalRemaining": 150,
+      "totalInitial": 200,
+      "lotCount": 3
+    }
+  ]
+}
+```
+
+### Get Stock Valuation
+
+```
+GET /api/inventory/valuation
+Authorization: Bearer <token>
+```
+
+**Access:** SPPG_ADMIN only
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "totalValue": 1725000,
+    "items": [
+      {
+        "itemId": "clx...",
+        "itemName": "Beras Premium",
+        "unit": "kg",
+        "totalQty": 150,
+        "totalValue": 1725000
+      }
+    ]
+  }
+}
+```
+
+### Get Low Stock Alerts
+
+```
+GET /api/inventory/alerts
+Authorization: Bearer <token>
+```
+
+**Access:** SPPG_ADMIN only
+
+**Query Params:**
+
+| Param              | Type   | Required | Description                                                   |
+| ------------------ | ------ | -------- | ------------------------------------------------------------- |
+| `defaultThreshold` | number | Tidak    | Ambang batas global jika item.minThreshold null (default: 10) |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "item": {
+        "id": "clx...",
+        "name": "Telur Ayam",
+        "unit": "pcs",
+        "minThreshold": 50
+      },
+      "totalRemaining": 30,
+      "totalInitial": 100,
+      "lotCount": 2,
+      "threshold": 50,
+      "isLow": true
+    }
+  ]
+}
+```
+
+### Get Stock Adjustment History
+
+```
+GET /api/inventory/:id/history
+Authorization: Bearer <token>
+```
+
+**Access:** SPPG_ADMIN only
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "stock": {
+      "id": "clx...",
+      "itemId": "clx...",
+      "initialQty": 100,
+      "remainingQty": 95,
+      "item": {
+        "name": "Beras Premium",
+        "unit": "kg"
+      }
+    },
+    "adjustments": [
+      {
+        "id": "clx...",
+        "adjustmentQty": -5,
+        "reason": "SPOILAGE",
+        "description": "Beras rusak akibat kelembaban tinggi",
+        "changedBy": {
+          "id": "clx...",
+          "name": "Admin SPPG",
+          "email": "admin@sppg.go.id"
+        },
+        "createdAt": "2026-07-13T00:00:00Z"
+      }
+    ]
+  }
+}
+```
+
+### Stock Sources
+
+| Source              | Description                  | Trigger                    |
+| ------------------- | ---------------------------- | -------------------------- |
+| `SYSTEM_ORDER`      | Stok dari order yang selesai | Order COMPLETED            |
+| `MANUAL_ADJUSTMENT` | Input stok manual            | POST /api/inventory/manual |
+| `BATCH_RETURN`      | Stok dikembalikan dari batch | Batch CANCELLED/FAILED     |
+
+---
+
 ## Authentication
 
 All protected endpoints require `Authorization: Bearer <token>` header.
 
 ### Role-Based Access
 
-| Endpoint         |  SPPG_ADMIN   |  SUPPLIER   |   PUBLIC    |
-| ---------------- | :-----------: | :---------: | :---------: |
-| Supplier CRUD    |      ✅       |  ✅ (own)   |     ❌      |
-| Beneficiary CRUD | ✅ (own SPPG) |     ❌      |  ✅ (read)  |
-| Market Analytics |      ✅       |     ❌      |     ❌      |
-| Batch Create     |      ✅       |     ❌      |     ❌      |
-| Batch View       |      ✅       | ✅ (orders) | ✅ (public) |
-| Complaint Submit |      ❌       |     ❌      |     ✅      |
-| Complaint View   |   ✅ (own)    |     ❌      |     ❌      |
-| Reports          |   ✅ (own)    |     ❌      |     ❌      |
-| Order Create     |      ✅       |     ❌      |     ❌      |
-| Order View       |   ✅ (own)    |  ✅ (own)   |     ❌      |
-| Order Confirm    |      ❌       |  ✅ (own)   |     ❌      |
-| Order Deliver    |      ❌       |  ✅ (own)   |     ❌      |
-| Order Complete   |      ✅       |     ❌      |     ❌      |
-| Order Cancel     |      ✅       |  ✅ (own)   |     ❌      |
+| Endpoint          |  SPPG_ADMIN   |  SUPPLIER   |   PUBLIC    |
+| ----------------- | :-----------: | :---------: | :---------: |
+| Supplier CRUD     |      ✅       |  ✅ (own)   |     ❌      |
+| Beneficiary CRUD  | ✅ (own SPPG) |     ❌      |  ✅ (read)  |
+| Market Analytics  |      ✅       |     ❌      |     ❌      |
+| Batch Create      |      ✅       |     ❌      |     ❌      |
+| Batch View        |      ✅       | ✅ (orders) | ✅ (public) |
+| Complaint Submit  |      ❌       |     ❌      |     ✅      |
+| Complaint View    |   ✅ (own)    |     ❌      |     ❌      |
+| Reports           |   ✅ (own)    |     ❌      |     ❌      |
+| Order Create      |      ✅       |     ❌      |     ❌      |
+| Order View        |   ✅ (own)    |  ✅ (own)   |     ❌      |
+| Order Confirm     |      ❌       |  ✅ (own)   |     ❌      |
+| Order Deliver     |      ❌       |  ✅ (own)   |     ❌      |
+| Order Complete    |      ✅       |     ❌      |     ❌      |
+| Order Cancel      |      ✅       |  ✅ (own)   |     ❌      |
+| Inventory Create  |      ✅       |     ❌      |     ❌      |
+| Inventory Adjust  |      ✅       |     ❌      |     ❌      |
+| Inventory View    |      ✅       |     ❌      |     ❌      |
+| Inventory Balance |      ✅       |     ❌      |     ❌      |
+| Inventory Alerts  |      ✅       |     ❌      |     ❌      |

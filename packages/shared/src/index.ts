@@ -35,6 +35,12 @@ export enum MouStatus {
   TERMINATED = "TERMINATED",
 }
 
+export enum StockSource {
+  SYSTEM_ORDER = "SYSTEM_ORDER",
+  MANUAL_ADJUSTMENT = "MANUAL_ADJUSTMENT",
+  BATCH_RETURN = "BATCH_RETURN",
+}
+
 // ============================================================================
 // Core Models
 // ============================================================================
@@ -108,6 +114,7 @@ export interface SupplierItem {
   description?: string;
   minOrderQty?: number;
   orderStep?: number;
+  minThreshold?: number;
   supplierId: string;
   createdAt: Date;
 }
@@ -182,11 +189,29 @@ export interface InventoryStock {
   sppgId: string;
   itemId: string;
   orderItemId?: string;
+  source: StockSource;
   purchasePrice: number;
   initialQty: number;
   remainingQty: number;
+  expiredAt?: Date;
+  createdById: string;
+  notes?: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// ============================================================================
+// Inventory Adjustment Log — Audit trail penyesuaian stok
+// ============================================================================
+
+export interface InventoryAdjustmentLog {
+  id: string;
+  inventoryStockId: string;
+  adjustmentQty: number;
+  reason: string;
+  description?: string;
+  changedById: string;
+  createdAt: Date;
 }
 
 // ============================================================================

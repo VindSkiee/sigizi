@@ -5,9 +5,6 @@ ALTER TYPE "OrderStatus" ADD VALUE 'CANCELLED';
 ALTER TABLE "Order" DROP CONSTRAINT "Order_updatedById_fkey";
 
 -- AlterTable
-ALTER TABLE "Beneficiary" ALTER COLUMN "updatedAt" DROP DEFAULT;
-
--- AlterTable
 ALTER TABLE "Order" ADD COLUMN     "actualDeliveryDate" TIMESTAMP(3),
 ADD COLUMN     "cancelledAt" TIMESTAMP(3),
 ADD COLUMN     "cancelledById" TEXT,
