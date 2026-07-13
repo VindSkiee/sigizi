@@ -14,9 +14,6 @@ ALTER TABLE "Batch" DROP CONSTRAINT "Batch_updatedById_fkey";
 ALTER TABLE "InventoryStock" DROP CONSTRAINT "InventoryStock_orderItemId_fkey";
 
 -- AlterTable
-ALTER TABLE "Beneficiary" ALTER COLUMN "updatedAt" DROP DEFAULT;
-
--- AlterTable
 ALTER TABLE "InventoryStock" ADD COLUMN     "createdById" TEXT NOT NULL,
 ADD COLUMN     "expiredAt" TIMESTAMP(3),
 ADD COLUMN     "notes" TEXT,
