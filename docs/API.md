@@ -440,7 +440,7 @@ Content-Type: application/json
 {
   "reportKey": "A7X9K2M4",
   "description": "Nasi berbau basi",
-  "evidence": "base64-or-url"
+  "evidence": "https://example.com/evidence.jpg"
 }
 ```
 
@@ -451,23 +451,86 @@ Content-Type: application/json
   "success": true,
   "data": {
     "id": "clx...",
+    "reportKey": "A7X9K2M4",
+    "description": "Nasi berbau basi",
+    "evidence": "https://example.com/evidence.jpg",
     "status": "PENDING",
+    "batchId": "clx...",
+    "batch": {
+      "id": "clx...",
+      "batchNumber": "BATCH-20260709-001",
+      "menu": "Nasi Ayam Bakar + Sayur Bayam",
+      "sppg": {
+        "id": "clx...",
+        "name": "SPPG Purwakarta"
+      }
+    },
     "createdAt": "2026-07-09T12:00:00Z"
   }
 }
 ```
 
-### List Complaints (SPPG only)
+### List Complaints (SPPG Admin)
 
 ```
-GET /api/complaints?status=PENDING&batchId=clx...
+GET /api/complaints?sppgId=clx...&status=PENDING&batchId=clx...
 Authorization: Bearer <token>
 ```
+
+**Query Params:**
+
+| Param     | Type   | Required | Description                            |
+| --------- | ------ | -------- | -------------------------------------- |
+| `sppgId`  | string | No       | Filter by SPPG ID (via batch relation) |
+| `batchId` | string | No       | Filter by batch ID                     |
+| `status`  | string | No       | PENDING, REVIEWED, RESOLVED            |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "clx...",
+        "reportKey": "A7X9K2M4",
+        "description": "Nasi berbau basi",
+        "status": "PENDING",
+        "batch": {
+          "id": "clx...",
+          "batchNumber": "BATCH-20260709-001",
+          "sppg": {
+            "id": "clx...",
+            "name": "SPPG Purwakarta"
+          }
+        },
+        "createdAt": "2026-07-09T12:00:00Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 5,
+      "totalPages": 1
+    }
+  }
+}
+```
+
+### Get Complaint Detail (auto-marks as REVIEWED)
+
+```
+GET /api/complaints/:id
+Authorization: Bearer <token>
+```
+
+**Behavior:** Jika status masih `PENDING`, otomatis diubah ke `REVIEWED` saat SPPG membaca komplain.
 
 ### Update Complaint Status
 
 ```
-PUT /api/complaints/:id
+PUT /api/complaints/:id/status
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
@@ -476,10 +539,18 @@ Content-Type: application/json
 
 ```json
 {
-  "status": "REVIEWED",
-  "notes": "Sudah ditindaklanjuti"
+  "status": "RESOLVED",
+  "notes": "Sudah ditindaklanjuti, penggantian bahan makanan dilakukan"
 }
 ```
+
+**Status Transitions:**
+
+| Dari     | Ke       | Syarat              |
+| -------- | -------- | ------------------- |
+| PENDING  | REVIEWED | —                   |
+| REVIEWED | RESOLVED | `notes` wajib diisi |
+| RESOLVED | —        | Terminal state      |
 
 ---
 
