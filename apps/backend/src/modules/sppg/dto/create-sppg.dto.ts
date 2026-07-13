@@ -12,7 +12,7 @@ export class CreateSppgDto {
   @ApiProperty({ example: "SPPG Purwakarta" })
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -27,17 +27,17 @@ export class CreateSppgDto {
   @ApiProperty({ example: "Jawa Barat" })
   @IsString()
   @IsNotEmpty()
-  province: string;
+  province!: string;
 
   @ApiProperty({ example: "Purwakarta" })
   @IsString()
   @IsNotEmpty()
-  regency: string;
+  regency!: string;
 
   @ApiProperty({ example: "Purwakarta" })
   @IsString()
   @IsNotEmpty()
-  district: string;
+  district!: string;
 
   @ApiPropertyOptional()
   @IsOptional()

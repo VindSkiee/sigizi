@@ -126,6 +126,7 @@ export interface Beneficiary {
   contactEmail?: string;
   sppgId: string;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 // ============================================================================
@@ -449,6 +450,16 @@ export interface CreateBeneficiaryRequest {
   institution: string;
   institutionType?: string;
   totalBeneficiary: number;
+  address?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+}
+
+export interface UpdateBeneficiaryRequest {
+  name?: string;
+  institution?: string;
+  institutionType?: string;
+  totalBeneficiary?: number;
   address?: string;
   contactPhone?: string;
   contactEmail?: string;

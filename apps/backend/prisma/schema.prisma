@@ -183,6 +183,7 @@ model Beneficiary {
   sppg               Sppg     @relation(fields: [sppgId], references: [id], onDelete: Restrict)
   sppgId             String
   createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   @@index([sppgId])
   @@index([institution])
