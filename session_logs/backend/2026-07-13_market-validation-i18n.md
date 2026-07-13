@@ -60,5 +60,5 @@ All plan requirements already implemented:
 
 ## Next Steps
 
-1. Commit changes
-2. Configure GitHub auth to push all pending commits
+1. Frontend wiring with all this patch to implement it in admin/market to use all the rule in this patch
+
