@@ -9,6 +9,7 @@ import {
   updateSupplierItem,
   removeSupplierItem,
 } from "@/lib/api";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import {
   ProductCreateModal,
   ProductEditModal,
@@ -36,6 +37,19 @@ export default function KatalogPage() {
     null,
   );
   const [showEditModal, setShowEditModal] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    variant: "success" | "danger";
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    variant: "danger",
+    onConfirm: () => {},
+  });
 
   const fetchProducts = useCallback(async () => {
     if (!token || !user?.supplierId) return;
@@ -78,8 +92,17 @@ export default function KatalogPage() {
     await fetchProducts();
   };
 
-  const handleDeleteProduct = async (productId: string) => {
-    if (!confirm("Yakin ingin menghapus produk ini?")) return;
+  const handleDeleteProduct = (productId: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Hapus Produk",
+      message: "Yakin ingin menghapus produk ini? Tindakan ini tidak dapat dibatalkan.",
+      variant: "danger",
+      onConfirm: () => confirmDeleteProduct(productId),
+    });
+  };
+
+  const confirmDeleteProduct = async (productId: string) => {
     try {
       const response = await removeSupplierItem(token!, productId);
       if (!response.success) {
@@ -88,6 +111,8 @@ export default function KatalogPage() {
       await fetchProducts();
     } catch (err: any) {
       alert(err.message || "Gagal menghapus produk");
+    } finally {
+      setConfirmModal((prev) => ({ ...prev, isOpen: false }));
     }
   };
 
@@ -271,6 +296,16 @@ export default function KatalogPage() {
         }}
         onSubmit={handleEditProduct}
         product={editingProduct}
+      />
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        confirmLabel="Ya, Hapus"
+        onConfirm={confirmModal.onConfirm}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
       />
     </div>
   );

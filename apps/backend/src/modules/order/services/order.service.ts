@@ -40,7 +40,7 @@ export class OrderService {
 
   private readonly TRANSITION_ROLES: Record<string, Role[]> = {
     [`${OS.PENDING}→${OS.CONFIRMED}`]: [Role.SUPPLIER],
-    [`${OS.CONFIRMED}→${OS.DELIVERED}`]: [Role.SUPPLIER],
+    [`${OS.CONFIRMED}→${OS.DELIVERED}`]: [Role.SPPG_ADMIN, Role.SUPPLIER],
     [`${OS.DELIVERED}→${OS.COMPLETED}`]: [Role.SPPG_ADMIN],
     [`${OS.PENDING}→${OS.CANCELLED}`]: [Role.SPPG_ADMIN, Role.SUPPLIER],
     [`${OS.CONFIRMED}→${OS.CANCELLED}`]: [Role.SPPG_ADMIN, Role.SUPPLIER],

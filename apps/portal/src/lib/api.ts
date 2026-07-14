@@ -351,12 +351,18 @@ export async function updateOrderStatus(
 // ============================================================================
 export async function getComplaints(
   token: string,
-  batchId?: string,
-  status?: string,
+  options?: {
+    batchId?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }
 ) {
   const params = new URLSearchParams();
-  if (batchId) params.append("batchId", batchId);
-  if (status) params.append("status", status);
+  if (options?.batchId) params.append("batchId", options.batchId);
+  if (options?.status) params.append("status", options.status);
+  if (options?.page) params.append("page", String(options.page));
+  if (options?.limit) params.append("limit", String(options.limit));
   const qs = params.toString() ? `?${params.toString()}` : "";
   return fetchApi(`/api/complaints${qs}`, {
     headers: {

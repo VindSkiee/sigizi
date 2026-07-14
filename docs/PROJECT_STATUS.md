@@ -51,8 +51,8 @@
 | Register             | ✅ Done    | 100%     | Supplier registration with validation, NPWP upload                                               |
 | Dashboard (Admin)    | ✅ Done    | 100%     | Admin overview + skeleton loading                                                                |
 | Supplier Management  | ✅ Done    | 100%     | CRUD table + create page + skeleton loading                                                      |
-| Batch Management     | ✅ Done    | 100%     | SPPG admin workflow + 11 feature components + skeleton                                            |
-| Complaint Management | ❌ Not Started | 0%   | Komponen modal ada, route/page belum ada                                                         |
+| Batch Management     | ✅ Done    | 100%     | Card ringkas + report key + detail modal + 12 feature components                                |
+| Complaint Management | ✅ Done    | 100%     | Page + 7 components: stats, filter, table, detail modal, resolve modal                          |
 | Market/Analytics     | ✅ Done    | 100%     | Price charts + 7 feature components + skeleton                                                   |
 | Reports              | ✅ Done    | 100%     | Daily/weekly views + 9 feature components + skeleton                                             |
 | Order Management     | ✅ Done    | 100%     | SPPG: Create/manage orders + skeleton loading                                                    |
@@ -67,7 +67,7 @@
 | Auth Provider/Context     | ✅ Done | 100%     | AuthContext wrapped in root layout via Providers                              |
 | Reusable UI Components    | ✅ Done | 100%     | Button (4 variants), Card, Badge (5 variants), Input, Pagination, FileUpload |
 | Loading Skeletons         | ✅ Done | 100%     | Skeleton.tsx + applied in 11 pages                                           |
-| Error Boundaries          | ❌ Not Started | 0%   |                                                                              |
+| Error Boundaries          | ✅ Done | 100%     | ErrorBoundary + PageErrorBoundary components                                                    |
 
 ### Order Workflow Features
 
@@ -287,7 +287,7 @@
 - [x] Frontend: Order management page
 - [x] Frontend: Supplier orders page
 - [x] Frontend: Order tracking dashboard
-- [ ] Frontend: Complaint management page
+- [x] Frontend: Complaint management page
 - [x] Frontend: Market/Analytics page
 - [x] Frontend: Reports page
 - [x] Fix batch complaint form (use API client)

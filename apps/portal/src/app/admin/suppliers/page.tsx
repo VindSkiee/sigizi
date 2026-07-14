@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { OrderStatus } from "@sigizi/shared";
 import { useAuth } from "@/contexts/AuthContext";
-import { getOrders } from "@/lib/api";
+import { getOrders, updateOrderStatus } from "@/lib/api";
 import {
   SupplierOrder,
   SupplierStats,
@@ -144,20 +144,36 @@ export default function SupplierIntegrationPage() {
     setCurrentPage(1);
   };
 
-  const handleUpdateStatus = (orderId: string, newStatus: string) => {
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.id === orderId
-          ? { ...o, status: newStatus as OrderStatus | "CANCELLED" }
-          : o
-      )
-    );
-    if (selectedOrder?.id === orderId) {
-      setSelectedOrder((prev) =>
-        prev
-          ? { ...prev, status: newStatus as OrderStatus | "CANCELLED" }
-          : null
-      );
+  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+    // If transitioning from CONFIRMED to DELIVERED (Bayar), navigate to payment page
+    const order = orders.find((o) => o.id === orderId);
+    if (order?.status === OrderStatus.CONFIRMED && newStatus === OrderStatus.DELIVERED) {
+      router.push(`/admin/payments/${orderId}`);
+      return;
+    }
+
+    // For other transitions, call API directly
+    if (!token) return;
+    try {
+      const response = await updateOrderStatus(token, orderId, newStatus);
+      if (response.success) {
+        setOrders((prev) =>
+          prev.map((o) =>
+            o.id === orderId
+              ? { ...o, status: newStatus as OrderStatus | "CANCELLED" }
+              : o
+          )
+        );
+        if (selectedOrder?.id === orderId) {
+          setSelectedOrder((prev) =>
+            prev
+              ? { ...prev, status: newStatus as OrderStatus | "CANCELLED" }
+              : null
+          );
+        }
+      }
+    } catch (err) {
+      console.error("Failed to update order status:", err);
     }
   };
 

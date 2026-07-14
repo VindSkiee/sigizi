@@ -80,14 +80,10 @@ export function SupplierOrderDetailModal({
             <h3 className="text-sm font-semibold text-gray-700 mb-2">
               Informasi Supplier
             </h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="text-sm">
               <div>
                 <p className="text-gray-500">Nama</p>
                 <p className="font-medium">{order.supplier?.name || "-"}</p>
-              </div>
-              <div>
-                <p className="text-gray-500">NIB</p>
-                <p className="font-medium">{order.supplier?.nib || "-"}</p>
               </div>
             </div>
             {order.mou && (

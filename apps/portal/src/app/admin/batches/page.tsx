@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getBatches, createBatch, updateBatchStatus, getBeneficiaries } from '@/lib/api';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { BatchManagementHeader } from '@/components/features/batch/BatchManagementHeader';
 import { BatchStatsCards } from '@/components/features/batch/BatchStatsCards';
 import { BatchSearchBar } from '@/components/features/batch/BatchSearchBar';
@@ -10,6 +11,7 @@ import { BatchCardGrid } from '@/components/features/batch/BatchCardGrid';
 import { BatchCreateModal } from '@/components/features/batch/BatchCreateModal';
 import { BatchQRPrintModal } from '@/components/features/batch/BatchQRPrintModal';
 import { FailBatchModal } from '@/components/features/batch/FailBatchModal';
+import { BatchDetailModal } from '@/components/features/batch/BatchDetailModal';
 import type { BatchManagement, BeneficiaryOption } from '@/components/features/batch/types';
 
 const COST_PER_PORTION_STANDARD = 10000;
@@ -67,6 +69,20 @@ export default function BatchManagementPage() {
     open: false,
     batchId: '',
     batchNumber: '',
+  });
+  const [selectedBatch, setSelectedBatch] = useState<BatchManagement | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    variant: 'success' | 'danger';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    variant: 'success',
+    onConfirm: () => {},
   });
 
   const fetchBatches = useCallback(async () => {
@@ -130,9 +146,18 @@ export default function BatchManagementPage() {
     }
   };
 
-  const handleCancel = async (batchId: string) => {
+  const handleCancel = (batchId: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Batalkan Batch',
+      message: 'Apakah Anda yakin ingin membatalkan batch ini? Tindakan ini tidak dapat dibatalkan.',
+      variant: 'danger',
+      onConfirm: () => confirmCancelBatch(batchId),
+    });
+  };
+
+  const confirmCancelBatch = async (batchId: string) => {
     if (!token) return;
-    if (!window.confirm('Apakah Anda yakin ingin membatalkan batch ini?')) return;
     try {
       await updateBatchStatus(token, batchId, 'CANCELLED');
       setBatches((prev) =>
@@ -140,6 +165,8 @@ export default function BatchManagementPage() {
       );
     } catch (err) {
       console.error('Failed to cancel batch:', err);
+    } finally {
+      setConfirmModal((prev) => ({ ...prev, isOpen: false }));
     }
   };
 
@@ -225,10 +252,7 @@ export default function BatchManagementPage() {
         />
         <BatchCardGrid
           batches={filteredBatches}
-          onComplete={handleComplete}
-          onCancel={handleCancel}
-          onFail={handleFail}
-          onPrintQR={setQrPrintBatch}
+          onViewDetail={setSelectedBatch}
         />
       </div>
 
@@ -251,6 +275,25 @@ export default function BatchManagementPage() {
         batchNumber={failModal.batchNumber}
         onClose={() => setFailModal({ open: false, batchId: '', batchNumber: '' })}
         onConfirm={handleFailConfirm}
+      />
+
+      <BatchDetailModal
+        batch={selectedBatch}
+        onClose={() => setSelectedBatch(null)}
+        onComplete={handleComplete}
+        onCancel={handleCancel}
+        onFail={handleFail}
+        onPrintQR={setQrPrintBatch}
+      />
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        confirmLabel="Ya, Batalkan"
+        onConfirm={confirmModal.onConfirm}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
       />
     </div>
   );

@@ -19,10 +19,10 @@ import {
   ComplaintPinModal,
   ComplaintFormModal,
   ComplaintSuccessModal,
-  useDailyPin,
 } from "@/components/features/complaint";
 import { getBatchByNumber } from "@/lib/api";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { PageErrorBoundary } from "@/components/features/PageErrorBoundary";
 
 interface BatchItem {
   name: string | null;
@@ -91,7 +91,6 @@ export default function BatchVerifyPage() {
   const [showPinModal, setShowPinModal] = useState(false);
   const [showFormModal, setShowFormModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const dailyPin = useDailyPin();
 
   useEffect(() => {
     if (!batchNumber) {
@@ -118,6 +117,7 @@ export default function BatchVerifyPage() {
 
   if (loading) {
     return (
+      <PageErrorBoundary pageName="Detail Batch">
       <main className="min-h-screen bg-white pb-8">
         <div className="bg-gradient-to-b from-emerald-500 to-emerald-600 text-white px-5 pt-4 pb-12 text-center">
           <div className="max-w-3xl mx-auto">
@@ -173,11 +173,13 @@ export default function BatchVerifyPage() {
           </div>
         </div>
       </main>
+      </PageErrorBoundary>
     );
   }
 
   if (error || !batch) {
     return (
+      <PageErrorBoundary pageName="Detail Batch">
       <main className="min-h-screen bg-white flex items-center justify-center px-6">
         <div className="text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -198,10 +200,12 @@ export default function BatchVerifyPage() {
           </button>
         </div>
       </main>
+      </PageErrorBoundary>
     );
   }
 
   return (
+    <PageErrorBoundary pageName="Detail Batch">
     <main
       className="min-h-screen bg-white pb-8"
       style={{
@@ -524,7 +528,7 @@ export default function BatchVerifyPage() {
           setShowPinModal(false);
           setShowFormModal(true);
         }}
-        correctPin={dailyPin}
+        correctPin={batch?.reportKey || ""}
       />
 
       <ComplaintFormModal
@@ -543,5 +547,6 @@ export default function BatchVerifyPage() {
         onClose={() => setShowSuccessModal(false)}
       />
     </main>
+    </PageErrorBoundary>
   );
 }

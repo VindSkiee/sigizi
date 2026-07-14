@@ -13,6 +13,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { getPublicSppgById } from "@/lib/api";
+import { PageErrorBoundary } from "@/components/features/PageErrorBoundary";
 
 interface SppgProfile {
   id: string;
@@ -85,17 +86,20 @@ export default function SppgProfilePage() {
 
   if (loading) {
     return (
+      <PageErrorBoundary pageName="Profil SPPG">
       <main className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 text-green-600 animate-spin mx-auto mb-3" />
           <p className="text-sm text-gray-500">Memuat data SPPG...</p>
         </div>
       </main>
+      </PageErrorBoundary>
     );
   }
 
   if (error || !sppg) {
     return (
+      <PageErrorBoundary pageName="Profil SPPG">
       <main className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
         <div className="text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -116,10 +120,12 @@ export default function SppgProfilePage() {
           </button>
         </div>
       </main>
+      </PageErrorBoundary>
     );
   }
 
   return (
+    <PageErrorBoundary pageName="Profil SPPG">
     <main className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-gradient-to-b from-emerald-500 to-emerald-600 text-white px-4 pt-4 pb-12">
@@ -262,5 +268,6 @@ export default function SppgProfilePage() {
         </div>
       </div>
     </main>
+    </PageErrorBoundary>
   );
 }

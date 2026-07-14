@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getOrders, updateOrderStatus } from "@/lib/api";
 import { ClipboardList, Search } from "lucide-react";
 import { Pagination } from "@/components/ui/Pagination";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import {
   OrderViewModel,
   FilterType,
@@ -74,6 +75,19 @@ export default function PesananPage() {
     null,
   );
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    variant: "success" | "danger";
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    variant: "success",
+    onConfirm: () => {},
+  });
 
   const fetchOrders = useCallback(async () => {
     if (!token) return;
@@ -124,10 +138,18 @@ export default function PesananPage() {
     setFilter(newFilter);
   }
 
-  async function handleAccept(orderId: string) {
+  function handleAccept(orderId: string) {
+    setConfirmModal({
+      isOpen: true,
+      title: "Konfirmasi Pesanan",
+      message: "Apakah Anda yakin ingin mengkonfirmasi pesanan ini?",
+      variant: "success",
+      onConfirm: () => confirmAcceptOrder(orderId),
+    });
+  }
+
+  async function confirmAcceptOrder(orderId: string) {
     if (!token) return;
-    const confirmed = window.confirm("Konfirmasi pesanan ini?");
-    if (!confirmed) return;
 
     setUpdatingId(orderId);
     try {
@@ -142,6 +164,7 @@ export default function PesananPage() {
       alert("Gagal mengkonfirmasi pesanan");
     } finally {
       setUpdatingId(null);
+      setConfirmModal((prev) => ({ ...prev, isOpen: false }));
     }
   }
 
@@ -165,10 +188,18 @@ export default function PesananPage() {
     }
   }
 
-  async function handleMarkDelivered(orderId: string) {
+  function handleMarkDelivered(orderId: string) {
+    setConfirmModal({
+      isOpen: true,
+      title: "Tandai Dikirim",
+      message: "Tandai pesanan sebagai sudah dikirim?",
+      variant: "success",
+      onConfirm: () => confirmMarkDelivered(orderId),
+    });
+  }
+
+  async function confirmMarkDelivered(orderId: string) {
     if (!token) return;
-    const confirmed = window.confirm("Tandai pesanan sebagai sudah dikirim?");
-    if (!confirmed) return;
 
     setUpdatingId(orderId);
     try {
@@ -183,6 +214,7 @@ export default function PesananPage() {
       alert("Gagal menandai pengiriman");
     } finally {
       setUpdatingId(null);
+      setConfirmModal((prev) => ({ ...prev, isOpen: false }));
     }
   }
 
@@ -284,6 +316,16 @@ export default function PesananPage() {
           onClose={() => setRejectingOrder(null)}
         />
       )}
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        confirmLabel={confirmModal.variant === "success" ? "Ya, Konfirmasi" : "Ya, Hapus"}
+        onConfirm={confirmModal.onConfirm}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

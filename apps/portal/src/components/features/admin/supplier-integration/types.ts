@@ -54,7 +54,7 @@ export const ORDER_STATUS_CONFIG: Record<
   [OrderStatus.CONFIRMED]: {
     label: "Dikonfirmasi",
     color: "bg-blue-100 text-blue-800",
-    nextAction: "Tandai Dikirim",
+    nextAction: "Bayar",
     nextStatus: OrderStatus.DELIVERED,
   },
   [OrderStatus.DELIVERED]: {

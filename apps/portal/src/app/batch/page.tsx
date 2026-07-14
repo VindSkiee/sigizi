@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { PageErrorBoundary } from "@/components/features/PageErrorBoundary";
 
 export default function BatchPage() {
   const searchParams = useSearchParams();
@@ -17,6 +18,7 @@ export default function BatchPage() {
 
   if (!batchNumber) {
     return (
+      <PageErrorBoundary pageName="Pencarian Batch">
       <main className="min-h-screen bg-gradient-to-b from-green-50 to-white">
         <div className="container mx-auto px-4 py-16">
           <div className="max-w-xl mx-auto text-center">
@@ -33,15 +35,18 @@ export default function BatchPage() {
           </div>
         </div>
       </main>
+      </PageErrorBoundary>
     );
   }
 
   return (
+    <PageErrorBoundary pageName="Pencarian Batch">
     <main className="min-h-screen bg-white flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600 mx-auto mb-3" />
         <p className="text-sm text-gray-500">Mengalihkan ke halaman batch...</p>
       </div>
     </main>
+    </PageErrorBoundary>
   );
 }

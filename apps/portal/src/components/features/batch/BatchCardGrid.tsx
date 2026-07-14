@@ -5,18 +5,12 @@ import type { BatchManagement } from './types';
 
 interface BatchCardGridProps {
   batches: BatchManagement[];
-  onComplete: (batchId: string) => void;
-  onCancel: (batchId: string) => void;
-  onFail?: (batchId: string) => void;
-  onPrintQR: (batch: BatchManagement) => void;
+  onViewDetail: (batch: BatchManagement) => void;
 }
 
 export function BatchCardGrid({
   batches,
-  onComplete,
-  onCancel,
-  onFail,
-  onPrintQR,
+  onViewDetail,
 }: BatchCardGridProps) {
   if (batches.length === 0) {
     return (
@@ -32,10 +26,7 @@ export function BatchCardGrid({
         <BatchCard
           key={batch.id}
           batch={batch}
-          onComplete={onComplete}
-          onCancel={onCancel}
-          onFail={onFail}
-          onPrintQR={onPrintQR}
+          onViewDetail={onViewDetail}
         />
       ))}
     </div>

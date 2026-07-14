@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Lock, AlertCircle } from "lucide-react";
+import { X, Lock, AlertCircle, Eye, EyeOff } from "lucide-react";
 
 interface ComplaintPinModalProps {
   isOpen: boolean;
@@ -18,25 +18,29 @@ export function ComplaintPinModal({
 }: ComplaintPinModalProps) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
+  const [showValue, setShowValue] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setPin("");
       setError("");
+      setShowValue(false);
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen]);
 
   const handleVerify = () => {
-    if (pin.length !== 4) {
-      setError("PIN harus 4 digit.");
+    const normalizedPin = pin.trim().toUpperCase();
+    const normalizedCorrect = correctPin.trim().toUpperCase();
+    if (normalizedPin.length !== 8) {
+      setError("Kode laporan harus 8 karakter.");
       return;
     }
-    if (pin === correctPin) {
+    if (normalizedPin === normalizedCorrect) {
       onVerified();
     } else {
-      setError("PIN salah. Silakan coba lagi.");
+      setError("Kode laporan salah. Silakan coba lagi.");
       setPin("");
     }
   };
@@ -74,26 +78,40 @@ export function ComplaintPinModal({
         <div className="p-5 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Masukkan PIN Laporan
+              Masukkan Kode Laporan
             </label>
             <p className="text-xs text-gray-400 mb-3">
-              PIN berubah setiap hari. Hubungi admin untuk mendapatkan PIN.
+              Masukkan 8 kode huruf/angka yang tertera pada batch makanan.
             </p>
-            <input
-              ref={inputRef}
-              type="password"
-              inputMode="numeric"
-              maxLength={4}
-              value={pin}
-              onChange={(e) => {
-                const val = e.target.value.replace(/\D/g, "");
-                setPin(val);
-                setError("");
-              }}
-              onKeyDown={handleKeyDown}
-              placeholder="● ● ● ●"
-              className="w-full px-4 py-3 text-center text-2xl tracking-[0.5em] font-mono border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white"
-            />
+            <div className="relative">
+              <input
+                ref={inputRef}
+                type={showValue ? "text" : "password"}
+                inputMode="text"
+                maxLength={8}
+                value={pin}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+                  setPin(val);
+                  setError("");
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder="Contoh: A7X9K2M4"
+                className="w-full px-4 py-3 pr-12 text-center text-2xl tracking-[0.3em] font-mono uppercase border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white"
+              />
+              <button
+                type="button"
+                onClick={() => setShowValue(!showValue)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                tabIndex={-1}
+              >
+                {showValue ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -113,7 +131,7 @@ export function ComplaintPinModal({
           </button>
           <button
             onClick={handleVerify}
-            disabled={pin.length !== 4}
+            disabled={pin.length !== 8}
             className="px-4 py-2.5 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Verifikasi
