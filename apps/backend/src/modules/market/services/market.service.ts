@@ -22,7 +22,7 @@ type HETBasedOn =
   | "clean_dynamic_median"
   | "all_anomaly_fallback";
 
-interface IQRBounds {
+export interface IQRBounds {
   lower: number;
   upper: number;
 }
@@ -64,6 +64,23 @@ interface ResolvedScope {
 interface ScopeCandidate {
   scopeUsed: MarketScopeUsed;
   items: SupplierItemWithSupplier[];
+}
+
+export interface MarketValidationContext {
+  itemName: string;
+  masterPrice: number;
+  scopeUsed: MarketScopeUsed;
+  sampleCount: number;
+  statistics: DualPriceStatistics;
+  iqrBounds: IQRBounds | null;
+  basedOn: HETBasedOn;
+}
+
+export interface IntegratedValidationResult {
+  status: "VALID" | "WARNING" | "INVALID";
+  reason: string;
+  recommendation: string;
+  marketMedianSnapshot: number;
 }
 
 @Injectable()
@@ -110,6 +127,7 @@ export class MarketService {
       sampleCount: resolved.items.length,
       effectiveRadiusKm: resolved.effectiveRadiusKm ?? null,
       statistics,
+      iqrBounds: bounds,
       suppliers,
     };
   }
@@ -206,6 +224,129 @@ export class MarketService {
       het,
       basedOn: "clean_dynamic_median" satisfies HETBasedOn,
       statistics,
+    };
+  }
+
+  // =========================================================================
+  // PRICE VALIDATION
+  // =========================================================================
+
+  async getMarketContextForItem(
+    itemName: string,
+    filter: MarketLocationFilterDto = {},
+  ): Promise<MarketValidationContext> {
+    const masterPrice = this.getMasterReferencePrice(itemName);
+    const marketPrices = await this.getMarketPrices(itemName, filter);
+
+    let basedOn: HETBasedOn;
+    if (marketPrices.sampleCount === 0 || marketPrices.scopeUsed === "master") {
+      basedOn = "master_reference_cold_start";
+    } else if (marketPrices.sampleCount < MIN_MATURE_SAMPLE) {
+      basedOn = "blended_small_sample";
+    } else if (marketPrices.statistics.clean.count === 0) {
+      basedOn = "all_anomaly_fallback";
+    } else {
+      basedOn = "clean_dynamic_median";
+    }
+
+    return {
+      itemName,
+      masterPrice,
+      scopeUsed: marketPrices.scopeUsed,
+      sampleCount: marketPrices.sampleCount,
+      statistics: marketPrices.statistics,
+      iqrBounds: marketPrices.iqrBounds ?? null,
+      basedOn,
+    };
+  }
+
+  async validatePrice(
+    itemName: string,
+    proposedPrice: number,
+    filter: MarketLocationFilterDto = {},
+  ): Promise<IntegratedValidationResult> {
+    const ctx = await this.getMarketContextForItem(itemName, filter);
+    return this.evaluatePrice(ctx, proposedPrice);
+  }
+
+  private evaluatePrice(
+    ctx: MarketValidationContext,
+    proposedPrice: number,
+  ): IntegratedValidationResult {
+    // ── Cold Start / Fallback ──
+    if (
+      ctx.basedOn === "master_reference_cold_start" ||
+      ctx.basedOn === "all_anomaly_fallback"
+    ) {
+      if (proposedPrice > ctx.masterPrice * 1.2) {
+        return {
+          status: "INVALID",
+          reason: `Harga melebihi jaring pengaman batas atas nasional sebesar 20% (Master: Rp ${ctx.masterPrice.toLocaleString("id-ID")})`,
+          recommendation: `Negosiasikan harga di bawah Rp ${(ctx.masterPrice * 1.2).toLocaleString("id-ID")}`,
+          marketMedianSnapshot: ctx.masterPrice,
+        };
+      }
+      if (proposedPrice > ctx.masterPrice * 1.05) {
+        return {
+          status: "WARNING",
+          reason: "Harga sedikit berada di atas acuan master baku nasional",
+          recommendation:
+            "Diizinkan jika stok lokal langka, namun wajib input alasan justifikasi",
+          marketMedianSnapshot: ctx.masterPrice,
+        };
+      }
+      return {
+        status: "VALID",
+        reason: "",
+        recommendation: "",
+        marketMedianSnapshot: ctx.masterPrice,
+      };
+    }
+
+    // ── Mature Market (clean_dynamic_median / blended_small_sample) ──
+    if (ctx.iqrBounds) {
+      if (proposedPrice > ctx.iqrBounds.upper) {
+        return {
+          status: "INVALID",
+          reason:
+            "Harga terdeteksi sebagai outlier ekstrem di atas batas wajar pasar lokal",
+          recommendation: `Batas atas pasar: Rp ${ctx.iqrBounds.upper.toLocaleString("id-ID")}`,
+          marketMedianSnapshot: ctx.statistics.clean.median ?? ctx.masterPrice,
+        };
+      }
+      if (proposedPrice < ctx.iqrBounds.lower) {
+        return {
+          status: "WARNING",
+          reason:
+            "Harga dicurigai terlalu rendah di bawah batas bawah statistik pasar. Potensi kualitas komoditas buruk",
+          recommendation:
+            "Lakukan verifikasi fisik kualitas bahan makanan ke supplier sebelum menerima pengiriman",
+          marketMedianSnapshot: ctx.statistics.clean.median ?? ctx.masterPrice,
+        };
+      }
+    }
+
+    // ── Deviasi Median Pasar Bersih ──
+    if (ctx.statistics.clean.count > 0) {
+      const deviation =
+        (proposedPrice - ctx.statistics.clean.median) /
+        ctx.statistics.clean.median;
+      if (deviation > 0.15) {
+        return {
+          status: "WARNING",
+          reason: `Harga mengalami pembengkakan sebesar ${(deviation * 100).toFixed(1)}% dari rata-rata median pasar bersih riil`,
+          recommendation:
+            "Pertimbangkan harga lebih rendah atau justifikasi alasan kenaikan",
+          marketMedianSnapshot: ctx.statistics.clean.median,
+        };
+      }
+    }
+
+    return {
+      status: "VALID",
+      reason: "",
+      recommendation: "",
+      marketMedianSnapshot: ctx.statistics.clean.median ?? ctx.masterPrice,
     };
   }
 

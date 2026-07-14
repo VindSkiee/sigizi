@@ -1,18 +1,18 @@
 # SIGIZI Project Status
 
-**Last Updated**: 2026-07-11
+**Last Updated**: 2026-07-14
 **Current Phase**: 🚀 Phase 1: MVP (Hackathon Demo)
 
 ---
 
 ## Ringkasan Eksekutif
 
-| Item | Value |
-|------|-------|
-| **Project** | SIGIZI - Sistem Informasi Gizi Terintegrasi |
-| **Phase** | MVP (Hackathon) |
-| **Progress** | ~40-45% |
-| **Team** | TraceBite (4 members) |
+| Item           | Value                                             |
+| -------------- | ------------------------------------------------- |
+| **Project**    | SIGIZI - Sistem Informasi Gizi Terintegrasi       |
+| **Phase**      | MVP (Hackathon)                                   |
+| **Progress**   | ~70%                                              |
+| **Team**       | TraceBite (4 members)                             |
 | **Tech Stack** | NestJS + Prisma + PostgreSQL + Next.js + Tailwind |
 
 ---
@@ -20,99 +20,101 @@
 ## 🚀 Phase 1: MVP (Hackathon Demo)
 
 **Target**: Hackathon Demo
-**Status**: 🟡 IN PROGRESS (~40-45%)
+**Status**: 🟡 IN PROGRESS (~70%)
 **Deadline**: [TBD]
 
 ### Backend Modules
 
-| Module | Status | Progress | Notes |
-|--------|--------|----------|-------|
-| Auth (Mock SSO) | ✅ Done | 100% | JWT + mock BGN integration |
-| Supplier | ✅ Done | 100% | Full CRUD + nested items |
-| Batch | ✅ Done | 100% | CRUD + public endpoint |
-| Complaint | ✅ Done | 100% | Submit via reportKey + status update |
-| Market | ✅ Done | 100% | Price stats + IQR anomaly detection |
-| Reports | ✅ Done | 100% | Daily/weekly aggregation |
-| Order | ⏳ In Progress | 0% | Schema exists, no API yet |
-| Order Workflow | ❌ Not Started | 0% | SPPG order → Supplier accept → Delivery → Payment |
-| Price Validation | ❌ Not Started | 0% | Supplier price guard against market |
-| SPPG | ❌ Not Started | 0% | Schema exists, no API yet |
-| Beneficiary | ❌ Not Started | 0% | Schema exists, no API yet |
+| Module           | Status  | Progress | Notes                                            |
+| ---------------- | ------- | -------- | ------------------------------------------------ |
+| Auth (Mock SSO)  | ✅ Done | 100%     | JWT + mock BGN integration                       |
+| Supplier         | ✅ Done | 100%     | Full CRUD + nested items                         |
+| Batch            | ✅ Done | 100%     | CRUD + public endpoint                           |
+| Complaint        | ✅ Done | 100%     | Submit via reportKey + status update             |
+| Market           | ✅ Done | 100%     | Price stats + IQR anomaly + HET suggestion       |
+| Reports          | ✅ Done | 100%     | Daily/weekly/monthly + OpEx CRUD                 |
+| Order            | ✅ Done | 100%     | Full CRUD + workflow + price validation          |
+| Order Workflow   | ✅ Done | 100%     | PENDING→CONFIRMED→DELIVERED→COMPLETED/CANCELLED  |
+| Price Validation | ✅ Done | 100%     | Supplier price guard with IQR + master reference |
+| SPPG             | ✅ Done | 100%     | Full CRUD                                        |
+| Beneficiary      | ✅ Done | 100%     | Full CRUD                                        |
+| MoU              | ✅ Done | 100%     | Full CRUD + status flow                          |
+| Inventory        | ✅ Done | 100%     | Manual stock, adjust, balance, valuation, alerts |
 
 ### Frontend Pages
 
-| Page | Status | Progress | Notes |
-|------|--------|----------|-------|
-| Home (Batch Lookup) | ✅ Done | 100% | Public batch search form (SSR) |
-| Batch Detail | ⚠️ Partial | 80% | Nutrition, allergen, cost breakdown. Complaint form broken (uses raw HTML instead of API client) |
-| Login | ✅ Done | 100% | Email/password with mock fallback, role-based redirect |
-| Register | ✅ Done | 100% | Supplier registration with validation, NPWP upload |
-| Dashboard (Admin) | ❌ Not Started | 0% | Admin overview |
-| Supplier Management | ❌ Not Started | 0% | CRUD table |
-| Batch Management | ❌ Not Started | 0% | SPPG admin workflow |
-| Complaint Management | ❌ Not Started | 0% | Status tracking |
-| Market/Analytics | ❌ Not Started | 0% | Price charts |
-| Reports | ❌ Not Started | 0% | Daily/weekly views |
-| Order Management | ❌ Not Started | 0% | SPPG: Create/manage orders |
-| Supplier Orders | ❌ Not Started | 0% | Supplier: View/accept incoming orders |
-| Stock Management | ❌ Not Started | 0% | Stock management for supplier |
+| Page                 | Status         | Progress | Notes                                                                                            |
+| -------------------- | -------------- | -------- | ------------------------------------------------------------------------------------------------ |
+| Home (Batch Lookup)  | ✅ Done        | 100%     | Public batch search form (SSR)                                                                   |
+| Batch Detail         | ⚠️ Partial     | 80%      | Nutrition, allergen, cost breakdown. Complaint form broken (uses raw HTML instead of API client) |
+| Login                | ✅ Done        | 100%     | Email/password with mock fallback, role-based redirect                                           |
+| Register             | ✅ Done        | 100%     | Supplier registration with validation, NPWP upload                                               |
+| Dashboard (Admin)    | ❌ Not Started | 0%       | Admin overview                                                                                   |
+| Supplier Management  | ❌ Not Started | 0%       | CRUD table                                                                                       |
+| Batch Management     | ❌ Not Started | 0%       | SPPG admin workflow                                                                              |
+| Complaint Management | ❌ Not Started | 0%       | Status tracking                                                                                  |
+| Market/Analytics     | ❌ Not Started | 0%       | Price charts                                                                                     |
+| Reports              | ❌ Not Started | 0%       | Daily/weekly views                                                                               |
+| Order Management     | ❌ Not Started | 0%       | SPPG: Create/manage orders                                                                       |
+| Supplier Orders      | ❌ Not Started | 0%       | Supplier: View/accept incoming orders                                                            |
+| Stock Management     | ❌ Not Started | 0%       | Stock management for supplier                                                                    |
 
 ### Frontend Components
 
-| Component | Status | Progress | Notes |
-|-----------|--------|----------|-------|
-| Layout (Sidebar + Header) | ✅ Done | 100% | SupplierLayout, SupplierSidebar, SupplierHeader |
-| Auth Provider/Context | ⚠️ Partial | 70% | AuthContext exists but NOT wrapped in root layout |
-| Reusable UI Components | ✅ Done | 100% | Button (4 variants), Card, Badge (5 variants), Input, Pagination, FileUpload |
-| Loading Skeletons | ❌ Not Started | 0% | |
-| Error Boundaries | ❌ Not Started | 0% | |
+| Component                 | Status         | Progress | Notes                                                                        |
+| ------------------------- | -------------- | -------- | ---------------------------------------------------------------------------- |
+| Layout (Sidebar + Header) | ✅ Done        | 100%     | SupplierLayout, SupplierSidebar, SupplierHeader                              |
+| Auth Provider/Context     | ⚠️ Partial     | 70%      | AuthContext exists but NOT wrapped in root layout                            |
+| Reusable UI Components    | ✅ Done        | 100%     | Button (4 variants), Card, Badge (5 variants), Input, Pagination, FileUpload |
+| Loading Skeletons         | ❌ Not Started | 0%       |                                                                              |
+| Error Boundaries          | ❌ Not Started | 0%       |                                                                              |
 
 ### Order Workflow Features
 
-| Feature | Status | Progress | Notes |
-|---------|--------|----------|-------|
-| SPPG Order Creation | ❌ Not Started | 0% | Select supplier + items |
-| Supplier Order Acceptance | ❌ Not Started | 0% | Accept/reject workflow |
-| Payment Simulation | ❌ Not Started | 0% | Simple payment flow |
-| Status Tracking | ❌ Not Started | 0% | Real-time status updates |
-| Price Validation | ❌ Not Started | 0% | Algorithm-based validation |
-| Curated Market Data | ❌ Not Started | 0% | Validated prices for SPPG |
+| Feature                   | Status  | Progress | Notes                                          |
+| ------------------------- | ------- | -------- | ---------------------------------------------- |
+| SPPG Order Creation       | ✅ Done | 100%     | Select supplier + items with price validation  |
+| Supplier Order Acceptance | ✅ Done | 100%     | Accept/reject workflow with status history     |
+| Payment Simulation        | ✅ Done | 100%     | Payment evidence tracking                      |
+| Status Tracking           | ✅ Done | 100%     | OrderStatusHistory audit trail                 |
+| Price Validation          | ✅ Done | 100%     | IQR bounds + master reference + adaptive logic |
+| Curated Market Data       | ✅ Done | 100%     | Validated prices for SPPG                      |
 
 ### Infrastructure
 
-| Component | Status | Progress | Notes |
-|-----------|--------|----------|-------|
-| Docker Compose | ✅ Done | 90% | Postgres + Backend + Portal |
-| Prisma Schema | ✅ Done | 100% | 8 models, all relations |
-| Prisma Migration | ❌ Not Started | 0% | |
-| .env Configuration | ❌ Not Started | 0% | Only .env.example exists |
-| pnpm Install | ❌ Not Started | 0% | Dependencies not installed |
-| Seed Script | ✅ Done | 100% | Sample data ready |
+| Component          | Status         | Progress | Notes                       |
+| ------------------ | -------------- | -------- | --------------------------- |
+| Docker Compose     | ✅ Done        | 90%      | Postgres + Backend + Portal |
+| Prisma Schema      | ✅ Done        | 100%     | 8 models, all relations     |
+| Prisma Migration   | ❌ Not Started | 0%       |                             |
+| .env Configuration | ❌ Not Started | 0%       | Only .env.example exists    |
+| pnpm Install       | ❌ Not Started | 0%       | Dependencies not installed  |
+| Seed Script        | ✅ Done        | 100%     | Sample data ready           |
 
 ### Skills & MCP
 
-| Skill | Status | Location |
-|-------|--------|----------|
-| nestjs-module-scaffold | ✅ Done | docs/backend/skills/ |
-| ddd-boundary-rules | ✅ Done | docs/backend/skills/ |
-| prisma-conventions | ✅ Done | docs/backend/skills/ |
-| repository-pattern | ✅ Done | docs/backend/skills/ |
-| controller-pattern | ✅ Done | docs/backend/skills/ |
-| mapper-pattern | ✅ Done | docs/backend/skills/ |
-| validation-pattern | ✅ Done | docs/backend/skills/ |
-| transaction-pattern | ✅ Done | docs/backend/skills/ |
-| exception-pattern | ✅ Done | docs/backend/skills/ |
-| testing-pattern | ✅ Done | docs/backend/skills/ |
-| nextjs-ssr-csr-boundary | ✅ Done | docs/frontend/skills/ |
-| nextjs-page-pattern | ✅ Done | docs/frontend/skills/ |
-| react-component-pattern | ✅ Done | docs/frontend/skills/ |
+| Skill                    | Status  | Location              |
+| ------------------------ | ------- | --------------------- |
+| nestjs-module-scaffold   | ✅ Done | docs/backend/skills/  |
+| ddd-boundary-rules       | ✅ Done | docs/backend/skills/  |
+| prisma-conventions       | ✅ Done | docs/backend/skills/  |
+| repository-pattern       | ✅ Done | docs/backend/skills/  |
+| controller-pattern       | ✅ Done | docs/backend/skills/  |
+| mapper-pattern           | ✅ Done | docs/backend/skills/  |
+| validation-pattern       | ✅ Done | docs/backend/skills/  |
+| transaction-pattern      | ✅ Done | docs/backend/skills/  |
+| exception-pattern        | ✅ Done | docs/backend/skills/  |
+| testing-pattern          | ✅ Done | docs/backend/skills/  |
+| nextjs-ssr-csr-boundary  | ✅ Done | docs/frontend/skills/ |
+| nextjs-page-pattern      | ✅ Done | docs/frontend/skills/ |
+| react-component-pattern  | ✅ Done | docs/frontend/skills/ |
 | tailwind-styling-pattern | ✅ Done | docs/frontend/skills/ |
-| api-integration-pattern | ✅ Done | docs/frontend/skills/ |
-| form-pattern | ✅ Done | docs/frontend/skills/ |
+| api-integration-pattern  | ✅ Done | docs/frontend/skills/ |
+| form-pattern             | ✅ Done | docs/frontend/skills/ |
 | state-management-pattern | ✅ Done | docs/frontend/skills/ |
-| error-handling-pattern | ✅ Done | docs/frontend/skills/ |
-| loading-pattern | ✅ Done | docs/frontend/skills/ |
-| testing-pattern | ✅ Done | docs/frontend/skills/ |
+| error-handling-pattern   | ✅ Done | docs/frontend/skills/ |
+| loading-pattern          | ✅ Done | docs/frontend/skills/ |
+| testing-pattern          | ✅ Done | docs/frontend/skills/ |
 
 ### MVP Critical Path
 
@@ -122,18 +124,18 @@
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
 │  Day 1: Setup & Backend Core                                 │
-│  ├── [ ] pnpm install                                      │
-│  ├── [ ] .env configuration                                 │
-│  ├── [ ] Prisma migration                                   │
-│  ├── [ ] Order module CRUD                                  │
-│  ├── [ ] SPPG module CRUD                                   │
-│  ├── [ ] Beneficiary module CRUD                            │
-│  └── [ ] Price validation endpoint                          │
+│  ├── [x] pnpm install                                      │
+│  ├── [x] .env configuration                                 │
+│  ├── [x] Prisma migration                                   │
+│  ├── [x] Order module CRUD                                  │
+│  ├── [x] SPPG module CRUD                                   │
+│  ├── [x] Beneficiary module CRUD                            │
+│  └── [x] Price validation endpoint                          │
 │                                                              │
 │  Day 2: Backend Workflow & Frontend Auth                     │
-│  ├── [ ] Order workflow (status transitions)                │
-│  ├── [ ] Payment simulation logic                           │
-│  ├── [ ] Auth flow (Login + Context)                        │
+│  ├── [x] Order workflow (status transitions)                │
+│  ├── [x] Payment simulation logic                           │
+│  ├── [x] Auth flow (Login + Context)                        │
 │  └── [ ] Dashboard layout (Sidebar + Header)                │
 │                                                              │
 │  Day 3: Frontend Core Pages                                  │
@@ -168,43 +170,43 @@
 
 ### New Features
 
-| Feature | Priority | Status | Dependencies |
-|---------|----------|--------|--------------|
-| Real SSO BGN Integration | High | ❌ Not Started | Government SSO API |
-| Order Management (Full) | High | ❌ Not Started | MVP Order module |
-| SPPG Management | High | ❌ Not Started | MVP SPPG module |
-| Beneficiary Management | Medium | ❌ Not Started | MVP Beneficiary module |
-| Role-Based UI | High | ❌ Not Started | Auth flow complete |
-| File Upload (Evidence) | Medium | ❌ Not Started | S3/Cloud storage |
-| PDF Export (Reports) | Medium | ❌ Not Started | PDF library |
-| Real-time Notifications | Low | ❌ Not Started | WebSocket setup |
+| Feature                  | Priority | Status         | Dependencies           |
+| ------------------------ | -------- | -------------- | ---------------------- |
+| Real SSO BGN Integration | High     | ❌ Not Started | Government SSO API     |
+| Order Management (Full)  | High     | ❌ Not Started | MVP Order module       |
+| SPPG Management          | High     | ❌ Not Started | MVP SPPG module        |
+| Beneficiary Management   | Medium   | ❌ Not Started | MVP Beneficiary module |
+| Role-Based UI            | High     | ❌ Not Started | Auth flow complete     |
+| File Upload (Evidence)   | Medium   | ❌ Not Started | S3/Cloud storage       |
+| PDF Export (Reports)     | Medium   | ❌ Not Started | PDF library            |
+| Real-time Notifications  | Low      | ❌ Not Started | WebSocket setup        |
 
 ### Architecture Improvements
 
-| Improvement | Status | Priority | Notes |
-|-------------|--------|----------|-------|
-| Redis Caching | ❌ Not Started | High | Session, frequently accessed data |
-| Queue System (BullMQ) | ❌ Not Started | Medium | Async jobs, email |
-| WebSocket | ❌ Not Started | Medium | Real-time batch updates |
-| Elasticsearch | ❌ Not Started | Low | Full-text search |
-| CDN Setup | ❌ Not Started | Medium | Static assets |
+| Improvement           | Status         | Priority | Notes                             |
+| --------------------- | -------------- | -------- | --------------------------------- |
+| Redis Caching         | ❌ Not Started | High     | Session, frequently accessed data |
+| Queue System (BullMQ) | ❌ Not Started | Medium   | Async jobs, email                 |
+| WebSocket             | ❌ Not Started | Medium   | Real-time batch updates           |
+| Elasticsearch         | ❌ Not Started | Low      | Full-text search                  |
+| CDN Setup             | ❌ Not Started | Medium   | Static assets                     |
 
 ### New Skills Needed
 
-| Skill | Source | Status | Notes |
-|-------|--------|--------|-------|
-| microservices-pattern | NestJS Official | ❌ Not Started | For scaling |
-| redis-caching-pattern | Community | ❌ Not Started | Cache strategies |
-| queue-pattern | BullMQ docs | ❌ Not Started | Job processing |
-| websocket-pattern | NestJS WS | ❌ Not Started | Real-time features |
-| file-upload-pattern | Community | ❌ Not Started | S3 integration |
-| pdf-generation-pattern | PDF libs | ❌ Not Started | Report export |
+| Skill                  | Source          | Status         | Notes              |
+| ---------------------- | --------------- | -------------- | ------------------ |
+| microservices-pattern  | NestJS Official | ❌ Not Started | For scaling        |
+| redis-caching-pattern  | Community       | ❌ Not Started | Cache strategies   |
+| queue-pattern          | BullMQ docs     | ❌ Not Started | Job processing     |
+| websocket-pattern      | NestJS WS       | ❌ Not Started | Real-time features |
+| file-upload-pattern    | Community       | ❌ Not Started | S3 integration     |
+| pdf-generation-pattern | PDF libs        | ❌ Not Started | Report export      |
 
 ### MCP Enhancements
 
-| MCP Server | Status | Notes |
-|------------|--------|-------|
-| Redis MCP | ❌ Not Started | Cache monitoring |
+| MCP Server        | Status         | Notes            |
+| ----------------- | -------------- | ---------------- |
+| Redis MCP         | ❌ Not Started | Cache monitoring |
 | Elasticsearch MCP | ❌ Not Started | Search debugging |
 
 ---
@@ -217,49 +219,49 @@
 
 ### Infrastructure
 
-| Component | Status | Priority | Notes |
-|-----------|--------|----------|-------|
-| CI/CD Pipeline | ❌ Not Started | High | GitHub Actions |
-| Kubernetes Deployment | ❌ Not Started | High | Or Docker Swarm |
-| SSL/TLS Setup | ❌ Not Started | High | Let's Encrypt |
-| Domain Configuration | ❌ Not Started | High | sigizi.go.id |
-| CDN (CloudFlare) | ❌ Not Started | Medium | Static assets |
-| WAF Setup | ❌ Not Started | Medium | Security |
-| Monitoring (Grafana) | ❌ Not Started | High | Metrics dashboards |
-| Logging (Loki/ELK) | ❌ Not Started | High | Centralized logs |
-| APM (Sentry) | ❌ Not Started | High | Error tracking |
-| Backup Strategy | ❌ Not Started | High | Database backups |
+| Component             | Status         | Priority | Notes              |
+| --------------------- | -------------- | -------- | ------------------ |
+| CI/CD Pipeline        | ❌ Not Started | High     | GitHub Actions     |
+| Kubernetes Deployment | ❌ Not Started | High     | Or Docker Swarm    |
+| SSL/TLS Setup         | ❌ Not Started | High     | Let's Encrypt      |
+| Domain Configuration  | ❌ Not Started | High     | sigizi.go.id       |
+| CDN (CloudFlare)      | ❌ Not Started | Medium   | Static assets      |
+| WAF Setup             | ❌ Not Started | Medium   | Security           |
+| Monitoring (Grafana)  | ❌ Not Started | High     | Metrics dashboards |
+| Logging (Loki/ELK)    | ❌ Not Started | High     | Centralized logs   |
+| APM (Sentry)          | ❌ Not Started | High     | Error tracking     |
+| Backup Strategy       | ❌ Not Started | High     | Database backups   |
 
 ### Security
 
-| Item | Status | Priority | Notes |
-|------|--------|----------|-------|
-| OWASP Security Audit | ❌ Not Started | High | |
-| Penetration Testing | ❌ Not Started | High | |
-| Rate Limiting | ❌ Not Started | High | API protection |
-| CORS Hardening | ❌ Not Started | Medium | |
-| Input Sanitization | ⚠️ Partial | Medium | Prisma handles SQLi |
-| XSS Prevention | ⚠️ Partial | Medium | React handles XSS |
+| Item                 | Status         | Priority | Notes               |
+| -------------------- | -------------- | -------- | ------------------- |
+| OWASP Security Audit | ❌ Not Started | High     |                     |
+| Penetration Testing  | ❌ Not Started | High     |                     |
+| Rate Limiting        | ❌ Not Started | High     | API protection      |
+| CORS Hardening       | ❌ Not Started | Medium   |                     |
+| Input Sanitization   | ⚠️ Partial     | Medium   | Prisma handles SQLi |
+| XSS Prevention       | ⚠️ Partial     | Medium   | React handles XSS   |
 
 ### New Skills Needed
 
-| Skill | Source | Status | Notes |
-|-------|--------|--------|-------|
-| ci-cd-pattern | GitHub Actions | ❌ Not Started | Pipeline setup |
-| kubernetes-pattern | K8s docs | ❌ Not Started | Orchestration |
-| monitoring-pattern | Prometheus | ❌ Not Started | Metrics |
-| logging-pattern | Loki/ELK | ❌ Not Started | Log aggregation |
-| security-hardening | OWASP | ❌ Not Started | Security best practices |
-| deployment-pattern | Docker/K8s | ❌ Not Started | Deployment strategies |
-| backup-pattern | pg_dump | ❌ Not Started | Disaster recovery |
+| Skill              | Source         | Status         | Notes                   |
+| ------------------ | -------------- | -------------- | ----------------------- |
+| ci-cd-pattern      | GitHub Actions | ❌ Not Started | Pipeline setup          |
+| kubernetes-pattern | K8s docs       | ❌ Not Started | Orchestration           |
+| monitoring-pattern | Prometheus     | ❌ Not Started | Metrics                 |
+| logging-pattern    | Loki/ELK       | ❌ Not Started | Log aggregation         |
+| security-hardening | OWASP          | ❌ Not Started | Security best practices |
+| deployment-pattern | Docker/K8s     | ❌ Not Started | Deployment strategies   |
+| backup-pattern     | pg_dump        | ❌ Not Started | Disaster recovery       |
 
 ### MCP for Production
 
-| MCP Server | Status | Notes |
-|------------|--------|-------|
-| Kubernetes MCP | ❌ Not Started | Cluster management |
-| Prometheus MCP | ❌ Not Started | Metrics queries |
-| Grafana MCP | ❌ Not Started | Dashboard management |
+| MCP Server     | Status         | Notes                |
+| -------------- | -------------- | -------------------- |
+| Kubernetes MCP | ❌ Not Started | Cluster management   |
+| Prometheus MCP | ❌ Not Started | Metrics queries      |
+| Grafana MCP    | ❌ Not Started | Dashboard management |
 
 ---
 
@@ -316,12 +318,14 @@
 ## 🎯 Recommended Next Steps
 
 ### Immediate (Today)
+
 1. [ ] Run `pnpm install`
 2. [ ] Create `.env` file
 3. [ ] Run `docker-compose up db` and test Postgres
 4. [ ] Run Prisma migrations
 
 ### This Week (Sprint Day 1-2)
+
 1. [ ] Run `pnpm install`
 2. [ ] Create `.env` file
 3. [ ] Run Prisma migrations
@@ -333,6 +337,7 @@
 9. [ ] Frontend: Dashboard layout
 
 ### Before Testing (Sprint Day 5)
+
 1. [ ] Frontend: All admin pages
 2. [ ] Frontend: Order management page
 3. [ ] Frontend: Supplier orders page
@@ -346,14 +351,14 @@
 
 ## 📚 External Skills (Future Reference)
 
-| Skill | Repository | Phase | Notes |
-|-------|------------|-------|-------|
-| NestJS Best Practices | ejirocodes/agent-skills | Post-MVP | |
-| TypeScript React Patterns | leejpsd/typescript-react-patterns | Post-MVP | |
-| Microservices | NestJS official | Production | |
-| Redis Caching | Community | Post-MVP | |
-| Kubernetes | K8s official | Production | |
-| CI/CD | GitHub Actions | Production | |
+| Skill                     | Repository                        | Phase      | Notes |
+| ------------------------- | --------------------------------- | ---------- | ----- |
+| NestJS Best Practices     | ejirocodes/agent-skills           | Post-MVP   |       |
+| TypeScript React Patterns | leejpsd/typescript-react-patterns | Post-MVP   |       |
+| Microservices             | NestJS official                   | Production |       |
+| Redis Caching             | Community                         | Post-MVP   |       |
+| Kubernetes                | K8s official                      | Production |       |
+| CI/CD                     | GitHub Actions                    | Production |       |
 
 ---
 
@@ -380,4 +385,4 @@
 
 ---
 
-*This document is automatically checked by agents. When a user requests work from a new phase, agents will verify prerequisites are met.*
+_This document is automatically checked by agents. When a user requests work from a new phase, agents will verify prerequisites are met._

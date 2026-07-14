@@ -15,6 +15,10 @@ import {
   OrderCompletedEvent,
   OrderCancelledEvent,
 } from "../events/order.events";
+import {
+  MarketService,
+  IntegratedValidationResult,
+} from "../../market/services/market.service";
 
 const OS = OrderStatus;
 
@@ -23,6 +27,7 @@ export class OrderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly marketService: MarketService,
   ) {}
 
   private readonly VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
@@ -109,6 +114,10 @@ export class OrderService {
   }
 
   async create(dto: CreateOrderDto, sppgId: string, createdById: string) {
+    // ═══════════════════════════════════════════════════════════════════
+    // 1. VALIDASI MoU (jika ada)
+    // ═══════════════════════════════════════════════════════════════════
+    let mouItems: Map<string, number> = new Map();
     if (dto.mouId) {
       const mou = await this.prisma.mou.findUnique({
         where: { id: dto.mouId },
@@ -127,10 +136,7 @@ export class OrderService {
           `MoU ${dto.mouId} tidak termasuk dalam cakupan SPPG Anda`,
         );
       }
-    }
 
-    let mouItems: Map<string, number> = new Map();
-    if (dto.mouId) {
       const mouItemsData = await this.prisma.mouItem.findMany({
         where: { mouId: dto.mouId },
       });
@@ -139,27 +145,151 @@ export class OrderService {
       }
     }
 
+    // ═══════════════════════════════════════════════════════════════════
+    // 2. BULK FETCH — Semua data sekaligus, tanpa loop await
+    // ═══════════════════════════════════════════════════════════════════
+    const itemIds = dto.items.map((i) => i.itemId);
+
+    const [supplierItems, sppg] = await Promise.all([
+      this.prisma.supplierItem.findMany({
+        where: { id: { in: itemIds } },
+        select: { id: true, basePrice: true, name: true },
+      }),
+      this.prisma.sppg.findUnique({
+        where: { id: sppgId },
+        select: { province: true, regency: true, district: true },
+      }),
+    ]);
+
+    const itemMap = new Map(supplierItems.map((i) => [i.id, i]));
+
+    // Validasi semua item ditemukan
+    for (const item of dto.items) {
+      if (!itemMap.has(item.itemId)) {
+        throw new NotFoundException(
+          `Barang dengan ID ${item.itemId} tidak ditemukan dalam katalog supplier`,
+        );
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 3. BANGUN FILTER dari data SPPG
+    // ═══════════════════════════════════════════════════════════════════
+    const marketFilter = {
+      province: sppg?.province ?? undefined,
+      regency: sppg?.regency ?? undefined,
+      district: sppg?.district ?? undefined,
+    };
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 4. VALIDASI HARGA — Parallel execution via Promise.all
+    // ═══════════════════════════════════════════════════════════════════
+    const validationResults = await Promise.all(
+      dto.items.map(async (item) => {
+        const supplierItem = itemMap.get(item.itemId)!;
+        const unitPrice = mouItems.get(item.itemId) ?? supplierItem.basePrice;
+        const itemName = supplierItem.name;
+
+        const validation = await this.marketService.validatePrice(
+          itemName,
+          unitPrice,
+          marketFilter,
+        );
+
+        return {
+          itemId: item.itemId,
+          itemName,
+          unitPrice,
+          validation,
+        };
+      }),
+    );
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 5. CEK HASIL VALIDASI
+    // ═══════════════════════════════════════════════════════════════════
+    const invalidItems = validationResults.filter(
+      (r) => r.validation.status === "INVALID",
+    );
+    if (invalidItems.length > 0) {
+      throw new BadRequestException({
+        message:
+          "Beberapa item memiliki harga tidak valid berdasarkan data pasar",
+        details: invalidItems.map((i) => ({
+          itemId: i.itemId,
+          itemName: i.itemName,
+          unitPrice: i.unitPrice,
+          ...i.validation,
+        })),
+      });
+    }
+
+    const warningItems = validationResults.filter(
+      (r) => r.validation.status === "WARNING",
+    );
+    if (warningItems.length > 0 && !dto.priceJustification) {
+      throw new BadRequestException({
+        message:
+          "Beberapa item memiliki harga di atas normal. Sertakan priceJustification di request body",
+        details: warningItems.map((i) => ({
+          itemId: i.itemId,
+          itemName: i.itemName,
+          unitPrice: i.unitPrice,
+          ...i.validation,
+        })),
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 6. HITUNG TOTAL + BUILD SNAPSHOT MAP
+    // ═══════════════════════════════════════════════════════════════════
+    const validationMap = new Map(validationResults.map((r) => [r.itemId, r]));
+
     let total = 0;
     const itemsData: {
       itemId: string;
       quantity: number;
       unitPrice: number;
       subtotal: number;
+      marketMedianAtPurchase: number | null;
+      isWarningBypass: boolean;
+      justificationNote: string | null;
     }[] = [];
 
     for (const item of dto.items) {
-      const unitPrice =
-        mouItems.get(item.itemId) ?? (await this.getBasePrice(item.itemId));
+      const supplierItem = itemMap.get(item.itemId)!;
+      const unitPrice = mouItems.get(item.itemId) ?? supplierItem.basePrice;
       const subtotal = item.quantity * unitPrice;
       total += subtotal;
+
+      const vr = validationMap.get(item.itemId);
+      const isWarningBypass = vr?.validation.status === "WARNING";
+      const justificationNote = isWarningBypass
+        ? `[Price Validation Justification] ${dto.priceJustification}`
+        : "Semua harga valid sesuai data pasar";
+
       itemsData.push({
         itemId: item.itemId,
         quantity: item.quantity,
         unitPrice,
         subtotal,
+        marketMedianAtPurchase: vr?.validation.marketMedianSnapshot ?? null,
+        isWarningBypass,
+        justificationNote,
       });
     }
 
+    // ═══════════════════════════════════════════════════════════════════
+    // 7. BUILD AUDIT TRAIL NOTES
+    // ═══════════════════════════════════════════════════════════════════
+    const justificationNotes =
+      warningItems.length > 0
+        ? `[Price Validation Justification] ${dto.priceJustification}`
+        : "Semua harga valid sesuai data pasar";
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 8. CREATE ORDER + AUDIT TRAIL
+    // ═══════════════════════════════════════════════════════════════════
     const order = await this.prisma.$transaction(async (tx) => {
       const newOrder = await tx.order.create({
         data: {
@@ -173,7 +303,17 @@ export class OrderService {
           expectedDeliveryDate: dto.expectedDeliveryDate
             ? new Date(dto.expectedDeliveryDate)
             : null,
-          items: { create: itemsData },
+          items: {
+            create: itemsData.map((i) => ({
+              itemId: i.itemId,
+              quantity: i.quantity,
+              unitPrice: i.unitPrice,
+              subtotal: i.subtotal,
+              marketMedianAtPurchase: i.marketMedianAtPurchase,
+              isWarningBypass: i.isWarningBypass,
+              justificationNote: i.justificationNote,
+            })),
+          },
         },
         include: { items: true },
       });
@@ -184,7 +324,7 @@ export class OrderService {
           fromStatus: null,
           toStatus: OS.PENDING,
           changedById: createdById,
-          notes: "Order berhasil dibuat dan menunggu konfirmasi dari supplier",
+          notes: justificationNotes,
         },
       });
 
@@ -329,17 +469,5 @@ export class OrderService {
         );
       }
     }
-  }
-
-  private async getBasePrice(itemId: string): Promise<number> {
-    const item = await this.prisma.supplierItem.findUnique({
-      where: { id: itemId },
-      select: { basePrice: true },
-    });
-    if (!item)
-      throw new NotFoundException(
-        `Barang dengan ID ${itemId} tidak ditemukan dalam katalog supplier`,
-      );
-    return item.basePrice;
   }
 }

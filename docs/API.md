@@ -332,6 +332,65 @@ Authorization: Bearer <token>
 | Sayur          | sawi    | Rp 7.000      |
 | Fallback       | —       | Rp 20.000     |
 
+### Validate Price
+
+```
+POST /api/market/validate-price
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "itemName": "Beras Premium",
+  "proposedPrice": 18000,
+  "province": "Jawa Barat",
+  "regency": "Purwakarta",
+  "district": "Babakancikao"
+}
+```
+
+**Field Descriptions:**
+
+| Field           | Type   | Required | Description                      |
+| --------------- | ------ | -------- | -------------------------------- |
+| `itemName`      | string | Ya       | Nama item untuk pencarian pasar  |
+| `proposedPrice` | number | Ya       | Harga yang akan divalidasi       |
+| `province`      | string | Tidak    | Filter provinsi (opsional)       |
+| `regency`       | string | Tidak    | Filter kabupaten/kota (opsional) |
+| `district`      | string | Tidak    | Filter kecamatan (opsional)      |
+| `latitude`      | number | Tidak    | GPS latitude (opsional)          |
+| `longitude`     | number | Tidak    | GPS longitude (opsional)         |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "itemName": "Beras Premium",
+    "proposedPrice": 18000,
+    "validation": {
+      "status": "INVALID",
+      "reason": "Harga terdeteksi sebagai outlier ekstrem di atas batas wajar pasar lokal",
+      "recommendation": "Batas atas pasar: Rp 14.000",
+      "marketMedianSnapshot": 12000
+    }
+  }
+}
+```
+
+**Validation Logic:**
+
+| Kondisi                 | Status                                 | Keterangan                                   |
+| ----------------------- | -------------------------------------- | -------------------------------------------- |
+| Cold Start (0 supplier) | INVALID jika > master × 1.2            | Harga melebihi batas atas nasional 20%       |
+| Cold Start (0 supplier) | WARNING jika > master × 1.05           | Harga sedikit di atas master                 |
+| Mature Market           | INVALID jika > upper IQR               | Outlier ekstrem di atas batas wajar          |
+| Mature Market           | WARNING jika < lower IQR               | Harga terlalu rendah, potensi kualitas buruk |
+| Mature Market           | WARNING jika deviasi > 15% dari median | Harga membengkak dari median pasar           |
+
 ---
 
 ## Batch Management
@@ -588,11 +647,11 @@ Authorization: Bearer <token>
 
 **Query Params:**
 
-| Param       | Type   | Required | Description |
-| ----------- | ------ | -------- | ----------- |
+| Param       | Type   | Required | Description                                           |
+| ----------- | ------ | -------- | ----------------------------------------------------- |
 | `source`    | string | No       | `COGS`, `PROCUREMENT`, `OPEX`, `ALL` (default: `ALL`) |
-| `startDate` | string | Ya       | ISO date `YYYY-MM-DD` |
-| `endDate`   | string | Ya       | ISO date `YYYY-MM-DD` |
+| `startDate` | string | Ya       | ISO date `YYYY-MM-DD`                                 |
+| `endDate`   | string | Ya       | ISO date `YYYY-MM-DD`                                 |
 
 **Response:**
 
@@ -616,13 +675,38 @@ Authorization: Bearer <token>
           "batchId": "clx...",
           "batchNumber": "BATCH-20260709-001"
         }
+      },
+      {
+        "source": "PROCUREMENT",
+        "date": "2026-07-09T00:00:00.000Z",
+        "referenceId": "clx...",
+        "title": "UD. Sumber Rejeki",
+        "description": "Order COMPLETED",
+        "amount": 615000,
+        "meta": {
+          "orderId": "clx...",
+          "warningBypassCount": 1,
+          "priceValidation": {
+            "hasWarningBypass": true,
+            "bypassedItems": [
+              {
+                "itemName": "Beras Premium",
+                "quantity": 20,
+                "unitPrice": 11500,
+                "marketMedianAtPurchase": 12000,
+                "justificationNote": "[Price Validation Justification] Stok lokal langka"
+              }
+            ]
+          }
+        }
       }
     ],
     "summary": {
       "totalCogs": 4000000,
       "totalProcured": 1850000,
       "totalOpex": 250000,
-      "grandTotal": 6100000
+      "grandTotal": 6100000,
+      "warningBypassCount": 2
     }
   }
 }
@@ -666,12 +750,13 @@ DELETE /api/reports/operational-expenses/:id
 
 **Financial taxonomy used by reports:**
 
-| Metric | Source | Formula |
-| ------ | ------ | ------- |
-| `totalCogs` | BatchItem | Sum of `subtotal` |
-| `totalProcured` | Order COMPLETED | Sum of `total` |
-| `totalOpex` | OperationalExpense | Sum of `amount` |
-| `budgetVariance` | Official report | `(totalPortions * 10000) - totalCogs` |
+| Metric               | Source             | Formula                                      |
+| -------------------- | ------------------ | -------------------------------------------- |
+| `totalCogs`          | BatchItem          | Sum of `subtotal`                            |
+| `totalProcured`      | Order COMPLETED    | Sum of `total`                               |
+| `totalOpex`          | OperationalExpense | Sum of `amount`                              |
+| `budgetVariance`     | Official report    | `(totalPortions * 10000) - totalCogs`        |
+| `warningBypassCount` | OrderItem          | Count of items with `isWarningBypass = true` |
 
 ---
 
@@ -926,7 +1011,10 @@ Authorization: Bearer <token>
             "itemId": "clx...",
             "quantity": 20,
             "unitPrice": 11500,
-            "subtotal": 230000
+            "subtotal": 230000,
+            "marketMedianAtPurchase": 12000,
+            "isWarningBypass": false,
+            "justificationNote": "Semua harga valid sesuai data pasar"
           }
         ],
         "createdAt": "2026-07-13T00:00:00Z"
@@ -979,6 +1067,9 @@ Authorization: Bearer <token>
         "quantity": 20,
         "unitPrice": 11500,
         "subtotal": 230000,
+        "marketMedianAtPurchase": 12000,
+        "isWarningBypass": false,
+        "justificationNote": "Semua harga valid sesuai data pasar",
         "inventoryStocks": []
       }
     ],
@@ -1021,6 +1112,7 @@ Content-Type: application/json
   "mouId": "clx...",
   "notes": "Pesanan bahan baku minggu ini",
   "expectedDeliveryDate": "2026-07-15T00:00:00Z",
+  "priceJustification": "Stok lokal langka, supplier terdekat hanya ini yang tersedia",
   "items": [
     {
       "itemId": "clx...",
@@ -1036,15 +1128,16 @@ Content-Type: application/json
 
 **Field Descriptions:**
 
-| Field                  | Type   | Required | Description                                   |
-| ---------------------- | ------ | -------- | --------------------------------------------- |
-| `supplierId`           | string | Ya       | ID Supplier                                   |
-| `mouId`                | string | Tidak    | ID MoU (jika ada perjanjian kerjasama)        |
-| `notes`                | string | Tidak    | Catatan order                                 |
-| `expectedDeliveryDate` | string | Tidak    | Tanggal pengiriman yang diharapkan (ISO 8601) |
-| `items`                | array  | Ya       | Daftar barang yang dipesan                    |
-| `items[].itemId`       | string | Ya       | ID Barang                                     |
-| `items[].quantity`     | number | Ya       | Jumlah yang dipesan                           |
+| Field                  | Type   | Required    | Description                                                           |
+| ---------------------- | ------ | ----------- | --------------------------------------------------------------------- |
+| `supplierId`           | string | Ya          | ID Supplier                                                           |
+| `mouId`                | string | Tidak       | ID MoU (jika ada perjanjian kerjasama)                                |
+| `notes`                | string | Tidak       | Catatan order                                                         |
+| `expectedDeliveryDate` | string | Tidak       | Tanggal pengiriman yang diharapkan (ISO 8601)                         |
+| `priceJustification`   | string | Kondisional | Wajib diisi jika ada item dengan status WARNING dari price validation |
+| `items`                | array  | Ya          | Daftar barang yang dipesan                                            |
+| `items[].itemId`       | string | Ya          | ID Barang                                                             |
+| `items[].quantity`     | number | Ya          | Jumlah yang dipesan                                                   |
 
 **Response:**
 
@@ -1062,13 +1155,34 @@ Content-Type: application/json
         "itemId": "clx...",
         "quantity": 20,
         "unitPrice": 11500,
-        "subtotal": 230000
+        "subtotal": 230000,
+        "marketMedianAtPurchase": 12000,
+        "isWarningBypass": false,
+        "justificationNote": "Semua harga valid sesuai data pasar"
       }
     ],
     "createdAt": "2026-07-13T00:00:00Z"
   }
 }
 ```
+
+**Price Validation Behavior:**
+
+Saat membuat order, sistem akan secara otomatis memvalidasi harga setiap item terhadap data pasar:
+
+1. **INVALID** → Order ditolak. Sistem mengembalikan error dengan detail item yang tidak valid.
+2. **WARNING** → Order dapat dilanjutkan, tetapi admin wajib mengisi `priceJustification`.
+3. **VALID** → Order dapat dilanjutkan tanpa justifikasi.
+
+**Snapshot Fields per OrderItem:**
+
+| Field                    | Type    | Description                                                    |
+| ------------------------ | ------- | -------------------------------------------------------------- |
+| `marketMedianAtPurchase` | number  | Median pasar saat order dibuat (null jika tidak tersedia)      |
+| `isWarningBypass`        | boolean | true jika item melewati validasi WARNING dengan justifikasi    |
+| `justificationNote`      | string  | Catatan justifikasi atau "Semua harga valid sesuai data pasar" |
+
+Audit trail justifikasi disimpan di `OrderStatusHistory.notes`.
 
 ### Update Order Status
 

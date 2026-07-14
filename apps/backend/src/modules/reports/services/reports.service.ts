@@ -6,7 +6,10 @@ import {
 import { ReportSnapshot, ReportType as PrismaReportType } from "@prisma/client";
 import { Role, OrderStatus } from "@sigizi/shared";
 import { PrismaService } from "../../../database/prisma.service";
-import { PaginationDto, PaginatedResult } from "../../../core/dto/pagination.dto";
+import {
+  PaginationDto,
+  PaginatedResult,
+} from "../../../core/dto/pagination.dto";
 import { PdfGeneratorService } from "./pdf-generator.service";
 import {
   CreateOperationalExpenseDto,
@@ -38,6 +41,7 @@ type AggregatedFinancialSections = {
   totalProcured: number;
   totalOpex: number;
   totalPortions: number;
+  totalWarningBypassCount: number;
 };
 
 @Injectable()
@@ -84,7 +88,8 @@ export class ReportsService {
         totalCogs: sections.totalCogs,
         totalProcured: sections.totalProcured,
         totalOpex: sections.totalOpex,
-        grandTotal: sections.totalCogs + sections.totalProcured + sections.totalOpex,
+        grandTotal:
+          sections.totalCogs + sections.totalProcured + sections.totalOpex,
       },
     };
   }
@@ -135,6 +140,7 @@ export class ReportsService {
           totalProcured: sections.totalProcured,
           totalOpex: sections.totalOpex,
           budgetVariance: report.totals.budgetVariance,
+          warningBypassCount: sections.totalWarningBypassCount,
           generatedById: userId,
           finalizedAt: new Date(),
           payload: report as any,
@@ -284,7 +290,9 @@ export class ReportsService {
     });
 
     if (!snapshot) {
-      throw new NotFoundException(`Snapshot laporan dengan ID ${id} tidak ditemukan`);
+      throw new NotFoundException(
+        `Snapshot laporan dengan ID ${id} tidak ditemukan`,
+      );
     }
 
     const payload = this.normalizeSnapshotPayload(snapshot);
@@ -310,7 +318,10 @@ export class ReportsService {
       reportPayload.periodKey,
     );
 
-    const result = await this.pdfGenerator.generateReportPdf(reportPayload, pdfPath);
+    const result = await this.pdfGenerator.generateReportPdf(
+      reportPayload,
+      pdfPath,
+    );
 
     const updated = await this.prisma.reportSnapshot.update({
       where: { id: snapshot.id },
@@ -352,6 +363,7 @@ export class ReportsService {
         totalProcured: snapshot.totalProcured,
         totalOpex: snapshot.totalOpex,
         totalPortions: snapshot.totalPortions,
+        totalWarningBypassCount: snapshot.warningBypassCount ?? 0,
       },
     });
 
@@ -361,7 +373,8 @@ export class ReportsService {
       id: snapshot.id,
       sppgId: snapshot.sppgId,
       sppgName: snapshot.sppg?.name ?? payload?.sppgName ?? null,
-      type: (snapshot.type as ReportPeriodType) ?? payload?.type ?? fallback.type,
+      type:
+        (snapshot.type as ReportPeriodType) ?? payload?.type ?? fallback.type,
       periodKey: snapshot.periodKey,
       startDate: snapshot.startDate.toISOString(),
       endDate: snapshot.endDate.toISOString(),
@@ -372,6 +385,7 @@ export class ReportsService {
         totalProcured: snapshot.totalProcured,
         totalOpex: snapshot.totalOpex,
         budgetVariance: snapshot.budgetVariance,
+        warningBypassCount: snapshot.warningBypassCount ?? 0,
       },
       pdfPath: snapshot.pdfPath ?? payload?.pdfPath ?? null,
       pdfHash: snapshot.pdfHash ?? payload?.pdfHash ?? null,
@@ -406,6 +420,7 @@ export class ReportsService {
         totalProcured: params.sections.totalProcured,
         totalOpex: params.sections.totalOpex,
         budgetVariance,
+        warningBypassCount: params.sections.totalWarningBypassCount,
       },
       breakdown: {
         cogs: {
@@ -472,6 +487,18 @@ export class ReportsService {
           paidAt: true,
           updatedAt: true,
           supplier: { select: { name: true } },
+          items: {
+            select: {
+              id: true,
+              quantity: true,
+              unitPrice: true,
+              subtotal: true,
+              marketMedianAtPurchase: true,
+              isWarningBypass: true,
+              justificationNote: true,
+              item: { select: { name: true, unit: true } },
+            },
+          },
         },
         orderBy: { paidAt: "asc" },
       }),
@@ -509,17 +536,34 @@ export class ReportsService {
       })),
     );
 
-    const procurement: FinancialLogEntry[] = orders.map((order) => ({
-      source: "PROCUREMENT",
-      date: (order.paidAt ?? order.updatedAt).toISOString(),
-      referenceId: order.id,
-      title: order.supplier.name,
-      description: "Order COMPLETED",
-      amount: order.total,
-      meta: {
-        orderId: order.id,
-      },
-    }));
+    const procurement: FinancialLogEntry[] = orders.map((order) => {
+      const warningBypassItems = order.items.filter((i) => i.isWarningBypass);
+      return {
+        source: "PROCUREMENT",
+        date: (order.paidAt ?? order.updatedAt).toISOString(),
+        referenceId: order.id,
+        title: order.supplier.name,
+        description: "Order COMPLETED",
+        amount: order.total,
+        meta: {
+          orderId: order.id,
+          warningBypassCount: warningBypassItems.length,
+          priceValidation:
+            warningBypassItems.length > 0
+              ? {
+                  hasWarningBypass: true,
+                  bypassedItems: warningBypassItems.map((i) => ({
+                    itemName: i.item.name,
+                    quantity: i.quantity,
+                    unitPrice: i.unitPrice,
+                    marketMedianAtPurchase: i.marketMedianAtPurchase,
+                    justificationNote: i.justificationNote,
+                  })),
+                }
+              : null,
+        },
+      };
+    });
 
     const opex: FinancialLogEntry[] = expenses.map((expense) => ({
       source: "OPEX",
@@ -534,10 +578,17 @@ export class ReportsService {
     }));
 
     const totalCogs = cogs.reduce((sum, item) => sum + item.amount, 0);
-    const totalProcured = procurement.reduce((sum, item) => sum + item.amount, 0);
+    const totalProcured = procurement.reduce(
+      (sum, item) => sum + item.amount,
+      0,
+    );
     const totalOpex = opex.reduce((sum, item) => sum + item.amount, 0);
     const totalPortions = batches.reduce(
       (sum, batch) => sum + (batch.beneficiaryCount ?? 0),
+      0,
+    );
+    const totalWarningBypassCount = procurement.reduce(
+      (sum, item) => sum + ((item.meta?.warningBypassCount as number) ?? 0),
       0,
     );
 
@@ -550,6 +601,7 @@ export class ReportsService {
       totalProcured,
       totalOpex,
       totalPortions,
+      totalWarningBypassCount,
     };
   }
 
@@ -566,7 +618,11 @@ export class ReportsService {
     );
   }
 
-  private resolvePdfPath(sppgId: string, type: ReportPeriodType, periodKey: string) {
+  private resolvePdfPath(
+    sppgId: string,
+    type: ReportPeriodType,
+    periodKey: string,
+  ) {
     const safePeriod = periodKey.replace(/[^0-9A-Za-z_-]/g, "_");
     return `storage/reports/${sppgId}/${type.toLowerCase()}/${safePeriod}.pdf`;
   }
@@ -620,7 +676,10 @@ export class ReportsService {
     };
   }
 
-  private buildCustomRange(startDate: string, endDate: string): ReportDateRange {
+  private buildCustomRange(
+    startDate: string,
+    endDate: string,
+  ): ReportDateRange {
     const start = this.parseDateOnly(startDate);
     const end = this.parseDateOnly(endDate);
 
@@ -663,7 +722,9 @@ export class ReportsService {
     this.assertSppgId(user.sppgId);
   }
 
-  private assertSppgId(sppgId: string | null | undefined): asserts sppgId is string {
+  private assertSppgId(
+    sppgId: string | null | undefined,
+  ): asserts sppgId is string {
     if (!sppgId) {
       throw new BadRequestException("User tidak memiliki relasi SPPG");
     }

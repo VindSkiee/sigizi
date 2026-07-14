@@ -16,6 +16,31 @@ export interface ReportDateRange {
   periodKey: string;
 }
 
+export interface PriceValidationBypassItem {
+  itemName: string;
+  quantity: number;
+  unitPrice: number;
+  marketMedianAtPurchase: number | null;
+  justificationNote: string | null;
+}
+
+export interface PriceValidationMeta {
+  hasWarningBypass: boolean;
+  bypassedItems: PriceValidationBypassItem[];
+}
+
+export interface FinancialLogEntryMeta {
+  batchId?: string;
+  batchNumber?: string;
+  quantity?: number;
+  unit?: string;
+  beneficiaryCount?: number;
+  orderId?: string;
+  category?: string;
+  warningBypassCount?: number;
+  priceValidation?: PriceValidationMeta | null;
+}
+
 export interface FinancialLogEntry {
   source: Exclude<ExpenseSource, "ALL">;
   date: string;
@@ -23,7 +48,7 @@ export interface FinancialLogEntry {
   title: string;
   description?: string | null;
   amount: number;
-  meta?: Record<string, unknown>;
+  meta?: FinancialLogEntryMeta;
 }
 
 export interface ReportBreakdownSection {
@@ -46,6 +71,7 @@ export interface OfficialReportPayload {
     totalProcured: number;
     totalOpex: number;
     budgetVariance: number;
+    warningBypassCount: number;
   };
   breakdown: {
     cogs: ReportBreakdownSection;

@@ -46,6 +46,15 @@ export class CreateOrderDto {
   @IsDateString()
   expectedDeliveryDate?: string;
 
+  @ApiPropertyOptional({
+    description:
+      "Justification when price validation returns WARNING (required if any item has WARNING status)",
+    example: "Stok lokal langka, supplier terdekat hanya ini yang tersedia",
+  })
+  @IsOptional()
+  @IsString()
+  priceJustification?: string;
+
   @ApiProperty({ type: [OrderItemRequestDto] })
   @IsArray()
   @ValidateNested({ each: true })

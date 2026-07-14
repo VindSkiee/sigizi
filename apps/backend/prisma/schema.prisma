@@ -370,6 +370,11 @@ model OrderItem {
   unitPrice   Float
   subtotal    Float
 
+  // Price Validation Snapshot
+  marketMedianAtPurchase Float?
+  isWarningBypass        Boolean  @default(false)
+  justificationNote      String?
+
   inventoryStocks InventoryStock[]
 
   @@index([orderId])
@@ -610,6 +615,7 @@ model ReportSnapshot {
   totalProcured Float  @default(0)
   totalOpex     Float  @default(0)
   budgetVariance Float @default(0)
+  warningBypassCount Int @default(0)
 
   payload      Json?
   pdfPath      String?
