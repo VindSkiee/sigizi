@@ -162,7 +162,7 @@ export default function BatchVerifyPage() {
       style={{
         backgroundImage: "url('/batch_detail_bg.png')",
         backgroundRepeat: "repeat",
-        backgroundSize: "400px",
+        backgroundSize: "550px",
       }}
     >
       {/* Green Header */}
@@ -422,21 +422,23 @@ export default function BatchVerifyPage() {
         </div>
 
         {/* Report Button */}
-        <button
-          onClick={() => setShowPinModal(true)}
-          className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 active:bg-red-800 transition-colors shadow-sm"
-        >
-          <Flag className="w-5 h-5" />
-          Laporkan Masalah Makanan
-        </button>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
+          <button
+            onClick={() => setShowPinModal(true)}
+            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 active:bg-red-800 transition-colors"
+          >
+            <Flag className="w-5 h-5" />
+            Laporkan Masalah Makanan
+          </button>
 
-        {/* Footer Text */}
-        <div className="text-center px-4 pt-2">
-          <p className="text-xs text-gray-400 leading-relaxed">
-            Makanan ini disubsidi oleh program Makan Bergizi Gratis (MBG)
-            <br />
-            Pemerintah Republik Indonesia.
-          </p>
+          {/* Footer Text */}
+          <div className="text-center">
+            <p className="text-xs text-gray-400 leading-relaxed">
+              Makanan ini disubsidi oleh program Makan Bergizi Gratis (MBG)
+              <br />
+              Pemerintah Republik Indonesia.
+            </p>
+          </div>
         </div>
       </div>
 
