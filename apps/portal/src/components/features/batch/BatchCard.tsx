@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock, School, DollarSign } from 'lucide-react';
+import { Clock, School, DollarSign, Package, AlertTriangle } from 'lucide-react';
 import { BatchStatusBadge } from './BatchStatusBadge';
 import { BatchActionButtons } from './BatchActionButtons';
 import type { BatchManagement } from './types';
@@ -68,13 +68,76 @@ export function BatchCard({
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
             Target Distribusi
           </p>
-          <div className="flex items-center gap-2">
-            <School className="w-5 h-5 text-blue-600" />
-            <p className="text-sm font-semibold text-gray-800">
-              {batch.beneficiaryName} ({batch.beneficiaryPortions} Porsi)
-            </p>
+          <div className="flex items-start gap-2">
+            <School className="w-5 h-5 text-blue-600 mt-0.5" />
+            <div>
+              {batch.beneficiaryNames && batch.beneficiaryNames.length > 0 ? (
+                <div className="space-y-0.5">
+                  {batch.beneficiaryNames.map((name, idx) => (
+                    <p key={idx} className="text-sm font-semibold text-gray-800">{name}</p>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm font-semibold text-gray-800">-</p>
+              )}
+              <p className="text-xs text-gray-500 mt-0.5">{batch.beneficiaryPortions || batch.beneficiaryCount || 0} Porsi</p>
+            </div>
           </div>
         </div>
+
+        {/* Nama Menu */}
+        {batch.menu && (
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+              Nama Menu
+            </p>
+            <p className="text-sm font-semibold text-gray-800">{batch.menu}</p>
+          </div>
+        )}
+
+        {/* Allergen */}
+        {batch.allergens && batch.allergens.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              Allergen
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {batch.allergens.map((a, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 text-red-700 text-xs font-medium rounded-full border border-red-200"
+                >
+                  <AlertTriangle className="w-3 h-3" />
+                  {a}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Bahan Baku */}
+        {batch.batchItems && batch.batchItems.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              Bahan Baku
+            </p>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <ul className="space-y-1.5">
+                {batch.batchItems.map((item, idx) => (
+                  <li key={idx} className="text-sm text-gray-700 flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Package className="w-4 h-4 text-gray-400" />
+                      <span>{item.name}</span>
+                    </span>
+                    <span className="text-gray-500">
+                      {item.quantity} {item.unit}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
 
         {/* Budget Info */}
         <div className="bg-gray-50 rounded-lg p-4">
@@ -93,7 +156,7 @@ export function BatchCard({
               <p className="text-gray-500">Total Budget</p>
               <p className="font-medium text-gray-800">{formatCurrency(batch.totalBudget)}</p>
             </div>
-            {batch.totalCost !== undefined && (
+            {batch.totalCost !== undefined && batch.totalCost > 0 && (
               <>
                 <div>
                   <p className="text-gray-500">Total Biaya</p>
@@ -108,25 +171,12 @@ export function BatchCard({
                 </div>
               </>
             )}
-          </div>
-        </div>
-
-        {/* Menu Makanan */}
-        <div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            Menu Makanan ({batch.cycle})
-          </p>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <ul className="space-y-1.5">
-              {batch.menus.map((menu, idx) => (
-                <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
-                  <span className="text-gray-400 mt-0.5">•</span>
-                  <span>
-                    {menu.name} ({menu.weight})
-                  </span>
-                </li>
-              ))}
-            </ul>
+            {batch.costPerPortion !== undefined && batch.costPerPortion > 0 && (
+              <div className="col-span-2">
+                <p className="text-gray-500">Biaya/Porsi (Aktual)</p>
+                <p className="font-medium text-gray-800">{formatCurrency(batch.costPerPortion)}</p>
+              </div>
+            )}
           </div>
         </div>
 

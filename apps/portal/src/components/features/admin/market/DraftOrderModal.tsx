@@ -51,7 +51,6 @@ export function DraftOrderModal({
             items: supplierItems.map((item) => ({
               itemId: item.itemId,
               quantity: item.quantity,
-              unitPrice: item.unitPrice,
             })),
           },
           user.sppgId || "",

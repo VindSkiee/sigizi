@@ -5,6 +5,25 @@ export interface BatchMenuItem {
   weight: string;
 }
 
+export interface BatchFormItem {
+  itemId: string;
+  name: string;
+  unit: string;
+  quantity: number;
+}
+
+export interface InventoryBalanceItem {
+  item: {
+    id: string;
+    name: string;
+    unit: string;
+    minThreshold?: number;
+  };
+  totalRemaining: number;
+  totalInitial: number;
+  lotCount: number;
+}
+
 export interface BatchManagement {
   id: string;
   batchNumber: string;
@@ -14,14 +33,18 @@ export interface BatchManagement {
   // Delivery info
   beneficiaryId: string;
   beneficiaryName: string;
+  beneficiaryNames: string[];
   beneficiaryPortions: number;
   deliveryDate: string;
   deliveryTimeStart: string;
   deliveryTimeEnd: string;
 
   // Menu
+  menu: string;
   cycle: string;
+  allergens: string[];
   menus: BatchMenuItem[];
+  batchItems: BatchFormItem[];
 
   // Budget (Regulasi MBG Rp 10.000/porsi)
   beneficiaryCount?: number;

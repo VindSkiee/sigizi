@@ -16,8 +16,10 @@ const COST_PER_PORTION_STANDARD = 10000;
 
 function mapApiBatchToManagement(apiBatch: any): BatchManagement {
   const beneficiaryCount = apiBatch.beneficiaryCount || 0;
-  const totalBudget = COST_PER_PORTION_STANDARD * beneficiaryCount;
+  const beneficiaryNames = apiBatch.beneficiaryNames || [];
+  const totalBudget = apiBatch.totalBudget || COST_PER_PORTION_STANDARD * beneficiaryCount;
   const totalCost = apiBatch.totalCost || 0;
+  const budgetVariance = apiBatch.budgetVariance ?? (totalCost - totalBudget);
 
   return {
     id: apiBatch.id,
@@ -25,18 +27,28 @@ function mapApiBatchToManagement(apiBatch: any): BatchManagement {
     reportKey: apiBatch.reportKey,
     status: apiBatch.status,
     beneficiaryId: '',
-    beneficiaryName: apiBatch.menu || '',
+    beneficiaryName: beneficiaryNames[0] || '',
+    beneficiaryNames,
     beneficiaryPortions: beneficiaryCount,
     deliveryDate: apiBatch.date || apiBatch.createdAt,
     deliveryTimeStart: '04:00',
     deliveryTimeEnd: '06:30',
+    menu: apiBatch.menu || '',
     cycle: 'SIKLUS B',
+    allergens: apiBatch.allergens || [],
+    batchItems: (apiBatch.batchItems || []).map((item: any) => ({
+      itemId: item.itemId,
+      name: item.name || item.item?.name || '',
+      unit: item.unit || item.item?.unit || '',
+      quantity: item.quantity,
+    })),
     menus: [],
     beneficiaryCount,
-    costPerPortionStandard: COST_PER_PORTION_STANDARD,
+    costPerPortion: apiBatch.costPerPortion,
+    costPerPortionStandard: apiBatch.costPerPortionStandard || COST_PER_PORTION_STANDARD,
     totalBudget,
     totalCost,
-    budgetVariance: totalCost - totalBudget,
+    budgetVariance,
     failedReason: apiBatch.failedReason,
     failedEvidence: apiBatch.failedEvidence,
     createdAt: apiBatch.createdAt,
@@ -44,7 +56,7 @@ function mapApiBatchToManagement(apiBatch: any): BatchManagement {
 }
 
 export default function BatchManagementPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [batches, setBatches] = useState<BatchManagement[]>([]);
   const [beneficiaries, setBeneficiaries] = useState<BeneficiaryOption[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -101,7 +113,8 @@ export default function BatchManagementPage() {
     const q = searchQuery.toLowerCase();
     return (
       b.batchNumber.toLowerCase().includes(q) ||
-      b.beneficiaryName.toLowerCase().includes(q)
+      b.beneficiaryName.toLowerCase().includes(q) ||
+      b.menu.toLowerCase().includes(q)
     );
   });
 
@@ -158,21 +171,24 @@ export default function BatchManagementPage() {
   const handleCreateBatch = async (
     newBatch: Omit<BatchManagement, 'id' | 'batchNumber' | 'createdAt' | 'costPerPortionStandard' | 'totalBudget'>
   ) => {
-    if (!token) return;
-    try {
-      const data = {
-        menu: newBatch.menus.map((m) => m.name).join(', '),
-        beneficiaryCount: newBatch.beneficiaryPortions,
-        costPerPortionStandard: COST_PER_PORTION_STANDARD,
-        totalBudget: COST_PER_PORTION_STANDARD * newBatch.beneficiaryPortions,
-      };
-      const response = await createBatch(token, data, '', '');
-      if (response.success) {
-        await fetchBatches();
-      }
-    } catch (err) {
-      console.error('Failed to create batch:', err);
+    if (!token) throw new Error('Tidak terautentikasi');
+    const data = {
+      menu: newBatch.menu || '',
+      allergens: newBatch.allergens || [],
+      beneficiaryCount: newBatch.beneficiaryPortions,
+      beneficiaryNames: newBatch.beneficiaryNames || [],
+      items: (newBatch.batchItems || []).map((i) => ({
+        itemId: i.itemId,
+        name: i.name,
+        unit: i.unit,
+        quantity: i.quantity,
+      })),
+    };
+    const response = await createBatch(token, data, user?.sppgId || '', user?.id || '');
+    if (!response.success) {
+      throw new Error('Gagal membuat batch');
     }
+    await fetchBatches();
   };
 
   if (loading) {
