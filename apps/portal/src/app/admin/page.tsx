@@ -9,6 +9,7 @@ import {
   getBeneficiaries,
   getComplaints,
 } from "@/lib/api";
+import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
 import "@aejkatappaja/phantom-ui";
 
 const getRatingLabel = (rating: number): string => {
@@ -192,6 +193,43 @@ export default function AdminDashboard() {
 
     fetchDashboard();
   }, [token]);
+
+  if (loading) {
+    return (
+      <div className="max-w-full mx-auto">
+        <div className="mb-8">
+          <Skeleton className="h-8 w-64 mb-2" />
+          <Skeleton className="h-4 w-80" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {[1, 2, 3].map((i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+        <Skeleton className="h-24 rounded-xl mb-8" />
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6">
+          <div className="p-5 border-b border-gray-100">
+            <Skeleton className="h-5 w-64" />
+          </div>
+          <div className="p-5 space-y-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="p-5 border-b border-gray-100">
+            <Skeleton className="h-5 w-56" />
+          </div>
+          <div className="p-5 space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-lg" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <phantom-ui loading={loading}>

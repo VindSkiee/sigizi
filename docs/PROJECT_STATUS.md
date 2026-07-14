@@ -1,6 +1,6 @@
 # SIGIZI Project Status
 
-**Last Updated**: 2026-07-14
+**Last Updated**: 2026-07-15
 **Current Phase**: 🚀 Phase 1: MVP (Hackathon Demo)
 
 ---
@@ -11,7 +11,7 @@
 | -------------- | ------------------------------------------------- |
 | **Project**    | SIGIZI - Sistem Informasi Gizi Terintegrasi       |
 | **Phase**      | MVP (Hackathon)                                   |
-| **Progress**   | ~70%                                              |
+| **Progress**   | ~85%                                              |
 | **Team**       | TraceBite (4 members)                             |
 | **Tech Stack** | NestJS + Prisma + PostgreSQL + Next.js + Tailwind |
 
@@ -20,7 +20,7 @@
 ## 🚀 Phase 1: MVP (Hackathon Demo)
 
 **Target**: Hackathon Demo
-**Status**: 🟡 IN PROGRESS (~70%)
+**Status**: 🟡 IN PROGRESS (~85%)
 **Deadline**: [TBD]
 
 ### Backend Modules
@@ -43,31 +43,31 @@
 
 ### Frontend Pages
 
-| Page                 | Status         | Progress | Notes                                                                                            |
-| -------------------- | -------------- | -------- | ------------------------------------------------------------------------------------------------ |
-| Home (Batch Lookup)  | ✅ Done        | 100%     | Public batch search form (SSR)                                                                   |
-| Batch Detail         | ⚠️ Partial     | 80%      | Nutrition, allergen, cost breakdown. Complaint form broken (uses raw HTML instead of API client) |
-| Login                | ✅ Done        | 100%     | Email/password with mock fallback, role-based redirect                                           |
-| Register             | ✅ Done        | 100%     | Supplier registration with validation, NPWP upload                                               |
-| Dashboard (Admin)    | ❌ Not Started | 0%       | Admin overview                                                                                   |
-| Supplier Management  | ❌ Not Started | 0%       | CRUD table                                                                                       |
-| Batch Management     | ❌ Not Started | 0%       | SPPG admin workflow                                                                              |
-| Complaint Management | ❌ Not Started | 0%       | Status tracking                                                                                  |
-| Market/Analytics     | ❌ Not Started | 0%       | Price charts                                                                                     |
-| Reports              | ❌ Not Started | 0%       | Daily/weekly views                                                                               |
-| Order Management     | ❌ Not Started | 0%       | SPPG: Create/manage orders                                                                       |
-| Supplier Orders      | ❌ Not Started | 0%       | Supplier: View/accept incoming orders                                                            |
-| Stock Management     | ❌ Not Started | 0%       | Stock management for supplier                                                                    |
+| Page                 | Status     | Progress | Notes                                                                                            |
+| -------------------- | ---------- | -------- | ------------------------------------------------------------------------------------------------ |
+| Home (Batch Lookup)  | ✅ Done    | 100%     | Public batch search form (SSR)                                                                   |
+| Batch Detail         | ✅ Done    | 100%     | Nutrition, allergen, cost breakdown, complaint form via API client + skeleton            |
+| Login                | ✅ Done    | 100%     | Email/password with mock fallback, role-based redirect                                           |
+| Register             | ✅ Done    | 100%     | Supplier registration with validation, NPWP upload                                               |
+| Dashboard (Admin)    | ✅ Done    | 100%     | Admin overview + skeleton loading                                                                |
+| Supplier Management  | ✅ Done    | 100%     | CRUD table + create page + skeleton loading                                                      |
+| Batch Management     | ✅ Done    | 100%     | SPPG admin workflow + 11 feature components + skeleton                                            |
+| Complaint Management | ❌ Not Started | 0%   | Komponen modal ada, route/page belum ada                                                         |
+| Market/Analytics     | ✅ Done    | 100%     | Price charts + 7 feature components + skeleton                                                   |
+| Reports              | ✅ Done    | 100%     | Daily/weekly views + 9 feature components + skeleton                                             |
+| Order Management     | ✅ Done    | 100%     | SPPG: Create/manage orders + skeleton loading                                                    |
+| Supplier Orders      | ✅ Done    | 100%     | Supplier: View/accept incoming orders + 10 components + skeleton                                 |
+| Stock Management     | ✅ Done    | 100%     | Stock management for supplier + 6 components + skeleton                                          |
 
 ### Frontend Components
 
-| Component                 | Status         | Progress | Notes                                                                        |
-| ------------------------- | -------------- | -------- | ---------------------------------------------------------------------------- |
-| Layout (Sidebar + Header) | ✅ Done        | 100%     | SupplierLayout, SupplierSidebar, SupplierHeader                              |
-| Auth Provider/Context     | ⚠️ Partial     | 70%      | AuthContext exists but NOT wrapped in root layout                            |
-| Reusable UI Components    | ✅ Done        | 100%     | Button (4 variants), Card, Badge (5 variants), Input, Pagination, FileUpload |
-| Loading Skeletons         | ❌ Not Started | 0%       |                                                                              |
-| Error Boundaries          | ❌ Not Started | 0%       |                                                                              |
+| Component                 | Status  | Progress | Notes                                                                        |
+| ------------------------- | ------- | -------- | ---------------------------------------------------------------------------- |
+| Layout (Sidebar + Header) | ✅ Done | 100%     | SupplierLayout, SupplierSidebar, SupplierHeader                              |
+| Auth Provider/Context     | ✅ Done | 100%     | AuthContext wrapped in root layout via Providers                              |
+| Reusable UI Components    | ✅ Done | 100%     | Button (4 variants), Card, Badge (5 variants), Input, Pagination, FileUpload |
+| Loading Skeletons         | ✅ Done | 100%     | Skeleton.tsx + applied in 11 pages                                           |
+| Error Boundaries          | ❌ Not Started | 0%   |                                                                              |
 
 ### Order Workflow Features
 
@@ -136,20 +136,20 @@
 │  ├── [x] Order workflow (status transitions)                │
 │  ├── [x] Payment simulation logic                           │
 │  ├── [x] Auth flow (Login + Context)                        │
-│  └── [ ] Dashboard layout (Sidebar + Header)                │
+│  └── [x] Dashboard layout (Sidebar + Header)                │
 │                                                              │
 │  Day 3: Frontend Core Pages                                  │
-│  ├── [ ] Supplier management page                           │
-│  ├── [ ] Batch management page                              │
-│  ├── [ ] Order management page (SPPG)                       │
-│  ├── [ ] Supplier orders page                               │
-│  └── [ ] Order tracking dashboard                           │
+│  ├── [x] Supplier management page                           │
+│  ├── [x] Batch management page                              │
+│  ├── [x] Order management page (SPPG)                       │
+│  ├── [x] Supplier orders page                               │
+│  └── [x] Order tracking dashboard                           │
 │                                                              │
 │  Day 4: Frontend Features                                    │
 │  ├── [ ] Complaint management page                          │
-│  ├── [ ] Market/Analytics page                              │
-│  ├── [ ] Reports page                                       │
-│  └── [ ] Fix batch complaint form                           │
+│  ├── [x] Market/Analytics page                              │
+│  ├── [x] Reports page                                       │
+│  └── [x] Fix batch complaint form                           │
 │                                                              │
 │  Day 5: Polish & Ready for Testing                           │
 │  ├── [ ] End-to-end testing                                 │
@@ -279,18 +279,18 @@
 - [ ] Backend: Payment simulation logic
 - [ ] Backend: SPPG module CRUD
 - [ ] Backend: Beneficiary module CRUD
-- [ ] Frontend: Login page
-- [ ] Frontend: Auth context/provider
-- [ ] Frontend: Dashboard layout (sidebar + header)
-- [ ] Frontend: Supplier management page
-- [ ] Frontend: Batch management page
-- [ ] Frontend: Order management page
-- [ ] Frontend: Supplier orders page
-- [ ] Frontend: Order tracking dashboard
+- [x] Frontend: Login page
+- [x] Frontend: Auth context/provider
+- [x] Frontend: Dashboard layout (sidebar + header)
+- [x] Frontend: Supplier management page
+- [x] Frontend: Batch management page
+- [x] Frontend: Order management page
+- [x] Frontend: Supplier orders page
+- [x] Frontend: Order tracking dashboard
 - [ ] Frontend: Complaint management page
-- [ ] Frontend: Market/Analytics page
-- [ ] Frontend: Reports page
-- [ ] Fix batch complaint form (use API client)
+- [x] Frontend: Market/Analytics page
+- [x] Frontend: Reports page
+- [x] Fix batch complaint form (use API client)
 - [ ] Test Docker Compose startup
 
 ### Post-MVP Must-Haves (Phase 2)
@@ -329,19 +329,19 @@
 1. [ ] Run `pnpm install`
 2. [ ] Create `.env` file
 3. [ ] Run Prisma migrations
-4. [ ] Backend: Order module
-5. [ ] Backend: Order workflow (status transitions)
-6. [ ] Backend: Price validation endpoint
-7. [ ] Backend: SPPG module
-8. [ ] Frontend: Auth flow (login + context)
-9. [ ] Frontend: Dashboard layout
+4. [x] Backend: Order module
+5. [x] Backend: Order workflow (status transitions)
+6. [x] Backend: Price validation endpoint
+7. [x] Backend: SPPG module
+8. [x] Frontend: Auth flow (login + context)
+9. [x] Frontend: Dashboard layout
 
 ### Before Testing (Sprint Day 5)
 
-1. [ ] Frontend: All admin pages
-2. [ ] Frontend: Order management page
-3. [ ] Frontend: Supplier orders page
-4. [ ] Frontend: Order tracking dashboard
+1. [x] Frontend: All admin pages
+2. [x] Frontend: Order management page
+3. [x] Frontend: Supplier orders page
+4. [x] Frontend: Order tracking dashboard
 5. [ ] End-to-end testing
 6. [ ] UI/UX polish
 7. [ ] Bug fixes

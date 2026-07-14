@@ -21,6 +21,8 @@ import {
   ComplaintSuccessModal,
   useDailyPin,
 } from "@/components/features/complaint";
+import { getBatchByNumber } from "@/lib/api";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface BatchItem {
   name: string | null;
@@ -99,18 +101,11 @@ export default function BatchVerifyPage() {
 
     const fetchBatch = async () => {
       try {
-        const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-        const response = await fetch(
-          `${apiUrl}/api/batches/by-number/${batchNumber}`,
-        );
-
-        if (!response.ok) {
+        const response = await getBatchByNumber(batchNumber);
+        if (!response.success) {
           throw new Error("Batch tidak ditemukan");
         }
-
-        const result = await response.json();
-        setBatch(result.data);
+        setBatch(response.data as BatchData);
       } catch {
         setError("Batch tidak ditemukan");
       } finally {
@@ -123,10 +118,59 @@ export default function BatchVerifyPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600 mx-auto mb-3" />
-          <p className="text-sm text-gray-500">Memuat data batch...</p>
+      <main className="min-h-screen bg-white pb-8">
+        <div className="bg-gradient-to-b from-emerald-500 to-emerald-600 text-white px-5 pt-4 pb-12 text-center">
+          <div className="max-w-3xl mx-auto">
+            <Skeleton className="h-5 w-5 rounded-lg bg-emerald-400/30" />
+            <div className="mt-4">
+              <Skeleton className="w-16 h-16 rounded-full bg-emerald-400/30 mx-auto mb-3" />
+              <Skeleton className="h-3 w-32 bg-emerald-400/30 mx-auto mb-1" />
+              <Skeleton className="h-5 w-48 bg-white/30 mx-auto mb-1" />
+              <Skeleton className="h-4 w-40 bg-emerald-400/30 mx-auto" />
+            </div>
+          </div>
+        </div>
+        <div className="max-w-3xl mx-auto px-4 -mt-5 relative z-10 space-y-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+            <Skeleton className="h-3 w-24 mb-2" />
+            <Skeleton className="h-5 w-48 mb-2" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+            <Skeleton className="h-5 w-40 mb-4" />
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-2.5 py-2.5">
+                <Skeleton className="w-6 h-6 rounded-full" />
+                <Skeleton className="h-4 flex-1" />
+              </div>
+            ))}
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+            <Skeleton className="h-5 w-40 mb-4" />
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center justify-between py-2.5">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+            ))}
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+            <Skeleton className="h-5 w-40 mb-4" />
+            <div className="grid grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-20 rounded-lg" />
+              ))}
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+            <Skeleton className="h-5 w-40 mb-4" />
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex justify-between items-center text-sm py-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+            ))}
+          </div>
         </div>
       </main>
     );

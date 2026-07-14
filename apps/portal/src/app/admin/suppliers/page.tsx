@@ -1,32 +1,78 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { OrderStatus } from "@sigizi/shared";
+import { useAuth } from "@/contexts/AuthContext";
+import { getOrders } from "@/lib/api";
 import {
   SupplierOrder,
   SupplierStats,
   OrderFilterTab,
 } from "@/components/features/admin/supplier-integration/types";
-import { MOCK_ORDERS } from "@/components/features/admin/supplier-integration/mockData";
 import { SupplierStatsCards } from "@/components/features/admin/supplier-integration/SupplierStatsCards";
 import { SupplierOrderTabs } from "@/components/features/admin/supplier-integration/SupplierOrderTabs";
 import { SupplierSearchBar } from "@/components/features/admin/supplier-integration/SupplierSearchBar";
 import { SupplierOrderTable } from "@/components/features/admin/supplier-integration/SupplierOrderTable";
 import { SupplierOrderDetailModal } from "@/components/features/admin/supplier-integration/SupplierOrderDetailModal";
 import { Pagination } from "@/components/ui/Pagination";
+import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
 
 const ITEMS_PER_PAGE = 5;
 
+function mapApiOrderToSupplierOrder(raw: any): SupplierOrder {
+  return {
+    id: raw.id,
+    status: raw.status,
+    total: raw.total,
+    notes: raw.notes,
+    supplier: raw.supplier ? { id: raw.supplier.id, name: raw.supplier.name } : { id: "", name: "-" },
+    sppg: raw.sppg ? { id: raw.sppg.id, name: raw.sppg.name } : { id: "", name: "-" },
+    items: (raw.items || []).map((i: any) => ({
+      id: i.id,
+      name: i.item?.name || "-",
+      quantity: i.quantity,
+      unit: i.item?.unit || "",
+      unitPrice: i.unitPrice,
+      subtotal: i.subtotal,
+    })),
+    createdAt: raw.createdAt,
+  };
+}
+
 export default function SupplierIntegrationPage() {
   const router = useRouter();
-  const [orders, setOrders] = useState<SupplierOrder[]>(MOCK_ORDERS);
+  const { token } = useAuth();
+  const [orders, setOrders] = useState<SupplierOrder[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<OrderFilterTab>("ALL");
   const [search, setSearch] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<SupplierOrder | null>(
     null
   );
   const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    async function fetchOrders() {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const response = await getOrders(token);
+        if (response.success) {
+          const data = response.data as any;
+          const items = data?.items || data || [];
+          setOrders(Array.isArray(items) ? items.map(mapApiOrderToSupplierOrder) : []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch orders:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchOrders();
+  }, [token]);
 
   // Helper: Check if order is completed or cancelled
   const isCompletedOrCancelled = (status: string) =>
@@ -122,6 +168,48 @@ export default function SupplierIntegrationPage() {
   const handleOrderCreated = () => {
     router.refresh();
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <Skeleton className="h-8 w-72 mb-2" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          {[1, 2, 3, 4].map((i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+        <div className="flex gap-2 mb-6">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-10 w-24 rounded-lg" />
+          ))}
+        </div>
+        <Skeleton className="h-12 w-full max-w-md rounded-lg mb-6" />
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+            <div className="flex gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Skeleton key={i} className="h-3 flex-1" />
+              ))}
+            </div>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="px-4 py-4">
+                <div className="flex gap-4">
+                  {[1, 2, 3, 4, 5, 6].map((j) => (
+                    <Skeleton key={j} className="h-4 flex-1" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto">

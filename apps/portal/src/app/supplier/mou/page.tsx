@@ -5,6 +5,7 @@ import { FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMoUs } from "@/lib/api";
 import { Badge } from "@/components/ui/Badge";
+import { Skeleton } from "@/components/ui/Skeleton";
 import "@aejkatappaja/phantom-ui";
 
 import "@aejkatappaja/phantom-ui";
@@ -50,6 +51,38 @@ export default function MoUPage() {
 
     fetchMoUs();
   }, [token]);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <div className="space-y-4">
+          {[1, 2].map((i) => (
+            <div key={i} className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
+              <div className="flex items-start justify-between">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                  </div>
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-4 w-40" />
+                  <div className="flex gap-4">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                </div>
+                <Skeleton className="h-10 w-24 rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <phantom-ui loading={loading}>

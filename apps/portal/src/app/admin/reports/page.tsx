@@ -17,6 +17,7 @@ import { InvoiceTable } from "@/components/features/admin/reports/InvoiceTable";
 import { ManualExpenseModal } from "@/components/features/admin/reports/ManualExpenseModal";
 import { generateBgnReport } from "@/components/features/admin/reports/generateBgnReport";
 import { useAuth } from "@/contexts/AuthContext";
+import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
 
 function getManualExpenses(): ManualExpense[] {
   try {
@@ -126,6 +127,36 @@ export default function ReportsPage() {
       <ReportHeader onGeneratePDF={handleGeneratePDF} />
 
       <ReportFilterBar onFilter={handleFilter} isLoading={isLoading} />
+
+      {isLoading && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+              <div className="flex gap-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Skeleton key={i} className="h-3 flex-1" />
+                ))}
+              </div>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="px-4 py-4">
+                  <div className="flex gap-4">
+                    {[1, 2, 3, 4, 5].map((j) => (
+                      <Skeleton key={j} className="h-4 flex-1" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {hasFiltered && !isLoading && (
         <>
