@@ -15,6 +15,8 @@ import { ReportFilterBar } from "@/components/features/admin/reports/ReportFilte
 import { ReportStatsCards } from "@/components/features/admin/reports/ReportStatsCards";
 import { InvoiceTable } from "@/components/features/admin/reports/InvoiceTable";
 import { ManualExpenseModal } from "@/components/features/admin/reports/ManualExpenseModal";
+import { generateBgnReport } from "@/components/features/admin/reports/generateBgnReport";
+import { useAuth } from "@/contexts/AuthContext";
 
 function getManualExpenses(): ManualExpense[] {
   try {
@@ -33,6 +35,7 @@ function filterBySingleDate(rows: InvoiceRowType[], date: string): InvoiceRowTyp
 }
 
 export default function ReportsPage() {
+  const { user } = useAuth();
   const [filter, setFilter] = useState<ReportFilter>(DEFAULT_FILTER);
   const [isLoading, setIsLoading] = useState(false);
   const [hasFiltered, setHasFiltered] = useState(false);
@@ -109,30 +112,10 @@ export default function ReportsPage() {
     }, 500);
   }, []);
 
-  const handleDownloadCSV = useCallback(() => {
-    if (displayRows.length === 0) return;
-    const headers = ["Tanggal", "Ref", "Supplier", "Kategori", "Nominal", "Status Bukti"];
-    const rows = displayRows.map((r) => [
-      r.date,
-      r.ref,
-      r.supplierName || "-",
-      r.category,
-      r.nominal.toString(),
-      r.statusBukti,
-    ]);
-    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `laporan-bgn-${filter.date}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [displayRows, filter.date]);
-
   const handleGeneratePDF = useCallback(() => {
-    window.print();
-  }, []);
+    if (displayRows.length === 0) return;
+    generateBgnReport(displayRows, stats, filter, user?.sppg);
+  }, [displayRows, stats, filter, user?.sppg]);
 
   const handleSaveManual = useCallback((expense: ManualExpense) => {
     setManualExpenses((prev) => [...prev, expense]);
@@ -140,7 +123,7 @@ export default function ReportsPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <ReportHeader onDownloadCSV={handleDownloadCSV} onGeneratePDF={handleGeneratePDF} />
+      <ReportHeader onGeneratePDF={handleGeneratePDF} />
 
       <ReportFilterBar onFilter={handleFilter} isLoading={isLoading} />
 

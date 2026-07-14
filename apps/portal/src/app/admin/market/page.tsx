@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   MarketFilter,
   MarketSupplierItem,
-  MarketStats,
-  SPPG_DEFAULT_LOCATION,
+  MarketPriceStatistics,
 } from "@/components/features/admin/market/types";
-import { MOCK_MARKET_ITEMS } from "@/components/features/admin/market/mockData";
 import { MarketFilterBar } from "@/components/features/admin/market/MarketFilterBar";
 import { MarketStatsBar } from "@/components/features/admin/market/MarketStatsBar";
 import { MarketCardGrid } from "@/components/features/admin/market/MarketCardGrid";
@@ -21,123 +20,71 @@ import {
   updateDraftQuantity,
   removeDraftItem,
 } from "@/lib/draft";
+import { getMarketPrices } from "@/lib/api";
 
 const ITEMS_PER_PAGE = 9;
 
-function calculateDistanceKm(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-): number {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
 export default function MarketPage() {
-  const [items, setItems] = useState<MarketSupplierItem[]>(MOCK_MARKET_ITEMS);
+  const { token } = useAuth();
+  const [items, setItems] = useState<MarketSupplierItem[]>([]);
+  const [rawStats, setRawStats] = useState<MarketPriceStatistics | null>(null);
+  const [cleanStats, setCleanStats] = useState<MarketPriceStatistics | null>(null);
+  const [searchedItem, setSearchedItem] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [error, setError] = useState<string | null>(null);
 
-  // Draft state
   const [draftItems, setDraftItems] = useState<DraftItem[]>([]);
   const [showDraftModal, setShowDraftModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
-  // Load draft from localStorage on mount
   useEffect(() => {
     setDraftItems(getDraftItems());
   }, []);
 
-  const filteredItems = useMemo(() => {
-    return items.filter((item) => {
-      if (item.latitude && item.longitude) {
-        const dist = calculateDistanceKm(
-          SPPG_DEFAULT_LOCATION.latitude,
-          SPPG_DEFAULT_LOCATION.longitude,
-          item.latitude,
-          item.longitude
-        );
-        if (dist > 100) return false;
+  const handleSearch = useCallback(
+    async (filter: MarketFilter) => {
+      if (!token) return;
+      setIsLoading(true);
+      setHasSearched(true);
+      setError(null);
+      setCurrentPage(1);
+
+      try {
+        const response = await getMarketPrices(token, {
+          item: filter.item,
+          regency: filter.regency,
+        });
+
+        if (response.success) {
+          const data = response.data as any;
+          setItems(data.suppliers || []);
+          setRawStats(data.statistics || null);
+          setCleanStats(data.cleanStatistics || null);
+          setSearchedItem(filter.item);
+        } else {
+          setError("Gagal memuat data harga pasar");
+          setItems([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch market prices:", err);
+        setError("Gagal memuat data harga pasar");
+        setItems([]);
+      } finally {
+        setIsLoading(false);
       }
-      return true;
-    });
-  }, [items]);
+    },
+    [token]
+  );
 
-  const stats: MarketStats = useMemo(() => {
-    if (filteredItems.length === 0) {
-      return { total: 0, avgPrice: 0, minPrice: 0, maxPrice: 0 };
-    }
-    const prices = filteredItems.map((i) => i.price);
-    return {
-      total: filteredItems.length,
-      avgPrice: Math.round(prices.reduce((a, b) => a + b, 0) / prices.length),
-      minPrice: Math.min(...prices),
-      maxPrice: Math.max(...prices),
-    };
-  }, [filteredItems]);
-
-  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedItems = filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-
-  const handleSearch = (filter: MarketFilter) => {
-    setIsLoading(true);
-    setHasSearched(true);
-    setCurrentPage(1);
-
-    setTimeout(() => {
-      let result = [...MOCK_MARKET_ITEMS];
-
-      if (filter.item) {
-        const search = filter.item.toLowerCase();
-        result = result.filter((i) => i.itemName.toLowerCase().includes(search));
-      }
-
-      result = result.filter((item) => {
-        if (!item.latitude || !item.longitude) return true;
-        const dist = calculateDistanceKm(
-          SPPG_DEFAULT_LOCATION.latitude,
-          SPPG_DEFAULT_LOCATION.longitude,
-          item.latitude,
-          item.longitude
-        );
-        return dist <= filter.radius;
-      });
-
-      result = result.map((item) => ({
-        ...item,
-        distance:
-          item.latitude && item.longitude
-            ? calculateDistanceKm(
-                SPPG_DEFAULT_LOCATION.latitude,
-                SPPG_DEFAULT_LOCATION.longitude,
-                item.latitude,
-                item.longitude
-              )
-            : undefined,
-      }));
-
-      result.sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
-
-      setItems(result);
-      setIsLoading(false);
-    }, 500);
-  };
+  const paginatedItems = items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const handleAddToDraft = useCallback((item: MarketSupplierItem) => {
     const newItem = {
-      supplierId: item.supplierId,
+      supplierId: item.supplierId || "",
       supplierName: item.supplierName,
       itemId: item.id,
       itemName: item.itemName,
@@ -164,28 +111,52 @@ export default function MarketPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Analitik Pasar</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Temukan bahan baku dari supplier terdekat dengan harga terbaik.
+          Pantau harga bahan baku pasar dari supplier di seluruh region.
         </p>
       </div>
 
-      {/* Filter Bar */}
       <MarketFilterBar onSearch={handleSearch} isLoading={isLoading} />
 
-      {/* Stats */}
-      {hasSearched && !isLoading && <MarketStatsBar stats={stats} />}
+      {isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-3" />
+              <div className="h-3 bg-gray-200 rounded w-1/2 mb-4" />
+              <div className="h-8 bg-gray-200 rounded w-1/3 mb-4" />
+              <div className="h-10 bg-gray-200 rounded" />
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* Results */}
-      {hasSearched ? (
+      {!isLoading && hasSearched && error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <p className="text-red-600 text-sm">{error}</p>
+        </div>
+      )}
+
+      {!isLoading && hasSearched && !error && rawStats && cleanStats && (
         <>
-          <MarketCardGrid items={paginatedItems} onAddToDraft={handleAddToDraft} />
-          {filteredItems.length > 0 && (
+          <MarketStatsBar
+            rawStats={rawStats}
+            cleanStats={cleanStats}
+            item={searchedItem}
+          />
+          <MarketCardGrid
+            items={paginatedItems}
+            medianPrice={cleanStats.median}
+            onAddToDraft={handleAddToDraft}
+          />
+          {items.length > 0 && (
             <div className="mt-6 flex flex-col items-center gap-2">
               <p className="text-sm text-gray-500">
-                Menampilkan {startIndex + 1}-{Math.min(startIndex + ITEMS_PER_PAGE, filteredItems.length)} dari {filteredItems.length} supplier
+                Menampilkan {startIndex + 1}-
+                {Math.min(startIndex + ITEMS_PER_PAGE, items.length)} dari{" "}
+                {items.length} supplier
               </p>
               <Pagination
                 currentPage={currentPage}
@@ -195,7 +166,9 @@ export default function MarketPage() {
             </div>
           )}
         </>
-      ) : (
+      )}
+
+      {!hasSearched && (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <svg
             className="w-16 h-16 text-gray-300 mx-auto mb-4"
@@ -211,21 +184,30 @@ export default function MarketPage() {
             />
           </svg>
           <p className="text-gray-500 text-sm mb-1">
-            Pilih filter dan klik &quot;Cari Bahan&quot; untuk menemukan supplier
+            Pilih bahan baku dan region, lalu klik &quot;Lihat Harga Pasar&quot;
           </p>
           <p className="text-gray-400 text-xs">
-            Hasil akan menampilkan supplier dalam radius yang dipilih
+            Harga akan ditampilkan beserta statistik data mentah dan data bersih
           </p>
         </div>
       )}
 
-      {/* Floating Draft Button */}
       <button
         onClick={() => setShowDraftModal(true)}
         className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 px-5 py-3 bg-primary-600 text-white text-sm font-medium rounded-full shadow-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all hover:scale-105"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"
+          />
         </svg>
         Lihat Draft
         {draftItems.length > 0 && (
@@ -235,7 +217,6 @@ export default function MarketPage() {
         )}
       </button>
 
-      {/* Draft Modal */}
       <DraftOrderModal
         isOpen={showDraftModal}
         onClose={() => setShowDraftModal(false)}
@@ -244,7 +225,6 @@ export default function MarketPage() {
         onRemove={handleRemove}
       />
 
-      {/* Toast */}
       <Toast
         message="Berhasil ditambahkan ke draft"
         isVisible={showToast}

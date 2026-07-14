@@ -90,6 +90,7 @@ export function BatchCreateModal({
 
     onSubmit({
       status: 'ACTIVE',
+      reportKey: '',
       beneficiaryId: selectedBeneficiary.id,
       beneficiaryName: selectedBeneficiary.name,
       beneficiaryPortions: totalPorsi,
@@ -98,6 +99,8 @@ export function BatchCreateModal({
       deliveryTimeEnd,
       cycle,
       menus: menus.filter((m) => m.name.trim() !== ''),
+      costPerPortionStandard: 10000,
+      totalBudget: 10000 * totalPorsi,
     });
 
     onClose();

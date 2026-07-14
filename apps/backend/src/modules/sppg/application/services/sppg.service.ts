@@ -36,7 +36,7 @@ export class SppgService {
   async findOne(id: string) {
     const sppg = await this.repository.findById(id);
     if (!sppg) {
-      throw new NotFoundException(`SPPG dengan ID ${id} tidak ditemukan`);
+      throw new NotFoundException(`SPPG with ID ${id} not found`);
     }
     return sppg;
   }
@@ -48,7 +48,7 @@ export class SppgService {
   async update(id: string, dto: UpdateSppgDto) {
     const existing = await this.repository.findById(id);
     if (!existing) {
-      throw new NotFoundException(`SPPG dengan ID ${id} tidak ditemukan`);
+      throw new NotFoundException(`SPPG with ID ${id} not found`);
     }
     return this.repository.update(id, dto);
   }
@@ -56,7 +56,7 @@ export class SppgService {
   async remove(id: string) {
     const existing = await this.repository.findById(id);
     if (!existing) {
-      throw new NotFoundException(`SPPG dengan ID ${id} tidak ditemukan`);
+      throw new NotFoundException(`SPPG with ID ${id} not found`);
     }
     await this.repository.delete(id);
   }

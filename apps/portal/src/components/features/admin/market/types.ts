@@ -1,9 +1,14 @@
 export interface MarketFilter {
-  province: string;
-  regency: string;
-  district: string;
-  radius: number;
   item: string;
+  regency: string;
+}
+
+export interface MarketPriceStatistics {
+  min: number;
+  max: number;
+  median: number;
+  mean: number;
+  count: number;
 }
 
 export interface MarketSupplierItem {
@@ -14,10 +19,16 @@ export interface MarketSupplierItem {
   unit: string;
   price: number;
   isAnomaly: boolean;
-  latitude?: number;
-  longitude?: number;
   distance?: number;
   mou?: boolean;
+}
+
+export interface MarketPriceResponse {
+  item: string;
+  region: string;
+  statistics: MarketPriceStatistics;
+  cleanStatistics: MarketPriceStatistics;
+  suppliers: MarketSupplierItem[];
 }
 
 export interface MarketStats {
@@ -25,18 +36,26 @@ export interface MarketStats {
   avgPrice: number;
   minPrice: number;
   maxPrice: number;
+  medianPrice: number;
 }
 
-export const DEFAULT_FILTER: MarketFilter = {
-  province: "",
-  regency: "",
-  district: "",
-  radius: 25,
-  item: "",
-};
+export const POPULAR_ITEMS = [
+  "Beras",
+  "Daging Ayam",
+  "Daging Sapi",
+  "Ikan Lele",
+  "Ikan Tongkol",
+  "Telur Ayam",
+  "Minyak Goreng",
+  "Gula Pasir",
+  "Tepung Terigu",
+  "Sayur Bayam",
+  "Sayur Kangkung",
+  "Tempe",
+  "Tahu",
+];
 
-export const SPPG_DEFAULT_LOCATION = {
-  latitude: -6.5569,
-  longitude: 107.4448,
-  name: "SPPG Purwakarta",
+export const DEFAULT_FILTER: MarketFilter = {
+  item: "",
+  regency: "",
 };

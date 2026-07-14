@@ -7,16 +7,16 @@ interface BatchCardGridProps {
   batches: BatchManagement[];
   onComplete: (batchId: string) => void;
   onCancel: (batchId: string) => void;
+  onFail?: (batchId: string) => void;
   onPrintQR: (batch: BatchManagement) => void;
-  onDelete: (batchId: string) => void;
 }
 
 export function BatchCardGrid({
   batches,
   onComplete,
   onCancel,
+  onFail,
   onPrintQR,
-  onDelete,
 }: BatchCardGridProps) {
   if (batches.length === 0) {
     return (
@@ -34,8 +34,8 @@ export function BatchCardGrid({
           batch={batch}
           onComplete={onComplete}
           onCancel={onCancel}
+          onFail={onFail}
           onPrintQR={onPrintQR}
-          onDelete={onDelete}
         />
       ))}
     </div>

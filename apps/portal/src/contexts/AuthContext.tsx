@@ -5,10 +5,24 @@ import {
   useContext,
   useState,
   useEffect,
+  useCallback,
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { loginEmail, getCurrentUser } from "@/lib/api";
+import { loginEmail } from "@/lib/api";
+
+interface SppgData {
+  id: string;
+  name: string;
+  address?: string;
+  province: string;
+  regency: string;
+  district: string;
+  village?: string;
+  postalCode?: string;
+  latitude?: number;
+  longitude?: number;
+}
 
 interface User {
   id: string;
@@ -17,6 +31,7 @@ interface User {
   role: "SPPG_ADMIN" | "SUPPLIER" | "PUBLIC";
   supplierId?: string;
   sppgId?: string;
+  sppg?: SppgData;
 }
 
 interface AuthContextType {
@@ -26,15 +41,25 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isSupplier: boolean;
   isAdmin: boolean;
+  hasLocation: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  updateSppgLocation: (
+    latitude: number,
+    longitude: number,
+    province?: string,
+    regency?: string,
+    district?: string,
+    village?: string,
+    postalCode?: string,
+  ) => void;
+  updateSppgProfile: (data: Partial<SppgData>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const isDev = process.env.NODE_ENV !== "production";
 
-// Mock users - fallback saat backend tidak tersedia (hanya dev)
 const mockUsers = isDev
   ? [
       {
@@ -57,6 +82,13 @@ const mockUsers = isDev
           name: "Budi Santoso",
           role: "SPPG_ADMIN" as const,
           sppgId: "sppg-001",
+          sppg: {
+            id: "sppg-001",
+            name: "SPPG Purwakarta",
+            province: "JAWA_BARAT",
+            regency: "PURWAKARTA",
+            district: "WANAYASA",
+          },
         },
       },
     ]
@@ -86,9 +118,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = !!token && !!user;
   const isSupplier = user?.role === "SUPPLIER";
   const isAdmin = user?.role === "SPPG_ADMIN";
+  const hasLocation =
+    user?.sppg?.latitude != null && user?.sppg?.longitude != null;
 
   const login = async (email: string, password: string) => {
-    // 1. Coba login ke backend
     try {
       const response = await loginEmail(email, password);
       if (response.success) {
@@ -103,7 +136,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("Backend tidak tersedia, mencoba mock login...");
     }
 
-    // 2. Fallback ke mock login
     const mockUser = mockUsers.find(
       (u) => u.email === email && u.password === password,
     );
@@ -127,6 +159,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push("/login");
   };
 
+  const updateSppgLocation = useCallback(
+    (
+      latitude: number,
+      longitude: number,
+      province?: string,
+      regency?: string,
+      district?: string,
+      village?: string,
+      postalCode?: string,
+    ) => {
+      setUser((prev) => {
+        if (!prev?.sppg) return prev;
+        const updatedSppg: SppgData = {
+          ...prev.sppg,
+          latitude,
+          longitude,
+          ...(province !== undefined && { province }),
+          ...(regency !== undefined && { regency }),
+          ...(district !== undefined && { district }),
+          ...(village !== undefined && { village }),
+          ...(postalCode !== undefined && { postalCode }),
+        };
+        const updatedUser = { ...prev, sppg: updatedSppg };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        return updatedUser;
+      });
+    },
+    [],
+  );
+
+  const updateSppgProfile = useCallback((data: Partial<SppgData>) => {
+    setUser((prev) => {
+      if (!prev?.sppg) return prev;
+      const updatedSppg: SppgData = { ...prev.sppg, ...data };
+      const updatedUser = { ...prev, sppg: updatedSppg };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      return updatedUser;
+    });
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -136,8 +208,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated,
         isSupplier,
         isAdmin,
+        hasLocation,
         login,
         logout,
+        updateSppgLocation,
+        updateSppgProfile,
       }}
     >
       {children}

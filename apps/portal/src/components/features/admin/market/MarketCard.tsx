@@ -2,23 +2,30 @@
 
 import { MarketSupplierItem } from "./types";
 import { formatCurrency } from "@/lib/utils";
+import { AlertTriangle, CheckCircle } from "lucide-react";
 
 interface MarketCardProps {
   item: MarketSupplierItem;
+  medianPrice?: number;
   onAddToDraft: (item: MarketSupplierItem) => void;
 }
 
-export function MarketCard({ item, onAddToDraft }: MarketCardProps) {
-  const distanceText =
-    item.distance !== undefined
-      ? item.distance < 1
-        ? `${(item.distance * 1000).toFixed(0)} m`
-        : `${item.distance.toFixed(1)} km`
-      : null;
+export function MarketCard({
+  item,
+  medianPrice,
+  onAddToDraft,
+}: MarketCardProps) {
+  const priceDiff =
+    medianPrice && medianPrice > 0
+      ? ((item.price - medianPrice) / medianPrice) * 100
+      : 0;
+
+  const isAboveMedian = priceDiff > 5;
+  const isBelowMedian = priceDiff < -5;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow flex flex-col">
-      {/* Header: Supplier Name + MoU Badge */}
+      {/* Header: Supplier Name + Anomaly Badge */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-gray-900 truncate">
@@ -38,46 +45,73 @@ export function MarketCard({ item, onAddToDraft }: MarketCardProps) {
           )}
         </div>
         {item.isAnomaly && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 ml-2 flex-shrink-0">
-            Harga Anomali
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 ml-2 flex-shrink-0">
+            <AlertTriangle className="w-3 h-3" />
+            Anomali
           </span>
         )}
       </div>
 
       {/* Item Name */}
-      <p className="text-sm text-gray-600 mb-3">
-        {item.itemName}
-      </p>
+      <p className="text-sm text-gray-600 mb-3">{item.itemName}</p>
 
-      {/* Price + Distance */}
+      {/* Price */}
       <div className="flex items-end justify-between mb-4 mt-auto">
         <div>
           <p className="text-xs text-gray-500 mb-0.5">Harga per {item.unit}</p>
           <p className="text-lg font-bold text-primary-600">
             {formatCurrency(item.price)}
           </p>
-        </div>
-        {distanceText && (
-          <div className="text-right">
-            <p className="text-xs text-gray-500 mb-0.5">Jarak</p>
-            <div className="flex items-center gap-1 text-sm text-gray-700">
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span className="font-medium">{distanceText}</span>
+          {medianPrice !== undefined && medianPrice > 0 && (
+            <div className="flex items-center gap-1 mt-1">
+              {isBelowMedian ? (
+                <TrendingDown className="w-3 h-3 text-green-500" />
+              ) : isAboveMedian ? (
+                <TrendingUp className="w-3 h-3 text-red-500" />
+              ) : (
+                <CheckCircle className="w-3 h-3 text-blue-500" />
+              )}
+              <span
+                className={`text-xs font-medium ${
+                  isBelowMedian
+                    ? "text-green-600"
+                    : isAboveMedian
+                    ? "text-red-600"
+                    : "text-blue-600"
+                }`}
+              >
+                {priceDiff > 0 ? "+" : ""}
+                {priceDiff.toFixed(1)}% dari median
+              </span>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Action Button */}
       <button
         onClick={() => onAddToDraft(item)}
-        className="block w-full text-center px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
+        disabled={item.isAnomaly}
+        className="block w-full text-center px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
       >
-        Pesan Bahan
+        {item.isAnomaly ? "Harga Anomali" : "Pesan Bahan"}
       </button>
     </div>
+  );
+}
+
+function TrendingDown(props: { className?: string }) {
+  return (
+    <svg className={props.className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+    </svg>
+  );
+}
+
+function TrendingUp(props: { className?: string }) {
+  return (
+    <svg className={props.className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+    </svg>
   );
 }
