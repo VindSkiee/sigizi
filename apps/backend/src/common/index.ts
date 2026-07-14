@@ -15,3 +15,11 @@ export { ResponseTransformInterceptor } from "./interceptors/response-transform.
 
 // Exceptions
 export { InsufficientStockException } from "./exceptions/insufficient-stock.exception";
+
+// Guards
+export { JwtAuthGuard } from "./guards/jwt-auth.guard";
+export { RolesGuard } from "./guards/roles.guard";
+
+// Decorators
+export { Roles } from "./decorators/roles.decorator";
+export { CurrentUser } from "./decorators/current-user.decorator";

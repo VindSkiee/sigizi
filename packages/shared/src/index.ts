@@ -25,6 +25,7 @@ export enum OrderStatus {
   CONFIRMED = "CONFIRMED",
   DELIVERED = "DELIVERED",
   COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
 }
 
 export enum MouStatus {
@@ -32,6 +33,32 @@ export enum MouStatus {
   ACTIVE = "ACTIVE",
   EXPIRED = "EXPIRED",
   TERMINATED = "TERMINATED",
+}
+
+export enum StockSource {
+  SYSTEM_ORDER = "SYSTEM_ORDER",
+  MANUAL_ADJUSTMENT = "MANUAL_ADJUSTMENT",
+  BATCH_RETURN = "BATCH_RETURN",
+}
+
+export enum OperationalExpenseCategory {
+  TRANSPORTATION = "TRANSPORTATION",
+  FUEL = "FUEL",
+  VEHICLE_MAINTENANCE = "VEHICLE_MAINTENANCE",
+  ADMINISTRATIVE = "ADMINISTRATIVE",
+  UTILITIES = "UTILITIES",
+  OTHER = "OTHER",
+}
+
+export enum ReportType {
+  DAILY = "DAILY",
+  WEEKLY = "WEEKLY",
+  MONTHLY = "MONTHLY",
+}
+
+export enum ReportSnapshotStatus {
+  DRAFT = "DRAFT",
+  FINAL = "FINAL",
 }
 
 // ============================================================================
@@ -107,6 +134,7 @@ export interface SupplierItem {
   description?: string;
   minOrderQty?: number;
   orderStep?: number;
+  minThreshold?: number;
   supplierId: string;
   createdAt: Date;
 }
@@ -181,11 +209,29 @@ export interface InventoryStock {
   sppgId: string;
   itemId: string;
   orderItemId?: string;
+  source: StockSource;
   purchasePrice: number;
   initialQty: number;
   remainingQty: number;
+  expiredAt?: Date;
+  createdById: string;
+  notes?: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// ============================================================================
+// Inventory Adjustment Log — Audit trail penyesuaian stok
+// ============================================================================
+
+export interface InventoryAdjustmentLog {
+  id: string;
+  inventoryStockId: string;
+  adjustmentQty: number;
+  reason: string;
+  description?: string;
+  changedById: string;
+  createdAt: Date;
 }
 
 // ============================================================================
@@ -203,10 +249,25 @@ export interface Order {
   items?: OrderItem[];
   mouId?: string;
   mou?: Mou;
+  // Delivery tracking
+  expectedDeliveryDate?: Date;
+  actualDeliveryDate?: Date;
+  deliveryEvidence?: string;
+  // Payment tracking
+  paidAt?: Date;
+  paymentEvidenceUrl?: string;
+  paidById?: string;
+  // Cancellation tracking
+  cancelledAt?: Date;
+  cancelledReason?: string;
+  cancelledById?: string;
+  // Audit
   createdById: string;
   updatedById?: string;
   createdAt: Date;
   updatedAt: Date;
+  // Computed
+  isLate?: boolean;
 }
 
 export interface OrderItem {
@@ -218,6 +279,22 @@ export interface OrderItem {
   unitPrice: number;
   subtotal: number;
   inventoryStocks?: InventoryStock[];
+}
+
+// ============================================================================
+// OrderStatusHistory — Audit trail perubahan status order
+// ============================================================================
+
+export interface OrderStatusHistory {
+  id: string;
+  orderId: string;
+  fromStatus?: OrderStatus;
+  toStatus: OrderStatus;
+  changedById: string;
+  changedBy?: User;
+  notes?: string;
+  evidenceUrl?: string;
+  createdAt: Date;
 }
 
 // ============================================================================
@@ -308,14 +385,112 @@ export interface Complaint {
 }
 
 // ============================================================================
+// Financial Reporting
+// ============================================================================
+
+export type ExpenseSource = "COGS" | "PROCUREMENT" | "OPEX" | "ALL";
+
+export interface FinancialLogEntry {
+  source: Exclude<ExpenseSource, "ALL">;
+  date: string;
+  referenceId: string;
+  title: string;
+  description?: string | null;
+  amount: number;
+  meta?: Record<string, unknown>;
+}
+
+export interface ReportBreakdownSection {
+  total: number;
+  items: FinancialLogEntry[];
+}
+
+export interface OfficialReportTotals {
+  totalPortions: number;
+  totalCogs: number;
+  totalProcured: number;
+  totalOpex: number;
+  budgetVariance: number;
+}
+
+export interface OfficialReportPayload {
+  id: string;
+  sppgId: string;
+  sppgName: string | null;
+  type: ReportType;
+  periodKey: string;
+  startDate: string;
+  endDate: string;
+  status: ReportSnapshotStatus;
+  totals: OfficialReportTotals;
+  breakdown: {
+    cogs: ReportBreakdownSection;
+    procurement: ReportBreakdownSection;
+    opex: ReportBreakdownSection;
+  };
+  pdfPath?: string | null;
+  pdfHash?: string | null;
+  generatedAt: string;
+  finalizedAt: string;
+}
+
+export interface OperationalExpense {
+  id: string;
+  sppgId: string;
+  category: OperationalExpenseCategory;
+  amount: number;
+  expenseDate: Date;
+  description: string;
+  evidenceUrl?: string;
+  notes?: string;
+  createdById: string;
+  updatedById?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ReportSnapshot {
+  id: string;
+  sppgId: string;
+  type: ReportType;
+  periodKey: string;
+  startDate: Date;
+  endDate: Date;
+  status: ReportSnapshotStatus;
+  totalPortions: number;
+  totalCogs: number;
+  totalProcured: number;
+  totalOpex: number;
+  budgetVariance: number;
+  payload?: OfficialReportPayload;
+  pdfPath?: string;
+  pdfHash?: string;
+  generatedById: string;
+  generatedAt: Date;
+  finalizedAt: Date;
+  updatedAt: Date;
+}
+
+// ============================================================================
 // Market Analytics
 // ============================================================================
 
-export interface MarketPrice {
-  item: string;
-  region: string;
-  statistics: PriceStatistics;
-  suppliers: SupplierPrice[];
+export type MarketScopeUsed =
+  "district" | "regency" | "province" | "gps_radius" | "master";
+
+export type HETBasedOn =
+  | "master_reference_cold_start"
+  | "blended_small_sample"
+  | "clean_dynamic_median"
+  | "all_anomaly_fallback";
+
+export interface MarketLocationFilter {
+  province?: string | null;
+  regency?: string | null;
+  district?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  radiusKm?: number | null;
 }
 
 export interface PriceStatistics {
@@ -326,11 +501,38 @@ export interface PriceStatistics {
   count: number;
 }
 
+export interface DualPriceStatistics {
+  raw: PriceStatistics;
+  clean: PriceStatistics;
+}
+
+export interface MarketPrice {
+  item: string;
+  filter: MarketLocationFilter;
+  scopeUsed: MarketScopeUsed;
+  sampleCount: number;
+  effectiveRadiusKm?: number | null;
+  statistics: DualPriceStatistics;
+  suppliers: SupplierPrice[];
+}
+
 export interface SupplierPrice {
   id: string;
   name: string;
   price: number;
   isAnomaly: boolean;
+  latitude?: number;
+  longitude?: number;
+  distanceKm?: number;
+}
+
+export interface HETSuggestion {
+  item: string;
+  filter: MarketLocationFilter;
+  scopeUsed: MarketScopeUsed;
+  het: number;
+  basedOn: HETBasedOn;
+  statistics: DualPriceStatistics;
 }
 
 // ============================================================================
@@ -357,6 +559,22 @@ export interface ReportSummary {
   totalCost: number;
   totalPortions: number;
   avgCostPerPortion: number;
+}
+
+export interface FinancialReportSummary {
+  totalPortions: number;
+  totalCogs: number;
+  totalProcured: number;
+  totalOpex: number;
+  budgetVariance: number;
+}
+
+export interface ReportExpenseBreakdown {
+  source: ExpenseSource;
+  startDate: string;
+  endDate: string;
+  items: FinancialLogEntry[];
+  summary: FinancialReportSummary;
 }
 
 export interface ComplaintSummary {
@@ -608,6 +826,7 @@ export const COMPLAINT_MAX_DESCRIPTION_LENGTH = 1000;
 
 export const DAILY_REPORT_NAME = "Laporan Harian";
 export const WEEKLY_REPORT_NAME = "Laporan Mingguan";
+export const MONTHLY_REPORT_NAME = "Laporan Bulanan";
 
 // ============================================================================
 // Role Permissions
@@ -727,10 +946,11 @@ export const UNIT_OPTIONS = [
 // ============================================================================
 
 export const VALID_ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  [OrderStatus.PENDING]: [OrderStatus.CONFIRMED],
-  [OrderStatus.CONFIRMED]: [OrderStatus.DELIVERED],
-  [OrderStatus.DELIVERED]: [OrderStatus.COMPLETED],
+  [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+  [OrderStatus.CONFIRMED]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
+  [OrderStatus.DELIVERED]: [OrderStatus.COMPLETED, OrderStatus.CANCELLED],
   [OrderStatus.COMPLETED]: [],
+  [OrderStatus.CANCELLED]: [],
 };
 
 // ============================================================================
