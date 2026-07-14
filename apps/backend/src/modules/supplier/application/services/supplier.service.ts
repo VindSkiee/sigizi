@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from "@nestjs/common";
 import { SUPPLIER_REPOSITORY } from "../../domain";
 import type { SupplierRepository } from "../../domain";
@@ -10,6 +11,7 @@ import { CreateSupplierDto } from "../dto/create-supplier.dto";
 import { UpdateSupplierDto } from "../dto/update-supplier.dto";
 import { UpdateSupplierProfileDto } from "../dto/update-supplier-profile.dto";
 import { CreateSupplierItemDto } from "../dto/create-supplier-item.dto";
+import { UpdateSupplierItemDto } from "../dto/update-supplier-item.dto";
 import {
   PaginationDto,
   PaginatedResult,
@@ -98,7 +100,21 @@ export class SupplierService {
     return this.repository.addItem(supplierId, dto);
   }
 
+  async updateItem(itemId: string, dto: UpdateSupplierItemDto) {
+    const existing = await this.repository.findItemById(itemId);
+    if (!existing) {
+      throw new NotFoundException(`Supplier item with ID ${itemId} not found`);
+    }
+    return this.repository.updateItem(itemId, dto);
+  }
+
   async removeItem(itemId: string) {
+    const refCheck = await this.repository.hasItemReferences(itemId);
+    if (refCheck.hasReferences) {
+      throw new BadRequestException(
+        `Produk ini tidak dapat dihapus karena masih digunakan dalam: ${refCheck.reasons.join(", ")}. Nonaktifkan produk (set isAvailable = false) sebagai alternatif.`,
+      );
+    }
     await this.repository.removeItem(itemId);
   }
 }

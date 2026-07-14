@@ -223,6 +223,22 @@ export async function removeSupplierItem(token: string, itemId: string) {
   });
 }
 
+export async function updateSupplierItem(
+  token: string,
+  supplierId: string,
+  itemId: string,
+  data: any,
+) {
+  return fetchApi(`/api/suppliers/${supplierId}/items/${itemId}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+}
+
 // ============================================================================
 // Batch API
 // ============================================================================

@@ -6,5 +6,7 @@ export {
   UpdateSupplierData,
   SupplierItemData,
   CreateSupplierItemData,
+  UpdateSupplierItemData,
+  ItemReferenceCheck,
 } from "./repositories/supplier.repository";
 export { SUPPLIER_REPOSITORY } from "./repositories/tokens";
