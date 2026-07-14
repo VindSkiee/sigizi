@@ -62,6 +62,18 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-green-50 to-white">
+      {/* Top Navigation */}
+      <div className="absolute top-0 left-0 right-0 px-4 py-4">
+        <div className="max-w-5xl mx-auto flex justify-end">
+          <button
+            onClick={() => router.push("/login")}
+            className="px-4 py-2 text-sm font-medium text-green-700 bg-white border border-green-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-colors shadow-sm"
+          >
+            Masuk Admin
+          </button>
+        </div>
+      </div>
+
       <div className="container mx-auto px-4 py-16">
         {/* Header */}
         <div className="text-center mb-16">
