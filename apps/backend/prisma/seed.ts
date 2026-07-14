@@ -118,6 +118,44 @@ async function main() {
       longitude: 107.7634,
     },
   });
+
+  const supplier4 = await prisma.supplier.upsert({
+    where: { id: "clx00000000000000000000s4" },
+    update: {},
+    create: {
+      id: "clx00000000000000000000s4",
+      name: "UD. Berkah Pangan",
+      nib: "/uploads/nib/berkah-pangan-2026.pdf",
+      phone: "081234567893",
+      address: "Jl. Raya Wanayasa Km 3",
+      province: "JAWA_BARAT",
+      regency: "PURWAKARTA",
+      district: "WANAYASA",
+      village: "Wanayasa",
+      postalCode: "41152",
+      latitude: -6.503,
+      longitude: 107.453,
+    },
+  });
+
+  const supplier5 = await prisma.supplier.upsert({
+    where: { id: "clx00000000000000000000s5" },
+    update: {},
+    create: {
+      id: "clx00000000000000000000s5",
+      name: "UD. Jaya Abadi",
+      nib: "/uploads/nib/jaya-abadi-2026.pdf",
+      phone: "081234567894",
+      address: "Jl. Ir. H. Juanda No. 15",
+      province: "JAWA_BARAT",
+      regency: "PURWAKARTA",
+      district: "PURWAKARTA",
+      village: "Ciseureuh",
+      postalCode: "41111",
+      latitude: -6.555,
+      longitude: 107.447,
+    },
+  });
   console.log("✅ Suppliers upserted with NIB + address + GPS");
 
   // Update supplier user with supplierId
@@ -130,7 +168,11 @@ async function main() {
   // 4. Create Supplier Items
   // ============================================================================
 
+  // All 5 suppliers sell "Beras Premium" → IQR mature market path (≥5 samples)
+  // Ayam sold by s1+s2+s4+s5 = 4 suppliers → cold start
+  // Telur sold by s2+s4+s5 = 3 suppliers → cold start
   const items = [
+    // Supplier 1 — UD. Sumber Rejeki (Wanayasa)
     {
       name: "Beras Premium",
       unit: "kg",
@@ -158,10 +200,11 @@ async function main() {
       orderStep: 0.5,
       supplierId: supplier1.id,
     },
+    // Supplier 2 — UD. Murah Jaya (Purwakarta center)
     {
       name: "Beras Premium",
       unit: "kg",
-      basePrice: 11500,
+      basePrice: 11000,
       description: "Beras premium harga bersaing",
       minOrderQty: 10,
       orderStep: 1,
@@ -178,18 +221,19 @@ async function main() {
     },
     {
       name: "Telur Ayam",
-      unit: "kg",
+      unit: "pcs",
       basePrice: 28000,
-      description: "Telur ayam kampung segar",
+      description: "Telur ayam kampung segar per kg",
       minOrderQty: 1,
       orderStep: 0.5,
       supplierId: supplier2.id,
     },
+    // Supplier 3 — Tani Segar Farm (Subang) — EXPENSIVE (outlier for testing)
     {
       name: "Beras Premium",
       unit: "kg",
-      basePrice: 15000,
-      description: "Beras organik premium",
+      basePrice: 22000,
+      description: "Beras organik premium, jarak jauh dari Subang",
       minOrderQty: 5,
       orderStep: 1,
       supplierId: supplier3.id,
@@ -211,6 +255,62 @@ async function main() {
       minOrderQty: 2,
       orderStep: 0.5,
       supplierId: supplier3.id,
+    },
+    // Supplier 4 — UD. Berkah Pangan (Wanayasa)
+    {
+      name: "Beras Premium",
+      unit: "kg",
+      basePrice: 11800,
+      description: "Beras premium berkualitas, harga kompetitif",
+      minOrderQty: 5,
+      orderStep: 0.5,
+      supplierId: supplier4.id,
+    },
+    {
+      name: "Ayam Potong",
+      unit: "kg",
+      basePrice: 36000,
+      description: "Ayam potong segar dari peternak lokal",
+      minOrderQty: 2,
+      orderStep: 0.5,
+      supplierId: supplier4.id,
+    },
+    {
+      name: "Telur Ayam",
+      unit: "pcs",
+      basePrice: 29000,
+      description: "Telur ayam segar grade A",
+      minOrderQty: 1,
+      orderStep: 0.5,
+      supplierId: supplier4.id,
+    },
+    // Supplier 5 — UD. Jaya Abadi (Ciseureuh, Purwakarta)
+    {
+      name: "Beras Premium",
+      unit: "kg",
+      basePrice: 12200,
+      description: "Beras premium pilihan, dekat dengan SPPG",
+      minOrderQty: 5,
+      orderStep: 0.5,
+      supplierId: supplier5.id,
+    },
+    {
+      name: "Ayam Potong",
+      unit: "kg",
+      basePrice: 38000,
+      description: "Ayam potong segar premium",
+      minOrderQty: 2,
+      orderStep: 0.5,
+      supplierId: supplier5.id,
+    },
+    {
+      name: "Telur Ayam",
+      unit: "pcs",
+      basePrice: 30000,
+      description: "Telur ayam kampung segar, nutrisi tinggi",
+      minOrderQty: 1,
+      orderStep: 0.5,
+      supplierId: supplier5.id,
     },
   ];
 
@@ -347,62 +447,296 @@ async function main() {
   console.log("✅ MoU upserted:", mou.mouNumber, "- Status:", mou.status);
 
   // ============================================================================
-  // 7. Create Order (linked to MoU)
+  // 7. Create Orders (3 orders for report + price validation testing)
+  //    All set to COMPLETED + paidAt on 2026-07-14 for daily report
   // ============================================================================
 
+  // ── Order 1: All items VALID, linked to MoU ──
   const order1 = await prisma.order.upsert({
     where: { id: "clx00000000000000000000o1" },
-    update: {},
+    update: {
+      status: "COMPLETED",
+      paidAt: new Date("2026-07-14T10:00:00Z"),
+      actualDeliveryDate: new Date("2026-07-14T08:00:00Z"),
+    },
     create: {
       id: "clx00000000000000000000o1",
-      total: 615000,
+      status: "COMPLETED",
+      total: 512500, // 230000 + 170000 + 112500
       sppgId: sppg.id,
       supplierId: supplier1.id,
       createdById: admin.id,
       mouId: mou.id,
+      paidAt: new Date("2026-07-14T10:00:00Z"),
+      actualDeliveryDate: new Date("2026-07-14T08:00:00Z"),
+      paymentEvidenceUrl: "/uploads/evidence/bukti-bayar-o1.pdf",
+      notes: "Pesanan bahan baku minggu ini via MoU",
       items: {
         create: [
           {
-            itemId: createdItems[0].id, // Beras Premium
+            itemId: createdItems[0].id, // Beras Premium s1
             quantity: 20,
-            unitPrice: 11500, // Harga MoU (bukan basePrice)
+            unitPrice: 11500, // Harga MoU (valid: 11500 ≈ median 12000)
             subtotal: 230000,
+            marketMedianAtPurchase: 12000,
+            isWarningBypass: false,
+            justificationNote: "Semua harga valid sesuai data pasar",
           },
           {
-            itemId: createdItems[1].id, // Ayam Potong
+            itemId: createdItems[1].id, // Ayam Potong s1
             quantity: 5,
-            unitPrice: 34000, // Harga MoU
+            unitPrice: 34000, // Harga MoU (cold start, master ref 40000, valid)
             subtotal: 170000,
+            marketMedianAtPurchase: 40000,
+            isWarningBypass: false,
+            justificationNote: "Semua harga valid sesuai data pasar",
           },
           {
-            itemId: createdItems[2].id, // Sayur Bayam
-            quantity: 25,
-            unitPrice: 7500, // Harga MoU
-            subtotal: 187500,
+            itemId: createdItems[2].id, // Sayur Bayam s1
+            quantity: 15,
+            unitPrice: 7500,
+            subtotal: 112500,
+            marketMedianAtPurchase: 8000,
+            isWarningBypass: false,
+            justificationNote: "Semua harga valid sesuai data pasar",
           },
         ],
       },
     },
     include: { items: true },
   });
+
+  // Status history: PENDING → CONFIRMED → DELIVERED → COMPLETED
+  const orderHistoryData = [
+    {
+      orderId: order1.id,
+      fromStatus: null as string | null,
+      toStatus: "PENDING" as const,
+      changedById: admin.id,
+      notes: "Order berhasil dibuat dan menunggu konfirmasi dari supplier",
+      createdAt: new Date("2026-07-14T06:00:00Z"),
+    },
+    {
+      orderId: order1.id,
+      fromStatus: "PENDING" as const,
+      toStatus: "CONFIRMED" as const,
+      changedById: supplierUser.id,
+      notes: "Konfirmasi dari supplier",
+      createdAt: new Date("2026-07-14T06:30:00Z"),
+    },
+    {
+      orderId: order1.id,
+      fromStatus: "CONFIRMED" as const,
+      toStatus: "DELIVERED" as const,
+      changedById: supplierUser.id,
+      notes: "Pengiriman selesai",
+      createdAt: new Date("2026-07-14T08:00:00Z"),
+    },
+    {
+      orderId: order1.id,
+      fromStatus: "DELIVERED" as const,
+      toStatus: "COMPLETED" as const,
+      changedById: admin.id,
+      notes: "Semua harga valid sesuai data pasar. Pembayaran dikonfirmasi",
+      createdAt: new Date("2026-07-14T10:00:00Z"),
+    },
+  ];
+
   console.log(
     "✅ Order 1 upserted:",
     order1.id,
-    "linked to MoU:",
+    "COMPLETED via MoU:",
     mou.mouNumber,
   );
 
+  // ── Order 2: WARNING bypass — Ayam at Rp 55,000 (market median ~37,000) ──
+  const order2 = await prisma.order.upsert({
+    where: { id: "clx00000000000000000000o2" },
+    update: {
+      status: "COMPLETED",
+      paidAt: new Date("2026-07-14T14:00:00Z"),
+      actualDeliveryDate: new Date("2026-07-14T11:00:00Z"),
+    },
+    create: {
+      id: "clx00000000000000000000o2",
+      status: "COMPLETED",
+      total: 275000,
+      sppgId: sppg.id,
+      supplierId: supplier3.id, // Tani Segar Farm (Subang, expensive)
+      createdById: admin.id,
+      paidAt: new Date("2026-07-14T14:00:00Z"),
+      actualDeliveryDate: new Date("2026-07-14T11:00:00Z"),
+      paymentEvidenceUrl: "/uploads/evidence/bukti-bayar-o2.pdf",
+      notes: "Ayam dari Subang, stok lokal langka",
+      items: {
+        create: [
+          {
+            itemId: createdItems[10].id, // Ayam Potong s4 (Rp 36,000)
+            quantity: 5,
+            unitPrice: 55000, // Harga tinggi → WARNING bypass
+            subtotal: 275000,
+            marketMedianAtPurchase: 37000, // Median dari s1+s2+s4+s5 = (35+33+36+38)/4 = 35500 ≈ 37000
+            isWarningBypass: true,
+            justificationNote:
+              "[Price Validation Justification] Stok lokal langka, supplier terdekat hanya ini yang tersedia. Jarak Subang ~34km",
+          },
+        ],
+      },
+    },
+    include: { items: true },
+  });
+
+  orderHistoryData.push(
+    {
+      orderId: order2.id,
+      fromStatus: null,
+      toStatus: "PENDING",
+      changedById: admin.id,
+      notes: "Order ayam dari Tani Segar Farm (Subang)",
+      createdAt: new Date("2026-07-14T09:00:00Z"),
+    },
+    {
+      orderId: order2.id,
+      fromStatus: "PENDING",
+      toStatus: "CONFIRMED",
+      changedById: supplierUser.id,
+      notes: "Konfirmasi supplier",
+      createdAt: new Date("2026-07-14T09:30:00Z"),
+    },
+    {
+      orderId: order2.id,
+      fromStatus: "CONFIRMED",
+      toStatus: "DELIVERED",
+      changedById: supplierUser.id,
+      notes: "Pengiriman dari Subang",
+      createdAt: new Date("2026-07-14T11:00:00Z"),
+    },
+    {
+      orderId: order2.id,
+      fromStatus: "DELIVERED",
+      toStatus: "COMPLETED",
+      changedById: admin.id,
+      notes:
+        "[Price Validation Justification] Stok lokal langka, supplier terdekat hanya ini yang tersedia. Pembayaran dikonfirmasi",
+      createdAt: new Date("2026-07-14T14:00:00Z"),
+    },
+  );
+
+  console.log(
+    "✅ Order 2 upserted:",
+    order2.id,
+    "COMPLETED — WARNING bypass: Ayam @ Rp 55,000",
+  );
+
+  // ── Order 3: Mixed valid items (Beras + Telur, both valid) ──
+  const order3 = await prisma.order.upsert({
+    where: { id: "clx00000000000000000000o3" },
+    update: {
+      status: "COMPLETED",
+      paidAt: new Date("2026-07-14T16:00:00Z"),
+      actualDeliveryDate: new Date("2026-07-14T14:00:00Z"),
+    },
+    create: {
+      id: "clx00000000000000000000o3",
+      status: "COMPLETED",
+      total: 500000, // 360000 + 140000
+      sppgId: sppg.id,
+      supplierId: supplier1.id, // UD. Sumber Rejeki
+      createdById: admin.id,
+      paidAt: new Date("2026-07-14T16:00:00Z"),
+      actualDeliveryDate: new Date("2026-07-14T14:00:00Z"),
+      paymentEvidenceUrl: "/uploads/evidence/bukti-bayar-o3.pdf",
+      notes: "Beras + Telur untuk batch minggu ini",
+      items: {
+        create: [
+          {
+            itemId: createdItems[0].id, // Beras Premium s1 (Rp 12,000, valid)
+            quantity: 30,
+            unitPrice: 12000, // basePrice, valid: 12000 ≈ median
+            subtotal: 360000, // 30 × 12000 = 360000
+            marketMedianAtPurchase: 12000,
+            isWarningBypass: false,
+            justificationNote: "Semua harga valid sesuai data pasar",
+          },
+          {
+            itemId: createdItems[5].id, // Telur Ayam s2 (Rp 28,000, cold start, master ref 28000)
+            quantity: 5,
+            unitPrice: 28000, // master ref = 28000, valid
+            subtotal: 140000, // 5 × 28000 = 140000
+            marketMedianAtPurchase: 28000,
+            isWarningBypass: false,
+            justificationNote: "Semua harga valid sesuai data pasar",
+          },
+        ],
+      },
+    },
+    include: { items: true },
+  });
+
+  orderHistoryData.push(
+    {
+      orderId: order3.id,
+      fromStatus: null,
+      toStatus: "PENDING",
+      changedById: admin.id,
+      notes: "Order beras dan telur",
+      createdAt: new Date("2026-07-14T12:00:00Z"),
+    },
+    {
+      orderId: order3.id,
+      fromStatus: "PENDING",
+      toStatus: "CONFIRMED",
+      changedById: supplierUser.id,
+      notes: "Konfirmasi supplier",
+      createdAt: new Date("2026-07-14T12:30:00Z"),
+    },
+    {
+      orderId: order3.id,
+      fromStatus: "CONFIRMED",
+      toStatus: "DELIVERED",
+      changedById: supplierUser.id,
+      notes: "Pengiriman selesai",
+      createdAt: new Date("2026-07-14T14:00:00Z"),
+    },
+    {
+      orderId: order3.id,
+      fromStatus: "DELIVERED",
+      toStatus: "COMPLETED",
+      changedById: admin.id,
+      notes: "Semua harga valid sesuai data pasar. Pembayaran dikonfirmasi",
+      createdAt: new Date("2026-07-14T16:00:00Z"),
+    },
+  );
+
+  console.log(
+    "✅ Order 3 upserted:",
+    order3.id,
+    "COMPLETED — mixed valid: Beras + Telur",
+  );
+
+  // ── Batch-create all OrderStatusHistory entries ──
+  for (const h of orderHistoryData) {
+    await prisma.orderStatusHistory.create({ data: h as any });
+  }
+  console.log(
+    "✅ OrderStatusHistory created:",
+    orderHistoryData.length,
+    "entries",
+  );
+
   // ============================================================================
-  // 8. Create Batch (with BatchItems)
+  // 8. Create Batches (3 batches on 2026-07-14 for daily report)
   // ============================================================================
 
+  // ── Batch 1: Nasi Ayam Bakar + Sayur Bayam ──
   const batch1 = await prisma.batch.upsert({
     where: { id: "clx00000000000000000000bt1" },
     update: {},
     create: {
       id: "clx00000000000000000000bt1",
-      batchNumber: "BATCH-20260710-001",
+      batchNumber: "BATCH-20260714-001",
       reportKey: "A7X9K2M4",
+      date: new Date("2026-07-14T06:00:00Z"),
       menu: "Nasi Ayam Bakar + Sayur Bayam",
       nutrition: { calories: 450, protein: 25, fat: 15, carbs: 50 },
       allergens: ["gluten"],
@@ -410,14 +744,14 @@ async function main() {
       costPerPortion: 0,
       totalCost: 0,
       costPerPortionStandard: 10000,
-      totalBudget: 1500000, // 10000 * 150
-      budgetVariance: 0, // Will be computed after creation
+      totalBudget: 1500000,
+      budgetVariance: 0,
       sppgId: sppg.id,
       createdById: admin.id,
       batchItems: {
         create: [
           {
-            itemId: createdItems[0].id, // Beras Premium
+            itemId: createdItems[0].id,
             name: "Beras Premium 15kg",
             unit: "kg",
             quantity: 15,
@@ -426,7 +760,7 @@ async function main() {
             createdById: admin.id,
           },
           {
-            itemId: createdItems[1].id, // Ayam Potong
+            itemId: createdItems[1].id,
             name: "Ayam Potong 3kg",
             unit: "kg",
             quantity: 3,
@@ -435,7 +769,7 @@ async function main() {
             createdById: admin.id,
           },
           {
-            itemId: createdItems[2].id, // Sayur Bayam
+            itemId: createdItems[2].id,
             name: "Sayur Bayam 15kg",
             unit: "kg",
             quantity: 15,
@@ -453,24 +787,184 @@ async function main() {
     where: { id: batch1.id },
     include: { batchItems: true },
   });
-  if (!batch1WithItems) throw new Error("Batch not found");
+  if (!batch1WithItems) throw new Error("Batch 1 not found");
 
-  const totalCost = batch1WithItems.batchItems.reduce(
+  const totalCost1 = batch1WithItems.batchItems.reduce(
     (sum, item) => sum + item.subtotal,
     0,
   );
-  const costPerPortion = batch1WithItems.beneficiaryCount
-    ? totalCost / batch1WithItems.beneficiaryCount
+  const costPerPortion1 = batch1WithItems.beneficiaryCount
+    ? totalCost1 / batch1WithItems.beneficiaryCount
     : 0;
 
   await prisma.batch.update({
     where: { id: batch1.id },
-    data: { totalCost, costPerPortion, budgetVariance: totalCost - 1500000 },
+    data: {
+      totalCost: totalCost1,
+      costPerPortion: costPerPortion1,
+      budgetVariance: totalCost1 - 1500000,
+    },
   });
-  console.log("✅ Batch 1 upserted:", batch1.batchNumber, "Total:", totalCost);
+  console.log("✅ Batch 1:", batch1.batchNumber, "Total:", totalCost1);
+
+  // ── Batch 2: Nasi Ikan Goreng + Wortel ──
+  const batch2 = await prisma.batch.upsert({
+    where: { id: "clx00000000000000000000bt2" },
+    update: {},
+    create: {
+      id: "clx00000000000000000000bt2",
+      batchNumber: "BATCH-20260714-002",
+      reportKey: "B8Y3L5N1",
+      date: new Date("2026-07-14T07:00:00Z"),
+      menu: "Nasi Ikan Goreng + Wortel Rebus",
+      nutrition: { calories: 520, protein: 30, fat: 18, carbs: 55 },
+      allergens: ["fish"],
+      beneficiaryCount: 120,
+      costPerPortion: 0,
+      totalCost: 0,
+      costPerPortionStandard: 10000,
+      totalBudget: 1200000,
+      budgetVariance: 0,
+      sppgId: sppg.id,
+      createdById: admin.id,
+      batchItems: {
+        create: [
+          {
+            itemId: createdItems[0].id,
+            name: "Beras Premium 12kg",
+            unit: "kg",
+            quantity: 12,
+            unitPrice: 11500,
+            subtotal: 138000,
+            createdById: admin.id,
+          },
+          {
+            itemId: createdItems[8].id,
+            name: "Wortel 6kg",
+            unit: "kg",
+            quantity: 6,
+            unitPrice: 10000,
+            subtotal: 60000,
+            createdById: admin.id,
+          },
+          {
+            itemId: createdItems[7].id,
+            name: "Sayur Kangkung 8kg",
+            unit: "kg",
+            quantity: 8,
+            unitPrice: 6000,
+            subtotal: 48000,
+            createdById: admin.id,
+          },
+        ],
+      },
+    },
+  });
+
+  const batch2WithItems = await prisma.batch.findUnique({
+    where: { id: batch2.id },
+    include: { batchItems: true },
+  });
+  if (!batch2WithItems) throw new Error("Batch 2 not found");
+
+  const totalCost2 = batch2WithItems.batchItems.reduce(
+    (sum, item) => sum + item.subtotal,
+    0,
+  );
+  const costPerPortion2 = batch2WithItems.beneficiaryCount
+    ? totalCost2 / batch2WithItems.beneficiaryCount
+    : 0;
+
+  await prisma.batch.update({
+    where: { id: batch2.id },
+    data: {
+      totalCost: totalCost2,
+      costPerPortion: costPerPortion2,
+      budgetVariance: totalCost2 - 1200000,
+    },
+  });
+  console.log("✅ Batch 2:", batch2.batchNumber, "Total:", totalCost2);
+
+  // ── Batch 3: Nasi Tahu Tempe + Telur ──
+  const batch3 = await prisma.batch.upsert({
+    where: { id: "clx00000000000000000000bt3" },
+    update: {},
+    create: {
+      id: "clx00000000000000000000bt3",
+      batchNumber: "BATCH-20260714-003",
+      reportKey: "C9Z4M6P2",
+      date: new Date("2026-07-14T08:00:00Z"),
+      menu: "Nasi Tahu Tempe + Telur Dadar",
+      nutrition: { calories: 480, protein: 22, fat: 16, carbs: 52 },
+      allergens: ["soy", "egg"],
+      beneficiaryCount: 100,
+      costPerPortion: 0,
+      totalCost: 0,
+      costPerPortionStandard: 10000,
+      totalBudget: 1000000,
+      budgetVariance: 0,
+      sppgId: sppg.id,
+      createdById: admin.id,
+      batchItems: {
+        create: [
+          {
+            itemId: createdItems[0].id,
+            name: "Beras Premium 10kg",
+            unit: "kg",
+            quantity: 10,
+            unitPrice: 11500,
+            subtotal: 115000,
+            createdById: admin.id,
+          },
+          {
+            itemId: createdItems[5].id,
+            name: "Telur Ayam 5kg",
+            unit: "kg",
+            quantity: 5,
+            unitPrice: 28000,
+            subtotal: 140000, // 5 × 28000 = 140000
+            createdById: admin.id,
+          },
+          {
+            itemId: createdItems[4].id,
+            name: "Ayam Potong 2kg",
+            unit: "kg",
+            quantity: 2,
+            unitPrice: 33000,
+            subtotal: 66000,
+            createdById: admin.id,
+          },
+        ],
+      },
+    },
+  });
+
+  const batch3WithItems = await prisma.batch.findUnique({
+    where: { id: batch3.id },
+    include: { batchItems: true },
+  });
+  if (!batch3WithItems) throw new Error("Batch 3 not found");
+
+  const totalCost3 = batch3WithItems.batchItems.reduce(
+    (sum, item) => sum + item.subtotal,
+    0,
+  );
+  const costPerPortion3 = batch3WithItems.beneficiaryCount
+    ? totalCost3 / batch3WithItems.beneficiaryCount
+    : 0;
+
+  await prisma.batch.update({
+    where: { id: batch3.id },
+    data: {
+      totalCost: totalCost3,
+      costPerPortion: costPerPortion3,
+      budgetVariance: totalCost3 - 1000000,
+    },
+  });
+  console.log("✅ Batch 3:", batch3.batchNumber, "Total:", totalCost3);
 
   // ============================================================================
-  // 9. Create Sample Complaint
+  // 9. Create Sample Complaints
   // ============================================================================
 
   await prisma.complaint.upsert({
@@ -484,7 +978,51 @@ async function main() {
       batchId: batch1.id,
     },
   });
-  console.log("✅ Complaint upserted");
+
+  await prisma.complaint.upsert({
+    where: { id: "clx00000000000000000000c2" },
+    update: {},
+    create: {
+      id: "clx00000000000000000000c2",
+      reportKey: "B8Y3L5N1",
+      description: "Ikan goreng kurang garing, sedikit lembek",
+      batchId: batch2.id,
+    },
+  });
+  console.log("✅ Complaints upserted:", 2);
+
+  // ============================================================================
+  // 10. Create Operational Expenses (for OpEx in reports)
+  // ============================================================================
+
+  await prisma.operationalExpense.upsert({
+    where: { id: "clx00000000000000000000oe1" },
+    update: {},
+    create: {
+      id: "clx00000000000000000000oe1",
+      sppgId: sppg.id,
+      category: "TRANSPORTATION",
+      amount: 150000,
+      expenseDate: new Date("2026-07-14T00:00:00Z"),
+      description: "Pengantaran bahan baku mingguan dari 3 supplier",
+      createdById: admin.id,
+    },
+  });
+
+  await prisma.operationalExpense.upsert({
+    where: { id: "clx00000000000000000000oe2" },
+    update: {},
+    create: {
+      id: "clx00000000000000000000oe2",
+      sppgId: sppg.id,
+      category: "FUEL",
+      amount: 75000,
+      expenseDate: new Date("2026-07-14T00:00:00Z"),
+      description: "BBM pengantaran harian ke penerima manfaat",
+      createdById: admin.id,
+    },
+  });
+  console.log("✅ Operational expenses upserted:", 2);
 
   // ============================================================================
   // Summary
@@ -494,29 +1032,61 @@ async function main() {
   console.log("\n📊 Summary:");
   console.log("   - 1 SPPG (SPPG Purwakarta) — with GPS coordinates");
   console.log("   - 2 Users (1 admin, 1 supplier)");
-  console.log("   - 3 Suppliers — with NIB + structured address + GPS");
-  console.log(
-    "   - 9 Supplier Items (with description, minOrderQty, orderStep)",
-  );
+  console.log("   - 5 Suppliers — with NIB + structured address + GPS");
+  console.log("   - 15 Supplier Items (5x Beras, 4x Ayam, 3x Telur, 3x Sayur)");
   console.log("   - 4 Beneficiaries");
   console.log("   - 1 MoU (ACTIVE) — partnership with agreed prices");
-  console.log("   - 1 Order (3 items, linked to MoU)");
-  console.log("   - 1 Batch (3 BatchItems)");
-  console.log("   - 1 Complaint");
+  console.log("   - 3 Orders (all COMPLETED, paidAt on 2026-07-14)");
+  console.log(
+    "     - Order 1: All valid via MoU (Beras+Ayam+Bayam, Rp 512,500)",
+  );
+  console.log(
+    "     - Order 2: WARNING bypass — Ayam @ Rp 55,000 (median ~37,000)",
+  );
+  console.log("     - Order 3: Mixed valid — Beras + Telur (Rp 500,000)");
+  console.log("   - 3 Batches (all on 2026-07-14)");
+  console.log(
+    "     - bt1: Nasi Ayam Bakar (150 porsi, Rp",
+    totalCost1.toLocaleString(),
+    ")",
+  );
+  console.log(
+    "     - bt2: Nasi Ikan Goreng (120 porsi, Rp",
+    totalCost2.toLocaleString(),
+    ")",
+  );
+  console.log(
+    "     - bt3: Nasi Tahu Tempe (100 porsi, Rp",
+    totalCost3.toLocaleString(),
+    ")",
+  );
+  console.log("   - 2 Complaints");
+  console.log("   - 2 Operational Expenses (TRANSPORTATION + FUEL)");
+  console.log("   - 12 OrderStatusHistory entries");
   console.log("\n📍 GPS Data:");
   console.log("   - SPPG Purwakarta: -6.5547, 107.4461");
   console.log("   - Supplier 1 (Wanayasa): -6.5025, 107.4523 (~6km)");
   console.log("   - Supplier 2 (Purwakarta): -6.5560, 107.4480 (~0.2km)");
   console.log("   - Supplier 3 (Subang): -6.5703, 107.7634 (~34km)");
-  console.log("\n💰 Cost Verification:");
+  console.log("   - Supplier 4 (Wanayasa): -6.5030, 107.4530 (~6km)");
+  console.log("   - Supplier 5 (Ciseureuh): -6.5550, 107.4470 (~0.1km)");
+  console.log("\n🧪 Price Validation Test Scenarios:");
+  console.log("   - Beras Premium: 5 suppliers → IQR mature market");
+  console.log("     Sorted: [11000, 11800, 12000, 12200, 22000]");
+  console.log("     Supplier 3 @ 22000 = outlier (above IQR upper bound)");
   console.log(
-    "   - Batch totalCost computed from BatchItems: Rp",
-    totalCost.toLocaleString(),
+    "   - Ayam Potong: 4 suppliers → cold start (master ref Rp 40,000)",
   );
   console.log(
-    "   - costPerPortion computed: Rp",
-    costPerPortion.toLocaleString(),
+    "   - Telur Ayam: 3 suppliers → cold start (master ref Rp 28,000)",
   );
+  console.log("\n📄 Report Test:");
+  console.log("   - Call GET /api/reports/daily?date=2026-07-14");
+  console.log(
+    "   - Expected: COGS ~9 entries, PROCUREMENT 3 entries, OPEX 2 entries",
+  );
+  console.log("   - warningBypassCount: 1 (Order 2 Ayam)");
+  console.log("   - PDF audit table will render bypassed items");
 }
 
 main()
