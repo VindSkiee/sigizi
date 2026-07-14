@@ -195,6 +195,7 @@ export class BatchService {
           nutrition: dto.nutrition as any,
           allergens: dto.allergens ?? [],
           beneficiaryCount,
+          beneficiaryNames: dto.beneficiaryNames ?? [],
           costPerPortion,
           totalCost,
           costPerPortionStandard: COST_PER_PORTION_STANDARD,

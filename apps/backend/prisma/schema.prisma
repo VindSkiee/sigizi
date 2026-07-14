@@ -478,6 +478,7 @@ model Batch {
   nutrition        Json?
   allergens        String[]
   beneficiaryCount Int?
+  beneficiaryNames String[]    // Nama-nama penerima manfaat
 
   costPerPortion   Float
   totalCost        Float

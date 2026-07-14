@@ -53,6 +53,12 @@ export class CreateBatchDto {
   @Min(1)
   beneficiaryCount?: number;
 
+  @ApiPropertyOptional({ example: ["SDN 01 Purwakarta", "SDN 02 Purwakarta"] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  beneficiaryNames?: string[];
+
   @ApiProperty({ type: [BatchItemRequestDto] })
   @IsArray()
   @ValidateNested({ each: true })

@@ -63,25 +63,28 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       {/* Top Navigation */}
-      <div className="absolute top-0 left-0 right-0 px-4 py-4">
+      <nav className="absolute top-0 left-0 right-0 px-4 py-4">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <button
-            onClick={() => router.push("/login")}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-green-200 rounded-lg hover:bg-blue-700 shadow-sm"
-          >
-            Login sebagai SPPG
-          </button>
-          <button
-            onClick={() => router.push("/register")}
-            className="relative px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors shadow-sm"
-          >
-            Daftarkan Toko Mu
-            <span className="absolute -top-4 -right-3 px-1.5 py-0.5 text-[10px] font-bold text-white bg-orange-500 rounded-full">
-              Gratis!
-            </span>
-          </button>
+          <span className="text-xl font-bold text-green-700">SIGIZI</span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push("/login")}
+              className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
+            >
+              Masuk
+            </button>
+            <button
+              onClick={() => router.push("/register")}
+              className="relative px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+            >
+              Daftar Supplier
+              <span className="absolute -top-2 -right-2 px-1.5 py-0.5 text-[10px] font-bold text-white bg-orange-500 rounded-full">
+                Gratis!
+              </span>
+            </button>
+          </div>
         </div>
-      </div>
+      </nav>
 
       <div className="container mx-auto px-4 py-16">
         {/* Header */}
