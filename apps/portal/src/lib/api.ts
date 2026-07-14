@@ -319,14 +319,14 @@ export async function updateOrderStatus(
   token: string,
   id: string,
   status: string,
-  notes?: string,
+  reason?: string,
 ) {
   return fetchApi(`/api/orders/${id}/status`, {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ status, notes }),
+    body: JSON.stringify({ status, reason }),
   });
 }
 

@@ -17,13 +17,23 @@ interface SupplierLayoutProps {
   children: ReactNode;
 }
 
-const navItems = [
+const allNavItems = [
   { name: "Dashboard", href: "/supplier", icon: LayoutDashboard },
   { name: "Katalog Produk", href: "/supplier/katalog", icon: Package },
   { name: "Pesanan Masuk", href: "/supplier/pesanan", icon: ShoppingCart },
-  { name: "MoU & Kontrak", href: "/supplier/mou", icon: FileText },
+  {
+    name: "MoU & Kontrak",
+    href: "/supplier/mou",
+    icon: FileText,
+    devOnly: false,
+  },
   { name: "Profil", href: "/supplier/profil", icon: Building2 },
 ];
+
+const navItems =
+  process.env.NODE_ENV === "development"
+    ? allNavItems.filter((item) => item.devOnly !== false)
+    : allNavItems;
 
 export default function SupplierLayout({ children }: SupplierLayoutProps) {
   const pathname = usePathname();
@@ -81,9 +91,6 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm truncate">
                   {user?.name || "PT Sumber Makmur"}
-                </p>
-                <p className="text-xs text-green-100">
-                  ID: {user?.supplierId || "SUP-001"}
                 </p>
               </div>
             </div>

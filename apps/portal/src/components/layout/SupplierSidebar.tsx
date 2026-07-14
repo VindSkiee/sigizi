@@ -1,17 +1,30 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import { Home, Package, ClipboardList, FileText, Building2, Zap, Globe } from 'lucide-react';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import {
+  Home,
+  Package,
+  ClipboardList,
+  FileText,
+  Building2,
+  Zap,
+  Globe,
+} from "lucide-react";
 
-const navigation = [
-  { name: 'Dashboard', href: '/supplier', icon: Home },
-  { name: 'Katalog Produk', href: '/supplier/katalog', icon: Package },
-  { name: 'Pesanan Baru', href: '/supplier/pesanan', icon: ClipboardList },
-  { name: 'MoU Aktif', href: '/supplier/mou', icon: FileText },
-  { name: 'Profil', href: '/supplier/profil', icon: Building2 },
+const allNavigation = [
+  { name: "Dashboard", href: "/supplier", icon: Home },
+  { name: "Katalog Produk", href: "/supplier/katalog", icon: Package },
+  { name: "Pesanan Baru", href: "/supplier/pesanan", icon: ClipboardList },
+  { name: "MoU Aktif", href: "/supplier/mou", icon: FileText, devOnly: false },
+  { name: "Profil", href: "/supplier/profil", icon: Building2 },
 ];
+
+const navigation =
+  process.env.NODE_ENV === "development"
+    ? allNavigation.filter((item) => item.devOnly !== false)
+    : allNavigation;
 
 export function SupplierSidebar() {
   const pathname = usePathname();
@@ -38,13 +51,18 @@ export function SupplierSidebar() {
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                   isActive
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? "bg-primary-50 text-primary-700"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
                 )}
               >
-                <item.icon className={cn('w-5 h-5', isActive ? 'text-primary-600' : 'text-gray-400')} />
+                <item.icon
+                  className={cn(
+                    "w-5 h-5",
+                    isActive ? "text-primary-600" : "text-gray-400",
+                  )}
+                />
                 {item.name}
               </Link>
             );

@@ -1,7 +1,8 @@
 import { OrderViewModel } from "./types";
 import { OrderStatusBadge } from "./OrderStatusBadge";
 import { OrderActionButtons } from "./OrderActionButtons";
-import { Calendar } from "lucide-react";
+import { Calendar, MapPin } from "lucide-react";
+import { haversineDistance } from "@/lib/geo";
 
 interface OrderCardProps {
   order: OrderViewModel;
@@ -9,7 +10,6 @@ interface OrderCardProps {
   onReject: (orderId: string) => void;
   onMarkDelivered: (orderId: string) => void;
   onViewDetail: (order: OrderViewModel) => void;
-  onViewPayment: (order: OrderViewModel) => void;
 }
 
 function formatDate(dateStr: string): string {
@@ -20,18 +20,26 @@ function formatDate(dateStr: string): string {
   });
 }
 
-function formatItems(items: OrderViewModel["items"]): string {
-  return items.map((item) => `${item.name} ${item.quantity}${item.unit}`).join(", ");
+function formatItemsHorizontal(items: OrderViewModel["items"]): string {
+  return items
+    .map((item) => `${item.name} ${item.quantity} ${item.unit}`)
+    .join(", ");
 }
 
-function formatCurrency(amount: number): string {
-  return `Rp ${amount.toLocaleString("id-ID")}`;
-}
-
-function generateOrderNumber(id: string): string {
-  // Generate order number from id (last 3 characters)
-  const num = id.slice(-3).replace(/\D/g, "0").padStart(3, "0");
-  return `ORD-${num}`;
+function getDistanceKm(order: OrderViewModel): number | null {
+  if (
+    order.supplierLat == null ||
+    order.supplierLng == null ||
+    order.sppgLat == null ||
+    order.sppgLng == null
+  )
+    return null;
+  return haversineDistance(
+    order.supplierLat,
+    order.supplierLng,
+    order.sppgLat,
+    order.sppgLng,
+  );
 }
 
 export function OrderCard({
@@ -40,37 +48,41 @@ export function OrderCard({
   onReject,
   onMarkDelivered,
   onViewDetail,
-  onViewPayment,
 }: OrderCardProps) {
-  const orderNumber = generateOrderNumber(order.id);
+  const distance = getDistanceKm(order);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-        {/* Order Info */}
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="font-bold text-lg text-gray-800">{orderNumber}</span>
-            <OrderStatusBadge status={order.status} />
-          </div>
-          <p className="text-sm text-gray-700 font-medium">{order.sppgName}</p>
-          <p className="text-sm text-gray-500 mt-1">Item: {formatItems(order.items)}</p>
-          <div className="flex items-center gap-1 mt-2 text-xs text-gray-400">
-            <Calendar size={12} />
-            <span>Dipesan: {formatDate(order.createdAt)}</span>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <OrderActionButtons
-          order={order}
-          onAccept={onAccept}
-          onReject={onReject}
-          onMarkDelivered={onMarkDelivered}
-          onViewDetail={onViewDetail}
-          onViewPayment={onViewPayment}
-        />
+    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col relative">
+      <div className="flex items-center relative -top-5 right-5">
+        <OrderStatusBadge status={order.status} />
       </div>
+      <p className="text-sm text-gray-900 font-semibold">{order.sppgName}</p>
+      <p className="text-sm text-gray-600 mt-1">
+        {formatItemsHorizontal(order.items)}
+      </p>
+      <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+    <div className="flex items-center gap-1">
+      <Calendar size={12} />
+      <span>{formatDate(order.createdAt)}</span>
+    </div>
+
+    {distance != null && (
+      <div className="flex items-center gap-1">
+        <MapPin size={12} />
+        <span>{distance.toFixed(1)} km</span>
+      </div>
+    )}
+  </div>
+
+  <div className="absolute bottom-5 right-5">
+    <OrderActionButtons
+      order={order}
+      onAccept={onAccept}
+      onReject={onReject}
+      onMarkDelivered={onMarkDelivered}
+      onViewDetail={onViewDetail}
+    />
+  </div>
     </div>
   );
 }

@@ -2,14 +2,14 @@ import { OrderStatusWithCancel, StatusConfig } from "./types";
 
 const STATUS_CONFIG: Record<OrderStatusWithCancel, StatusConfig> = {
   PENDING: {
-    label: "BARU",
+    label: "Menunggu Konfirmasi",
     badgeClass: "bg-yellow-100 text-yellow-700 border border-yellow-200",
-    tabLabel: "Baru",
+    tabLabel: "Menunggu Konfirmasi",
   },
   CONFIRMED: {
-    label: "DIPROSES",
+    label: "DIKONFIRMASI",
     badgeClass: "bg-blue-100 text-blue-700 border border-blue-200",
-    tabLabel: "Diproses",
+    tabLabel: "Dikonfirmasi",
   },
   DELIVERED: {
     label: "DIKIRIM",
@@ -35,11 +35,11 @@ interface OrderStatusBadgeProps {
 
 export function OrderStatusBadge({ status, size = "sm" }: OrderStatusBadgeProps) {
   const config = STATUS_CONFIG[status];
-  const sizeClasses = size === "sm" ? "px-2 py-0.5 text-xs" : "px-3 py-1 text-sm";
+  const sizeClasses = size === "sm" ? "px-4 py-1 text-xs" : "px-3 py-1 text-sm";
 
   return (
     <span
-      className={`inline-flex items-center rounded-full font-semibold ${config.badgeClass} ${sizeClasses}`}
+      className={`inline-flex items-center rounded-tl-xl rounded-tr-none rounded-bl-none rounded-br-xl font-semibold ${config.badgeClass} ${sizeClasses}`}
     >
       {config.label}
     </span>
