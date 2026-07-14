@@ -7,22 +7,22 @@ const STATUS_CONFIG: Record<OrderStatusWithCancel, StatusConfig> = {
     tabLabel: "Menunggu Konfirmasi",
   },
   CONFIRMED: {
-    label: "DIKONFIRMASI",
+    label: "Dikonfirmasi",
     badgeClass: "bg-blue-100 text-blue-700 border border-blue-200",
     tabLabel: "Dikonfirmasi",
   },
   DELIVERED: {
-    label: "DIKIRIM",
+    label: "Dikirim",
     badgeClass: "bg-purple-100 text-purple-700 border border-purple-200",
     tabLabel: "Dikirim",
   },
   COMPLETED: {
-    label: "SELESAI",
+    label: "Selesai",
     badgeClass: "bg-green-100 text-green-700 border border-green-200",
     tabLabel: "Selesai",
   },
   CANCELLED: {
-    label: "DIBATALKAN",
+    label: "Dibatalkan",
     badgeClass: "bg-red-100 text-red-700 border border-red-200",
     tabLabel: "Batal",
   },
