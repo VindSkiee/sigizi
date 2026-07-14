@@ -1,6 +1,12 @@
+export type LocationMode = "region" | "gps";
+
 export interface MarketFilter {
   item: string;
+  locationMode: LocationMode;
   regency: string;
+  latitude: string;
+  longitude: string;
+  radiusKm: string;
 }
 
 export interface MarketPriceStatistics {
@@ -15,8 +21,8 @@ export interface MarketSupplierItem {
   id: string;
   supplierId: string;
   supplierName: string;
-  itemName: string;
-  unit: string;
+  itemName?: string;
+  unit?: string;
   price: number;
   isAnomaly: boolean;
   distance?: number;
@@ -57,5 +63,9 @@ export const POPULAR_ITEMS = [
 
 export const DEFAULT_FILTER: MarketFilter = {
   item: "",
+  locationMode: "region",
   regency: "",
+  latitude: "",
+  longitude: "",
+  radiusKm: "",
 };
