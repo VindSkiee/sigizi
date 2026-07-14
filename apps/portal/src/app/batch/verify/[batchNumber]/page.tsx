@@ -157,7 +157,14 @@ export default function BatchVerifyPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white pb-8">
+    <main
+      className="min-h-screen bg-white pb-8"
+      style={{
+        backgroundImage: "url('/batch_detail_bg.png')",
+        backgroundRepeat: "repeat",
+        backgroundSize: "400px",
+      }}
+    >
       {/* Green Header */}
       <div className="bg-gradient-to-b from-emerald-500 to-emerald-600 text-white px-5 pt-4 pb-12 text-center relative">
         <div className="max-w-3xl mx-auto relative">
