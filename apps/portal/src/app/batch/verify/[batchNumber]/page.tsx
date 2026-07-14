@@ -12,6 +12,7 @@ import {
   Clock,
   Flag,
   FlaskConical,
+  Package,
   Receipt,
 } from "lucide-react";
 import {
@@ -237,7 +238,40 @@ export default function BatchVerifyPage() {
             </h2>
           </div>
 
-          {batch.batchItems.length > 0 ? (
+          {batch.menu ? (
+            <div className="space-y-0">
+              {batch.menu
+                .split("+")
+                .map((item) => item.trim())
+                .filter(Boolean)
+                .map((item, index) => (
+                  <div key={index} className="flex items-center gap-2.5 py-2.5">
+                    <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs text-emerald-700 font-medium">
+                        {index + 1}
+                      </span>
+                    </div>
+                    <span className="text-sm text-gray-800">{item}</span>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 text-center py-4">
+              Menu tidak tersedia
+            </p>
+          )}
+        </div>
+
+        {/* Rincian Bahan Section */}
+        {batch.batchItems.length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <Package className="w-5 h-5 text-emerald-600" />
+              <h2 className="text-base font-semibold text-gray-900">
+                Rincian Bahan
+              </h2>
+            </div>
+
             <div className="space-y-0">
               {batch.batchItems.map((item, index) => (
                 <div
@@ -245,8 +279,8 @@ export default function BatchVerifyPage() {
                   className="flex items-center justify-between py-2.5"
                 >
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs text-emerald-700 font-medium">
+                    <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs text-gray-500 font-medium">
                         {index + 1}
                       </span>
                     </div>
@@ -255,7 +289,7 @@ export default function BatchVerifyPage() {
                     </span>
                   </div>
                   <span className="text-sm font-medium text-gray-900">
-                    Rp {item.unitPrice.toLocaleString("id-ID")}
+                    Rp {item.subtotal.toLocaleString("id-ID")}
                   </span>
                 </div>
               ))}
@@ -271,12 +305,8 @@ export default function BatchVerifyPage() {
                 </div>
               </div>
             </div>
-          ) : (
-            <p className="text-sm text-gray-500 text-center py-4">
-              {batch.menu || "Menu tidak tersedia"}
-            </p>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Nutrition Section */}
         {batch.nutrition && (
