@@ -41,6 +41,7 @@ export interface SupplierItemData {
   description: string | null;
   minOrderQty: number | null;
   orderStep: number | null;
+  isAvailable: boolean;
   supplierId: string;
   createdAt: Date;
 }
@@ -52,6 +53,22 @@ export interface CreateSupplierItemData {
   description?: string;
   minOrderQty?: number;
   orderStep?: number;
+  isAvailable?: boolean;
+}
+
+export interface UpdateSupplierItemData {
+  name?: string;
+  unit?: string;
+  basePrice?: number;
+  description?: string;
+  minOrderQty?: number;
+  orderStep?: number;
+  isAvailable?: boolean;
+}
+
+export interface ItemReferenceCheck {
+  hasReferences: boolean;
+  reasons: string[];
 }
 
 export interface SupplierRepository {
@@ -63,9 +80,15 @@ export interface SupplierRepository {
   update(id: string, data: UpdateSupplierData): Promise<Supplier>;
   delete(id: string): Promise<void>;
   findItems(supplierId: string): Promise<SupplierItemData[]>;
+  findItemById(itemId: string): Promise<SupplierItemData | null>;
   addItem(
     supplierId: string,
     data: CreateSupplierItemData,
   ): Promise<SupplierItemData>;
+  updateItem(
+    itemId: string,
+    data: UpdateSupplierItemData,
+  ): Promise<SupplierItemData>;
+  hasItemReferences(itemId: string): Promise<ItemReferenceCheck>;
   removeItem(itemId: string): Promise<void>;
 }

@@ -1,7 +1,8 @@
 // Order types for Supplier Portal
 // Backend will add CANCELLED status to OrderStatus enum
 
-export type OrderStatusWithCancel = "PENDING" | "CONFIRMED" | "DELIVERED" | "COMPLETED" | "CANCELLED";
+export type OrderStatusWithCancel =
+  "PENDING" | "CONFIRMED" | "DELIVERED" | "COMPLETED" | "CANCELLED";
 
 export interface OrderItem {
   id: string;
@@ -21,6 +22,7 @@ export interface Order {
   status: OrderStatusWithCancel;
   total: number;
   notes?: string;
+  cancelledReason?: string;
   sppgId: string;
   supplierId: string;
   createdAt: string;
@@ -28,19 +30,38 @@ export interface Order {
   sppg: {
     id: string;
     name: string;
+    address?: string;
+    province?: string;
+    regency?: string;
+    district?: string;
+    village?: string;
+    latitude?: number;
+    longitude?: number;
   };
   supplier: {
     id: string;
     name: string;
+    address?: string;
+    province?: string;
+    regency?: string;
+    district?: string;
+    village?: string;
+    latitude?: number;
+    longitude?: number;
   };
   items: OrderItem[];
 }
 
 export interface OrderViewModel {
   id: string;
-  orderNumber: string;
   sppgName: string;
+  sppgAddress: string;
   supplierName: string;
+  supplierLat: number | null;
+  supplierLng: number | null;
+  sppgLat: number | null;
+  sppgLng: number | null;
+  cancelledReason?: string;
   items: {
     id: string;
     name: string;

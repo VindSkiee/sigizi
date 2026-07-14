@@ -194,7 +194,73 @@ Content-Type: application/json
 {
   "name": "Beras Premium",
   "unit": "kg",
-  "basePrice": 12000
+  "basePrice": 12000,
+  "description": "Beras premium grade A",
+  "minOrderQty": 10,
+  "orderStep": 5,
+  "isAvailable": true
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx...",
+    "name": "Beras Premium",
+    "unit": "kg",
+    "basePrice": 12000,
+    "description": "Beras premium grade A",
+    "minOrderQty": 10,
+    "orderStep": 5,
+    "isAvailable": true,
+    "supplierId": "clx...",
+    "createdAt": "2026-07-09T00:00:00Z"
+  }
+}
+```
+
+### Update Supplier Item
+
+```
+PATCH /api/suppliers/:id/items/:itemId
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body (semua field optional):**
+
+```json
+{
+  "name": "Beras Premium Super",
+  "unit": "kg",
+  "basePrice": 13000,
+  "description": "Updated description",
+  "minOrderQty": 5,
+  "orderStep": 5,
+  "isAvailable": false
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx...",
+    "name": "Beras Premium Super",
+    "unit": "kg",
+    "basePrice": 13000,
+    "description": "Updated description",
+    "minOrderQty": 5,
+    "orderStep": 5,
+    "isAvailable": false,
+    "supplierId": "clx...",
+    "createdAt": "2026-07-09T00:00:00Z"
+  }
 }
 ```
 

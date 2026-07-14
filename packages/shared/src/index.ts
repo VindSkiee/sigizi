@@ -135,6 +135,7 @@ export interface SupplierItem {
   minOrderQty?: number;
   orderStep?: number;
   minThreshold?: number;
+  isAvailable: boolean;
   supplierId: string;
   createdAt: Date;
 }
@@ -657,6 +658,17 @@ export interface CreateSupplierItemRequest {
   description?: string;
   minOrderQty?: number;
   orderStep?: number;
+  isAvailable?: boolean;
+}
+
+export interface UpdateSupplierItemRequest {
+  name?: string;
+  unit?: string;
+  basePrice?: number;
+  description?: string;
+  minOrderQty?: number;
+  orderStep?: number;
+  isAvailable?: boolean;
 }
 
 // ============================================================================

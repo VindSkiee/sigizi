@@ -6,7 +6,9 @@ import {
   CreateSupplierData,
   UpdateSupplierData,
   CreateSupplierItemData,
+  UpdateSupplierItemData,
   SupplierItemData,
+  ItemReferenceCheck,
 } from "../../domain";
 import { Supplier } from "../../domain";
 
@@ -113,9 +115,29 @@ export class PrismaSupplierRepository implements SupplierRepository {
       description: item.description,
       minOrderQty: item.minOrderQty,
       orderStep: item.orderStep,
+      isAvailable: item.isAvailable,
       supplierId: item.supplierId,
       createdAt: item.createdAt,
     }));
+  }
+
+  async findItemById(itemId: string): Promise<SupplierItemData | null> {
+    const item = await this.prisma.supplierItem.findUnique({
+      where: { id: itemId },
+    });
+    if (!item) return null;
+    return {
+      id: item.id,
+      name: item.name,
+      unit: item.unit,
+      basePrice: item.basePrice,
+      description: item.description,
+      minOrderQty: item.minOrderQty,
+      orderStep: item.orderStep,
+      isAvailable: item.isAvailable,
+      supplierId: item.supplierId,
+      createdAt: item.createdAt,
+    };
   }
 
   async addItem(
@@ -123,7 +145,16 @@ export class PrismaSupplierRepository implements SupplierRepository {
     data: CreateSupplierItemData,
   ): Promise<SupplierItemData> {
     const item = await this.prisma.supplierItem.create({
-      data: { ...data, supplierId },
+      data: {
+        name: data.name,
+        unit: data.unit,
+        basePrice: data.basePrice,
+        description: data.description,
+        minOrderQty: data.minOrderQty,
+        orderStep: data.orderStep,
+        isAvailable: data.isAvailable ?? true,
+        supplierId,
+      },
     });
     return {
       id: item.id,
@@ -133,9 +164,51 @@ export class PrismaSupplierRepository implements SupplierRepository {
       description: item.description,
       minOrderQty: item.minOrderQty,
       orderStep: item.orderStep,
+      isAvailable: item.isAvailable,
       supplierId: item.supplierId,
       createdAt: item.createdAt,
     };
+  }
+
+  async updateItem(
+    itemId: string,
+    data: UpdateSupplierItemData,
+  ): Promise<SupplierItemData> {
+    const item = await this.prisma.supplierItem.update({
+      where: { id: itemId },
+      data,
+    });
+    return {
+      id: item.id,
+      name: item.name,
+      unit: item.unit,
+      basePrice: item.basePrice,
+      description: item.description,
+      minOrderQty: item.minOrderQty,
+      orderStep: item.orderStep,
+      isAvailable: item.isAvailable,
+      supplierId: item.supplierId,
+      createdAt: item.createdAt,
+    };
+  }
+
+  async hasItemReferences(itemId: string): Promise<ItemReferenceCheck> {
+    const reasons: string[] = [];
+
+    const [mouItems, orderItems, batchItems, inventoryStocks] =
+      await Promise.all([
+        this.prisma.mouItem.count({ where: { itemId } }),
+        this.prisma.orderItem.count({ where: { itemId } }),
+        this.prisma.batchItem.count({ where: { itemId } }),
+        this.prisma.inventoryStock.count({ where: { itemId } }),
+      ]);
+
+    if (mouItems > 0) reasons.push(`${mouItems} MoU aktif`);
+    if (orderItems > 0) reasons.push(`${orderItems} order tercatat`);
+    if (batchItems > 0) reasons.push(`${batchItems} batch produksi`);
+    if (inventoryStocks > 0) reasons.push(`${inventoryStocks} stok inventory`);
+
+    return { hasReferences: reasons.length > 0, reasons };
   }
 
   async removeItem(itemId: string): Promise<void> {

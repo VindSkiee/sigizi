@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -22,6 +23,7 @@ import { CreateSupplierDto } from "../../application/dto/create-supplier.dto";
 import { UpdateSupplierDto } from "../../application/dto/update-supplier.dto";
 import { UpdateSupplierProfileDto } from "../../application/dto/update-supplier-profile.dto";
 import { CreateSupplierItemDto } from "../../application/dto/create-supplier-item.dto";
+import { UpdateSupplierItemDto } from "../../application/dto/update-supplier-item.dto";
 import { PaginationDto } from "../../../../core/dto/pagination.dto";
 
 @ApiTags("Suppliers")
@@ -95,6 +97,20 @@ export class SupplierController {
   @ApiOperation({ summary: "Add supplier item" })
   addItem(@Param("id") id: string, @Body() dto: CreateSupplierItemDto) {
     return this.supplierService.addItem(id, dto);
+  }
+
+  @Patch(":id/items/:itemId")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Update supplier item (name, price, availability, etc.)",
+  })
+  updateItem(
+    @Param("id") id: string,
+    @Param("itemId") itemId: string,
+    @Body() dto: UpdateSupplierItemDto,
+  ) {
+    return this.supplierService.updateItem(itemId, dto);
   }
 
   @Delete("items/:itemId")

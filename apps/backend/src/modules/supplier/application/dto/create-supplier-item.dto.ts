@@ -3,6 +3,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsNumber,
+  IsBoolean,
   Min,
 } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
@@ -37,6 +38,14 @@ export class CreateSupplierItemDto {
   @ApiPropertyOptional({ example: 1 })
   @IsOptional()
   @IsNumber()
-  @Min(1)
+  @Min(0.5)
   orderStep?: number;
+
+  @ApiPropertyOptional({
+    example: true,
+    description: "Status ketersediaan stok (default: true)",
+  })
+  @IsOptional()
+  @IsBoolean()
+  isAvailable?: boolean;
 }

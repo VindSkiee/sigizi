@@ -9,8 +9,8 @@ interface OrderTabsProps {
 
 const TAB_CONFIG: { key: FilterType; label: string }[] = [
   { key: "all", label: "Semua" },
-  { key: "PENDING", label: "Baru" },
-  { key: "CONFIRMED", label: "Diproses" },
+  { key: "PENDING", label: "Menunggu Konfirmasi" },
+  { key: "CONFIRMED", label: "Dikonfirmasi" },
   { key: "DELIVERED", label: "Dikirim" },
   { key: "COMPLETED", label: "Selesai" },
   { key: "CANCELLED", label: "Batal" },

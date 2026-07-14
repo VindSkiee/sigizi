@@ -1,10 +1,19 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Package, Plus, Search } from "lucide-react";
+import { Package, Plus, Search, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSupplierItems, addSupplierItem } from "@/lib/api";
-import { ProductCreateModal } from "@/components/features/supplier/katalog";
+import {
+  getSupplierItems,
+  addSupplierItem,
+  updateSupplierItem,
+  removeSupplierItem,
+} from "@/lib/api";
+import {
+  ProductCreateModal,
+  ProductEditModal,
+  ProductData,
+} from "@/components/features/supplier/katalog";
 
 interface Product {
   id: string;
@@ -14,6 +23,7 @@ interface Product {
   description?: string;
   minOrderQty?: number;
   orderStep?: number;
+  isAvailable: boolean;
 }
 
 export default function KatalogPage() {
@@ -22,6 +32,10 @@ export default function KatalogPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<ProductData | null>(
+    null,
+  );
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const fetchProducts = useCallback(async () => {
     if (!token || !user?.supplierId) return;
@@ -48,6 +62,47 @@ export default function KatalogPage() {
       throw new Error("Gagal menyimpan produk");
     }
     await fetchProducts();
+  };
+
+  const handleEditProduct = async (data: any) => {
+    if (!editingProduct) return;
+    const response = await updateSupplierItem(
+      token!,
+      user!.supplierId!,
+      editingProduct.id,
+      data,
+    );
+    if (!response.success) {
+      throw new Error("Gagal mengupdate produk");
+    }
+    await fetchProducts();
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (!confirm("Yakin ingin menghapus produk ini?")) return;
+    try {
+      const response = await removeSupplierItem(token!, productId);
+      if (!response.success) {
+        throw new Error("Gagal menghapus produk");
+      }
+      await fetchProducts();
+    } catch (err: any) {
+      alert(err.message || "Gagal menghapus produk");
+    }
+  };
+
+  const openEditModal = (product: Product) => {
+    setEditingProduct({
+      id: product.id,
+      name: product.name,
+      unit: product.unit,
+      basePrice: product.basePrice,
+      description: product.description,
+      minOrderQty: product.minOrderQty,
+      orderStep: product.orderStep,
+      isAvailable: product.isAvailable,
+    });
+    setShowEditModal(true);
   };
 
   const filteredProducts = products.filter((p) =>
@@ -128,6 +183,12 @@ export default function KatalogPage() {
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">
                   Min. Order
                 </th>
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">
+                  Status
+                </th>
+                <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">
+                  Aksi
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -160,6 +221,35 @@ export default function KatalogPage() {
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {product.minOrderQty || 1} {product.unit}
                   </td>
+                  <td className="px-6 py-4">
+                    {product.isAvailable ? (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                        Tersedia
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                        Habis
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => openEditModal(product)}
+                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Edit produk"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProduct(product.id)}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Hapus produk"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -171,6 +261,16 @@ export default function KatalogPage() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSubmit={handleCreateProduct}
+      />
+
+      <ProductEditModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingProduct(null);
+        }}
+        onSubmit={handleEditProduct}
+        product={editingProduct}
       />
     </div>
   );

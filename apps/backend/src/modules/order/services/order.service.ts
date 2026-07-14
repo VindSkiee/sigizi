@@ -68,7 +68,11 @@ export class OrderService {
         skip: pagination.skip,
         take: limit,
         orderBy: { createdAt: "desc" },
-        include: { items: true, supplier: true, sppg: true },
+        include: {
+          items: { include: { item: true } },
+          supplier: true,
+          sppg: true,
+        },
       }),
       this.prisma.order.count({ where }),
     ]);
@@ -92,7 +96,7 @@ export class OrderService {
     const order = await this.prisma.order.findUnique({
       where: { id },
       include: {
-        items: { include: { inventoryStocks: true } },
+        items: { include: { item: true, inventoryStocks: true } },
         supplier: true,
         sppg: true,
         statusHistory: { orderBy: { createdAt: "desc" } },

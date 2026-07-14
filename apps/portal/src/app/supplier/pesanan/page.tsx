@@ -13,16 +13,39 @@ import {
 import { OrderTabs } from "@/components/features/supplier/orders/OrderTabs";
 import { OrderCard } from "@/components/features/supplier/orders/OrderCard";
 import { OrderDetailModal } from "@/components/features/supplier/orders/OrderDetailModal";
-import { PaymentProofModal } from "@/components/features/supplier/orders/PaymentProofModal";
+import { RejectModal } from "@/components/features/supplier/orders/RejectModal";
 
 const ITEMS_PER_PAGE = 5;
+
+function formatProvince(raw: string): string {
+  return raw
+    .toLowerCase()
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function formatAddress(sppg: Order["sppg"]): string {
+  const parts: string[] = [];
+  if (sppg.address) parts.push(sppg.address);
+  if (sppg.regency) parts.push(`Kab. ${formatProvince(sppg.regency)}`);
+  if (sppg.district) parts.push(`Kec. ${formatProvince(sppg.district)}`);
+  if (sppg.village) parts.push(`Kel. ${sppg.village}`);
+  if (sppg.province) parts.push(formatProvince(sppg.province));
+  return parts.join(", ") || "-";
+}
 
 function mapOrderFromBackend(raw: Order): OrderViewModel {
   return {
     id: raw.id,
-    orderNumber: `ORD-${raw.id.slice(-6).toUpperCase()}`,
     sppgName: raw.sppg?.name || "SPPG",
+    sppgAddress: raw.sppg ? formatAddress(raw.sppg) : "-",
     supplierName: raw.supplier?.name || "Supplier",
+    supplierLat: raw.supplier?.latitude ?? null,
+    supplierLng: raw.supplier?.longitude ?? null,
+    sppgLat: raw.sppg?.latitude ?? null,
+    sppgLng: raw.sppg?.longitude ?? null,
+    cancelledReason: raw.cancelledReason,
     items: raw.items.map((i) => ({
       id: i.id,
       name: i.item?.name || "Item",
@@ -44,8 +67,12 @@ export default function PesananPage() {
   const [filter, setFilter] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedOrder, setSelectedOrder] = useState<OrderViewModel | null>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState<OrderViewModel | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<OrderViewModel | null>(
+    null,
+  );
+  const [rejectingOrder, setRejectingOrder] = useState<OrderViewModel | null>(
+    null,
+  );
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async () => {
@@ -77,9 +104,8 @@ export default function PesananPage() {
       const query = searchQuery.toLowerCase();
       result = result.filter(
         (o) =>
-          o.orderNumber.toLowerCase().includes(query) ||
           o.sppgName.toLowerCase().includes(query) ||
-          o.items.some((item) => item.name.toLowerCase().includes(query))
+          o.items.some((item) => item.name.toLowerCase().includes(query)),
       );
     }
     return result;
@@ -108,8 +134,8 @@ export default function PesananPage() {
       await updateOrderStatus(token, orderId, "CONFIRMED");
       setOrders((prev) =>
         prev.map((o) =>
-          o.id === orderId ? { ...o, status: "CONFIRMED" as const } : o
-        )
+          o.id === orderId ? { ...o, status: "CONFIRMED" as const } : o,
+        ),
       );
     } catch (err) {
       console.error("Failed to confirm order:", err);
@@ -119,19 +145,18 @@ export default function PesananPage() {
     }
   }
 
-  async function handleReject(orderId: string) {
+  async function handleReject(orderId: string, reason: string) {
     if (!token) return;
-    const confirmed = window.confirm("Tolak pesanan ini?");
-    if (!confirmed) return;
 
     setUpdatingId(orderId);
     try {
-      await updateOrderStatus(token, orderId, "CANCELLED", "Ditolak oleh supplier");
+      await updateOrderStatus(token, orderId, "CANCELLED", reason);
       setOrders((prev) =>
         prev.map((o) =>
-          o.id === orderId ? { ...o, status: "CANCELLED" as const } : o
-        )
+          o.id === orderId ? { ...o, status: "CANCELLED" as const } : o,
+        ),
       );
+      setRejectingOrder(null);
     } catch (err) {
       console.error("Failed to reject order:", err);
       alert("Gagal menolak pesanan");
@@ -150,8 +175,8 @@ export default function PesananPage() {
       await updateOrderStatus(token, orderId, "DELIVERED");
       setOrders((prev) =>
         prev.map((o) =>
-          o.id === orderId ? { ...o, status: "DELIVERED" as const } : o
-        )
+          o.id === orderId ? { ...o, status: "DELIVERED" as const } : o,
+        ),
       );
     } catch (err) {
       console.error("Failed to mark delivered:", err);
@@ -178,7 +203,9 @@ export default function PesananPage() {
   return (
     <div className="w-full">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Daftar Pesanan Masuk</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Daftar Pesanan Masuk
+        </h1>
         <p className="text-sm text-gray-500 mt-1">
           Pantau dan kelola permintaan logistik dari unit SPPG.
         </p>
@@ -189,7 +216,7 @@ export default function PesananPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             type="text"
-            placeholder="Cari ID Pesanan / Nama SPPG / Item..."
+            placeholder="Cari nama SPPG atau item..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -197,7 +224,11 @@ export default function PesananPage() {
         </div>
       </div>
 
-      <OrderTabs activeFilter={filter} orders={orders.map(o => ({ ...o, status: o.status as any }))} onFilterChange={handleFilterChange} />
+      <OrderTabs
+        activeFilter={filter}
+        orders={orders.map((o) => ({ ...o, status: o.status as any }))}
+        onFilterChange={handleFilterChange}
+      />
 
       {paginatedOrders.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 shadow-sm text-center">
@@ -217,17 +248,18 @@ export default function PesananPage() {
                 key={`${order.id}-${idx}`}
                 order={order}
                 onAccept={handleAccept}
-                onReject={handleReject}
+                onReject={(id) => setRejectingOrder(order)}
                 onMarkDelivered={handleMarkDelivered}
                 onViewDetail={setSelectedOrder}
-                onViewPayment={setShowPaymentModal}
               />
             ))}
           </div>
 
           <div className="mt-6 flex flex-col items-center gap-2">
             <p className="text-sm text-gray-500">
-              Menampilkan {startIndex + 1}-{Math.min(endIndex, filteredOrders.length)} dari {filteredOrders.length} pesanan
+              Menampilkan {startIndex + 1}-
+              {Math.min(endIndex, filteredOrders.length)} dari{" "}
+              {filteredOrders.length} pesanan
             </p>
             <Pagination
               currentPage={currentPage}
@@ -239,11 +271,18 @@ export default function PesananPage() {
       )}
 
       {selectedOrder && (
-        <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
+        <OrderDetailModal
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+        />
       )}
 
-      {showPaymentModal && (
-        <PaymentProofModal order={showPaymentModal} onClose={() => setShowPaymentModal(null)} />
+      {rejectingOrder && (
+        <RejectModal
+          orderNumber={rejectingOrder.id}
+          onConfirm={(reason) => handleReject(rejectingOrder.id, reason)}
+          onClose={() => setRejectingOrder(null)}
+        />
       )}
     </div>
   );

@@ -195,6 +195,7 @@ model SupplierItem {
   minOrderQty  Float?
   orderStep    Float?
   minThreshold Float?   // Batas ambang stok rendah per item (null = gunakan default sistem)
+  isAvailable  Boolean  @default(true) // Status ketersediaan stok katalog
   supplier     Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
   supplierId   String
   createdAt    DateTime @default(now())
