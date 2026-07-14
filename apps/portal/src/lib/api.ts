@@ -615,15 +615,15 @@ export async function updateSppg(
 }
 
 // ============================================================================
-// Market API
+// Market Prices API
 // ============================================================================
 export async function getMarketPrices(
   token: string,
-  params: { item: string; regency: string },
+  params: { item: string } & MarketLocationParams,
 ) {
   const searchParams = new URLSearchParams();
   searchParams.append("item", params.item);
-  searchParams.append("regency", params.regency);
+  appendMarketLocationParams(searchParams, params);
   return fetchApi(`/api/market/prices?${searchParams.toString()}`, {
     headers: {
       Authorization: `Bearer ${token}`,

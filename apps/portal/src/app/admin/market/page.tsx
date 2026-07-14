@@ -54,14 +54,37 @@ export default function MarketPage() {
       try {
         const response = await getMarketPrices(token, {
           item: filter.item,
-          regency: filter.regency,
+          regency: filter.locationMode === "region" ? filter.regency : undefined,
+          latitude:
+            filter.locationMode === "gps" && filter.latitude
+              ? parseFloat(filter.latitude)
+              : undefined,
+          longitude:
+            filter.locationMode === "gps" && filter.longitude
+              ? parseFloat(filter.longitude)
+              : undefined,
+          radiusKm:
+            filter.locationMode === "gps" && filter.radiusKm
+              ? parseFloat(filter.radiusKm)
+              : undefined,
         });
 
         if (response.success) {
           const data = response.data as any;
-          setItems(data.suppliers || []);
-          setRawStats(data.statistics || null);
-          setCleanStats(data.cleanStatistics || null);
+          setItems(
+            (data.suppliers || []).map((s: any) => ({
+              id: s.id,
+              supplierId: s.id,
+              supplierName: s.name ?? "-",
+              itemName: s.itemName ?? undefined,
+              unit: s.unit ?? undefined,
+              price: s.price,
+              isAnomaly: s.isAnomaly,
+              distance: s.distanceKm,
+            }))
+          );
+          setRawStats(data.statistics?.raw || null);
+          setCleanStats(data.statistics?.clean || null);
           setSearchedItem(filter.item);
         } else {
           setError("Gagal memuat data harga pasar");
@@ -87,8 +110,8 @@ export default function MarketPage() {
       supplierId: item.supplierId || "",
       supplierName: item.supplierName,
       itemId: item.id,
-      itemName: item.itemName,
-      unit: item.unit,
+      itemName: item.itemName ?? "-",
+      unit: item.unit ?? "-",
       unitPrice: item.price,
       quantity: 1,
     };
