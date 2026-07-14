@@ -64,12 +64,21 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       {/* Top Navigation */}
       <div className="absolute top-0 left-0 right-0 px-4 py-4">
-        <div className="max-w-5xl mx-auto flex justify-end">
+        <div className="max-w-5xl mx-auto flex justify-between items-center">
           <button
             onClick={() => router.push("/login")}
             className="px-4 py-2 text-sm font-medium text-green-700 bg-white border border-green-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-colors shadow-sm"
           >
-            Masuk Admin
+            Login sebagai SPPG
+          </button>
+          <button
+            onClick={() => router.push("/register")}
+            className="relative px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+          >
+            Daftarkan Toko Mu!
+            <span className="absolute -top-4 -right-2 px-1.5 py-0.5 text-[10px] font-bold text-white bg-orange-500 rounded-full">
+              Gratis
+            </span>
           </button>
         </div>
       </div>
