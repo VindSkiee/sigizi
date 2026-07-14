@@ -11,6 +11,8 @@ import {
   Truck,
   Clock,
   Flag,
+  FlaskConical,
+  Receipt,
 } from "lucide-react";
 import {
   ComplaintPinModal,
@@ -40,6 +42,9 @@ interface BatchData {
   allergens: string[];
   costPerPortion: number;
   totalCost: number;
+  costPerPortionStandard: number;
+  totalBudget: number;
+  budgetVariance: number | null;
   beneficiaryCount: number | null;
   status: string;
   reportKey: string;
@@ -52,11 +57,13 @@ interface BatchData {
 
 function formatTime(isoDate: string): string {
   const date = new Date(isoDate);
-  return date.toLocaleTimeString("id-ID", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Asia/Jakarta",
-  }) + " WIB";
+  return (
+    date.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Jakarta",
+    }) + " WIB"
+  );
 }
 
 function formatDate(isoDate: string): string {
@@ -68,63 +75,6 @@ function formatDate(isoDate: string): string {
     year: "numeric",
   });
 }
-
-const MOCK_BATCH_DATA: Record<string, BatchData> = {
-  "BTCH-001": {
-    batchNumber: "BTCH-001",
-    date: new Date().toISOString(),
-    menu: "Nasi Putih, Telur Dadar Gulung, Sayur Sop Makaroni, Buah Jeruk & Susu UHT",
-    allergens: ["Gluten/Tepung"],
-    costPerPortion: 12000,
-    totalCost: 6240000,
-    beneficiaryCount: 520,
-    status: "COMPLETED",
-    reportKey: "C5H2R8X1",
-    batchItems: [
-      { name: "Nasi Putih", unit: "g", quantity: 100, unitPrice: 3000, subtotal: 300000 },
-      { name: "Telur Dadar Gulung", unit: "pcs", quantity: 1, unitPrice: 3000, subtotal: 3000 },
-      { name: "Sayur Sop Makaroni", unit: "g", quantity: 50, unitPrice: 3000, subtotal: 150000 },
-      { name: "Buah Jeruk & Susu UHT", unit: "ml", quantity: 125, unitPrice: 3000, subtotal: 375000 },
-    ],
-    sppg: { name: "SPPG Purwakarta", address: "SDN 01 Kebon Jeruk" },
-  },
-  "BTCH-002": {
-    batchNumber: "BTCH-002",
-    date: new Date().toISOString(),
-    menu: "Nasi Putih, Ayam Teriyaki Suwir, Tumis Buncis Wortel, Buah Pisang & Susu UHT",
-    allergens: [],
-    costPerPortion: 12000,
-    totalCost: 3720000,
-    beneficiaryCount: 310,
-    status: "COMPLETED",
-    reportKey: "B3F7N1P5",
-    batchItems: [
-      { name: "Nasi Putih", unit: "g", quantity: 100, unitPrice: 3000, subtotal: 300000 },
-      { name: "Ayam Teriyaki Suwir", unit: "g", quantity: 50, unitPrice: 3000, subtotal: 150000 },
-      { name: "Tumis Buncis Wortel", unit: "g", quantity: 50, unitPrice: 3000, subtotal: 150000 },
-      { name: "Buah Pisang & Susu UHT", unit: "ml", quantity: 125, unitPrice: 3000, subtotal: 375000 },
-    ],
-    sppg: { name: "SPPG Purwakarta", address: "SDN 02 Palmerah" },
-  },
-  "BTCH-003": {
-    batchNumber: "BTCH-003",
-    date: new Date().toISOString(),
-    menu: "Nasi Putih, Ayam Teriyaki, Tumis Buncis Wortel, Buah Pisang & Susu UHT",
-    allergens: ["Gluten/Tepung", "Susu"],
-    costPerPortion: 12000,
-    totalCost: 5040000,
-    beneficiaryCount: 420,
-    status: "ACTIVE",
-    reportKey: "A7X9K2M4",
-    batchItems: [
-      { name: "Nasi Putih", unit: "g", quantity: 150, unitPrice: 3000, subtotal: 450000 },
-      { name: "Ayam Teriyaki", unit: "g", quantity: 75, unitPrice: 3000, subtotal: 225000 },
-      { name: "Tumis Buncis Wortel", unit: "g", quantity: 50, unitPrice: 3000, subtotal: 150000 },
-      { name: "Buah Pisang & Susu UHT", unit: "ml", quantity: 200, unitPrice: 3000, subtotal: 600000 },
-    ],
-    sppg: { name: "SPPG Purwakarta", address: "SMPN 03 Jakarta" },
-  },
-};
 
 export default function BatchVerifyPage() {
   const params = useParams();
@@ -161,12 +111,7 @@ export default function BatchVerifyPage() {
         const result = await response.json();
         setBatch(result.data);
       } catch {
-        const mockKey = batchNumber.replace(/^#/, "");
-        if (MOCK_BATCH_DATA[mockKey]) {
-          setBatch(MOCK_BATCH_DATA[mockKey]);
-        } else {
-          setError("Batch tidak ditemukan");
-        }
+        setError("Batch tidak ditemukan");
       } finally {
         setLoading(false);
       }
@@ -215,28 +160,30 @@ export default function BatchVerifyPage() {
     <main className="min-h-screen bg-white pb-8">
       {/* Green Header */}
       <div className="bg-gradient-to-b from-emerald-500 to-emerald-600 text-white px-5 pt-4 pb-12 text-center relative">
-        <button
-          onClick={() => router.back()}
-          className="absolute left-4 top-4 p-2 hover:bg-white/10 rounded-lg transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+        <div className="max-w-3xl mx-auto relative">
+          <button
+            onClick={() => router.back()}
+            className="absolute left-0 top-0 p-2 hover:bg-white/10 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
 
-        <div className="mt-4">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-            <CheckCircle className="w-9 h-9 text-white" />
+          <div className="mt-4">
+            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <CheckCircle className="w-9 h-9 text-white" />
+            </div>
+            <p className="text-xs uppercase tracking-widest text-emerald-100 mb-1">
+              Distribusi Terverifikasi
+            </p>
+            <h1 className="text-xl font-bold">Batch #{batch.batchNumber}</h1>
+            <p className="text-sm text-emerald-100 mt-1">
+              {formatDate(batch.date)}
+            </p>
           </div>
-          <p className="text-xs uppercase tracking-widest text-emerald-100 mb-1">
-            Distribusi Terverifikasi
-          </p>
-          <h1 className="text-xl font-bold">Batch #{batch.batchNumber}</h1>
-          <p className="text-sm text-emerald-100 mt-1">
-            {formatDate(batch.date)}
-          </p>
         </div>
       </div>
 
-      <div className="mx-4 -mt-5 relative z-10 space-y-4">
+      <div className="max-w-3xl mx-auto px-4 -mt-5 relative z-10 space-y-4">
         {/* Info Box */}
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <div className="mb-3">
@@ -324,6 +271,44 @@ export default function BatchVerifyPage() {
           )}
         </div>
 
+        {/* Nutrition Section */}
+        {batch.nutrition && (
+          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <FlaskConical className="w-5 h-5 text-emerald-600" />
+              <h2 className="text-base font-semibold text-gray-900">
+                Informasi Gizi
+              </h2>
+            </div>
+            <div className="grid grid-cols-4 gap-3">
+              <div className="bg-green-50 rounded-lg p-3 text-center">
+                <p className="text-xl font-bold text-green-600">
+                  {batch.nutrition.calories}
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">Kalori (kkal)</p>
+              </div>
+              <div className="bg-blue-50 rounded-lg p-3 text-center">
+                <p className="text-xl font-bold text-blue-600">
+                  {batch.nutrition.protein}g
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">Protein</p>
+              </div>
+              <div className="bg-yellow-50 rounded-lg p-3 text-center">
+                <p className="text-xl font-bold text-yellow-600">
+                  {batch.nutrition.fat}g
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">Lemak</p>
+              </div>
+              <div className="bg-orange-50 rounded-lg p-3 text-center">
+                <p className="text-xl font-bold text-orange-600">
+                  {batch.nutrition.carbs}g
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">Karbohidrat</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Allergen Warning */}
         {batch.allergens && batch.allergens.length > 0 && (
           <div className="bg-red-50 rounded-xl border border-red-200 p-5">
@@ -347,6 +332,87 @@ export default function BatchVerifyPage() {
             </div>
           </div>
         )}
+
+        {/* Transparansi Biaya */}
+        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Receipt className="w-5 h-5 text-emerald-600" />
+            <h2 className="text-base font-semibold text-gray-900">
+              Transparansi Biaya
+            </h2>
+          </div>
+
+          <div className="space-y-3">
+            {batch.beneficiaryCount != null && (
+              <div className="flex justify-between items-center text-sm">
+                <div>
+                  <p className="text-gray-500">Anggaran BGN</p>
+                  <p className="text-xs text-gray-400">
+                    {batch.beneficiaryCount} porsi × Rp{" "}
+                    {batch.costPerPortionStandard.toLocaleString("id-ID")}
+                  </p>
+                </div>
+                <span className="font-semibold text-gray-900">
+                  Rp {batch.totalBudget.toLocaleString("id-ID")}
+                </span>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center text-sm">
+              <div>
+                <p className="text-gray-500">Biaya Aktual (Bahan)</p>
+                <p className="text-xs text-gray-400">
+                  Total harga bahan yang digunakan
+                </p>
+              </div>
+              <span className="font-semibold text-gray-900">
+                Rp {batch.totalCost.toLocaleString("id-ID")}
+              </span>
+            </div>
+
+            {batch.budgetVariance != null && (
+              <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-100">
+                <div>
+                  <p className="text-gray-500">Selisih</p>
+                  <p className="text-xs text-gray-400">
+                    {batch.budgetVariance <= 0
+                      ? "Hemat dari anggaran"
+                      : "Melebihi anggaran"}
+                  </p>
+                </div>
+                <span
+                  className={`font-semibold ${
+                    batch.budgetVariance <= 0
+                      ? "text-emerald-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {batch.budgetVariance <= 0 ? "" : "+"}Rp{" "}
+                  {batch.budgetVariance.toLocaleString("id-ID")}
+                </span>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-100">
+              <div>
+                <p className="text-gray-500">Biaya per Porsi</p>
+                <p className="text-xs text-gray-400">
+                  Standar BGN: Rp{" "}
+                  {batch.costPerPortionStandard.toLocaleString("id-ID")}
+                </p>
+              </div>
+              <span
+                className={`font-semibold ${
+                  batch.costPerPortion <= batch.costPerPortionStandard
+                    ? "text-emerald-600"
+                    : "text-red-600"
+                }`}
+              >
+                Rp {batch.costPerPortion.toLocaleString("id-ID")}/porsi
+              </span>
+            </div>
+          </div>
+        </div>
 
         {/* Report Button */}
         <button

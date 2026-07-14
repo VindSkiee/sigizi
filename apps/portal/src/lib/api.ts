@@ -615,6 +615,55 @@ export async function updateSppg(
 }
 
 // ============================================================================
+// Public SPPG API (no auth required)
+// ============================================================================
+export interface PublicSppgSearchParams {
+  province?: string;
+  regency?: string;
+  district?: string;
+  village?: string;
+  latitude?: number;
+  longitude?: number;
+  radiusKm?: number;
+  page?: number;
+  limit?: number;
+}
+
+export async function searchPublicSppg(params: PublicSppgSearchParams = {}) {
+  const searchParams = new URLSearchParams();
+  if (params.province) searchParams.append("province", params.province);
+  if (params.regency) searchParams.append("regency", params.regency);
+  if (params.district) searchParams.append("district", params.district);
+  if (params.village) searchParams.append("village", params.village);
+  if (params.latitude !== undefined)
+    searchParams.append("latitude", String(params.latitude));
+  if (params.longitude !== undefined)
+    searchParams.append("longitude", String(params.longitude));
+  if (params.radiusKm !== undefined)
+    searchParams.append("radiusKm", String(params.radiusKm));
+  if (params.page) searchParams.append("page", String(params.page));
+  if (params.limit) searchParams.append("limit", String(params.limit));
+  const qs = searchParams.toString() ? `?${searchParams.toString()}` : "";
+  return fetchApi(`/api/public/sppg${qs}`);
+}
+
+export async function getPublicSppgById(id: string) {
+  return fetchApi(`/api/public/sppg/${id}`);
+}
+
+export async function getPublicSppgBatches(
+  sppgId: string,
+  params?: { status?: string; page?: number; limit?: number },
+) {
+  const searchParams = new URLSearchParams();
+  if (params?.status) searchParams.append("status", params.status);
+  if (params?.page) searchParams.append("page", String(params.page));
+  if (params?.limit) searchParams.append("limit", String(params.limit));
+  const qs = searchParams.toString() ? `?${searchParams.toString()}` : "";
+  return fetchApi(`/api/public/sppg/batches/${sppgId}${qs}`);
+}
+
+// ============================================================================
 // Market API
 // ============================================================================
 export async function getMarketPrices(
