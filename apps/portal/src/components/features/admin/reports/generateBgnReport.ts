@@ -239,7 +239,7 @@ export function generateBgnReport(
         margin,
         pageH - 15
       );
-      doc.text(`Halaman ${doc.internal.getNumberOfPages()}`, pageWidth - margin, pageH - 15, {
+      doc.text(`Halaman ${(doc.internal as any).getNumberOfPages()}`, pageWidth - margin, pageH - 15, {
         align: "right",
       });
     },
