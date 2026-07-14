@@ -9,11 +9,20 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class CreateManualStockDto {
   @ApiProperty({
-    description: "ID item dari SupplierItem",
-    example: "clx...",
+    description: "Nama item (akan dibuat SupplierItem baru jika belum ada)",
+    example: "Beras Premium",
   })
   @IsString()
-  itemId!: string;
+  itemName!: string;
+
+  @ApiPropertyOptional({
+    description: "Satuan item (default: pcs)",
+    example: "kg",
+    default: "pcs",
+  })
+  @IsOptional()
+  @IsString()
+  unit?: string;
 
   @ApiProperty({
     description: "Jumlah stok yang diinput",

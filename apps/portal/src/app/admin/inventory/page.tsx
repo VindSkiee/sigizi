@@ -6,6 +6,7 @@ import {
   getInventoryStocks,
   getInventoryValuation,
   getInventoryAlerts,
+  getInventoryBalance,
   createManualStock,
   adjustStock,
 } from '@/lib/api';
@@ -13,10 +14,13 @@ import { InventoryStatsCards } from '@/components/features/admin/inventory/Inven
 import { InventoryTable } from '@/components/features/admin/inventory/InventoryTable';
 import { ManualStockModal } from '@/components/features/admin/inventory/ManualStockModal';
 import { AdjustStockModal } from '@/components/features/admin/inventory/AdjustStockModal';
+import { HistoryModal } from '@/components/features/admin/inventory/HistoryModal';
 import type {
   InventoryStock,
   InventoryValuation,
-  InventoryAlert,
+  InventoryAlertItem,
+  InventoryBalanceItem,
+  StockHistoryData,
 } from '@/components/features/admin/inventory/types';
 import { Plus, AlertTriangle } from 'lucide-react';
 
@@ -24,18 +28,21 @@ export default function InventoryPage() {
   const { token } = useAuth();
   const [stocks, setStocks] = useState<InventoryStock[]>([]);
   const [valuation, setValuation] = useState<InventoryValuation | null>(null);
-  const [alerts, setAlerts] = useState<InventoryAlert[]>([]);
+  const [balance, setBalance] = useState<InventoryBalanceItem[]>([]);
+  const [alerts, setAlerts] = useState<InventoryAlertItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showManualModal, setShowManualModal] = useState(false);
   const [adjustTarget, setAdjustTarget] = useState<InventoryStock | null>(null);
+  const [historyTarget, setHistoryTarget] = useState<StockHistoryData | null>(null);
 
   const fetchAll = useCallback(async () => {
     if (!token) return;
     try {
-      const [stocksRes, valuationRes, alertsRes] = await Promise.all([
-        getInventoryStocks(token, { limit: 100 }),
+      const [stocksRes, valuationRes, alertsRes, balanceRes] = await Promise.all([
+        getInventoryStocks(token),
         getInventoryValuation(token),
         getInventoryAlerts(token),
+        getInventoryBalance(token),
       ]);
 
       if (stocksRes.success) {
@@ -52,6 +59,11 @@ export default function InventoryPage() {
         const data = alertsRes.data as any;
         setAlerts(Array.isArray(data) ? data : []);
       }
+
+      if (balanceRes.success) {
+        const data = balanceRes.data as any;
+        setBalance(Array.isArray(data) ? data : []);
+      }
     } catch (err) {
       console.error('Failed to fetch inventory:', err);
     } finally {
@@ -64,9 +76,10 @@ export default function InventoryPage() {
   }, [fetchAll]);
 
   const handleManualStock = async (data: {
-    itemId: string;
+    itemName: string;
+    unit?: string;
     purchasePrice: number;
-    initialQty: number;
+    quantity: number;
     expiredAt?: string;
     notes?: string;
   }) => {
@@ -110,6 +123,12 @@ export default function InventoryPage() {
     );
   }
 
+  const expiringSoonCount = stocks.filter((s) => {
+    if (!s.expiredAt) return false;
+    const diff = (new Date(s.expiredAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    return diff > 0 && diff <= 7;
+  }).length;
+
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
@@ -134,12 +153,12 @@ export default function InventoryPage() {
         <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6">
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="w-4 h-4 text-orange-600" />
-            <h3 className="text-sm font-semibold text-orange-800">Peringatan Stok</h3>
+            <h3 className="text-sm font-semibold text-orange-800">Peringatan Stok Rendah</h3>
           </div>
           <div className="space-y-1">
             {alerts.slice(0, 5).map((alert) => (
-              <p key={alert.id} className="text-xs text-orange-700">
-                • {alert.message}
+              <p key={alert.item.id} className="text-xs text-orange-700">
+                • {alert.item.name}: {alert.totalRemaining} {alert.item.unit} tersisa (threshold: {alert.threshold} {alert.item.unit})
               </p>
             ))}
           </div>
@@ -147,15 +166,13 @@ export default function InventoryPage() {
       )}
 
       {/* Stats */}
-      <InventoryStatsCards valuation={valuation} />
+      <InventoryStatsCards valuation={valuation} expiringSoonCount={expiringSoonCount} lowStockCount={alerts.length} />
 
       {/* Table */}
       <InventoryTable
         stocks={stocks}
         onAdjust={setAdjustTarget}
-        onViewHistory={(stock) => {
-          alert(`Histori stok ${stock.itemName} akan segera tersedia`);
-        }}
+        onViewHistory={setHistoryTarget}
       />
 
       {/* Modals */}
@@ -170,6 +187,12 @@ export default function InventoryPage() {
         stock={adjustTarget}
         onClose={() => setAdjustTarget(null)}
         onConfirm={handleAdjustStock}
+      />
+
+      <HistoryModal
+        isOpen={!!historyTarget}
+        data={historyTarget}
+        onClose={() => setHistoryTarget(null)}
       />
     </div>
   );

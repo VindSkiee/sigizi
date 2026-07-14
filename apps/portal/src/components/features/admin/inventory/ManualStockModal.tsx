@@ -7,36 +7,40 @@ interface ManualStockModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (data: {
-    itemId: string;
+    itemName: string;
+    unit?: string;
     purchasePrice: number;
-    initialQty: number;
+    quantity: number;
     expiredAt?: string;
     notes?: string;
   }) => void;
 }
 
 export function ManualStockModal({ isOpen, onClose, onConfirm }: ManualStockModalProps) {
-  const [itemId, setItemId] = useState('');
+  const [itemName, setItemName] = useState('');
+  const [unit, setUnit] = useState('');
   const [purchasePrice, setPurchasePrice] = useState('');
-  const [initialQty, setInitialQty] = useState('');
+  const [quantity, setQuantity] = useState('');
   const [expiredAt, setExpiredAt] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (!itemId.trim() || !purchasePrice || !initialQty) return;
+    if (!itemName.trim() || !purchasePrice || !quantity) return;
     setIsSubmitting(true);
     try {
       onConfirm({
-        itemId: itemId.trim(),
+        itemName: itemName.trim(),
+        unit: unit.trim() || undefined,
         purchasePrice: Number(purchasePrice),
-        initialQty: Number(initialQty),
+        quantity: Number(quantity),
         expiredAt: expiredAt || undefined,
         notes: notes.trim() || undefined,
       });
-      setItemId('');
+      setItemName('');
+      setUnit('');
       setPurchasePrice('');
-      setInitialQty('');
+      setQuantity('');
       setExpiredAt('');
       setNotes('');
       onClose();
@@ -66,13 +70,13 @@ export function ManualStockModal({ isOpen, onClose, onConfirm }: ManualStockModa
         <div className="p-5 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Item ID <span className="text-red-500">*</span>
+              Nama Bahan <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              value={itemId}
-              onChange={(e) => setItemId(e.target.value)}
-              placeholder="ID item dari katalog"
+              value={itemName}
+              onChange={(e) => setItemName(e.target.value)}
+              placeholder="contoh: Beras Premium"
               className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
@@ -80,13 +84,13 @@ export function ManualStockModal({ isOpen, onClose, onConfirm }: ManualStockModa
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Harga Beli <span className="text-red-500">*</span>
+                Satuan
               </label>
               <input
-                type="number"
-                value={purchasePrice}
-                onChange={(e) => setPurchasePrice(e.target.value)}
-                placeholder="0"
+                type="text"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                placeholder="kg, liter, pcs"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
@@ -96,12 +100,25 @@ export function ManualStockModal({ isOpen, onClose, onConfirm }: ManualStockModa
               </label>
               <input
                 type="number"
-                value={initialQty}
-                onChange={(e) => setInitialQty(e.target.value)}
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
                 placeholder="0"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Harga Beli per Unit <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              value={purchasePrice}
+              onChange={(e) => setPurchasePrice(e.target.value)}
+              placeholder="0"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
           </div>
 
           <div>
@@ -140,7 +157,7 @@ export function ManualStockModal({ isOpen, onClose, onConfirm }: ManualStockModa
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!itemId.trim() || !purchasePrice || !initialQty || isSubmitting}
+            disabled={!itemName.trim() || !purchasePrice || !quantity || isSubmitting}
             className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50"
           >
             {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Package className="w-4 h-4" />}

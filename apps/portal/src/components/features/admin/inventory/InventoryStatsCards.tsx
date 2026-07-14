@@ -5,13 +5,15 @@ import type { InventoryValuation } from './types';
 
 interface InventoryStatsCardsProps {
   valuation: InventoryValuation | null;
+  expiringSoonCount: number;
+  lowStockCount: number;
 }
 
 function formatCurrency(amount: number): string {
   return `Rp ${amount.toLocaleString('id-ID')}`;
 }
 
-export function InventoryStatsCards({ valuation }: InventoryStatsCardsProps) {
+export function InventoryStatsCards({ valuation, expiringSoonCount, lowStockCount }: InventoryStatsCardsProps) {
   if (!valuation) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -24,6 +26,8 @@ export function InventoryStatsCards({ valuation }: InventoryStatsCardsProps) {
       </div>
     );
   }
+
+  const totalItem = valuation.items.length;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -54,12 +58,12 @@ export function InventoryStatsCards({ valuation }: InventoryStatsCardsProps) {
           </p>
         </div>
         <p className="text-2xl font-bold text-gray-900">
-          {valuation.totalItems}
+          {totalItem}
         </p>
-        <p className="text-xs text-gray-400 mt-1">Item aktif</p>
+        <p className="text-xs text-gray-400 mt-1">Jenis item aktif</p>
       </div>
 
-      {/* Low Stock */}
+      {/* Low Stock - dihitung dari valuation items yang totalQty rendah */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -70,7 +74,7 @@ export function InventoryStatsCards({ valuation }: InventoryStatsCardsProps) {
           </p>
         </div>
         <p className="text-2xl font-bold text-orange-600">
-          {valuation.lowStockCount}
+          {lowStockCount}
         </p>
         <p className="text-xs text-gray-400 mt-1">Item perlu restock</p>
       </div>
@@ -86,7 +90,7 @@ export function InventoryStatsCards({ valuation }: InventoryStatsCardsProps) {
           </p>
         </div>
         <p className="text-2xl font-bold text-red-600">
-          {valuation.expiringSoonCount}
+          {expiringSoonCount}
         </p>
         <p className="text-xs text-gray-400 mt-1">Dalam 7 hari ke depan</p>
       </div>

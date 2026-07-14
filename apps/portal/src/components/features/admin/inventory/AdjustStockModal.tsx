@@ -48,7 +48,7 @@ export function AdjustStockModal({ isOpen, stock, onClose, onConfirm }: AdjustSt
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Adjust Stok</h2>
-              <p className="text-xs text-gray-500">{stock.itemName}</p>
+              <p className="text-xs text-gray-500">{stock.item.name}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg">
@@ -60,7 +60,7 @@ export function AdjustStockModal({ isOpen, stock, onClose, onConfirm }: AdjustSt
           <div className="bg-gray-50 rounded-lg p-4">
             <p className="text-xs text-gray-500 mb-1">Stok Saat Ini</p>
             <p className="text-lg font-bold text-gray-900">
-              {stock.currentQty} {stock.itemUnit}
+              {stock.remainingQty} {stock.item.unit}
             </p>
           </div>
 
@@ -80,7 +80,7 @@ export function AdjustStockModal({ isOpen, stock, onClose, onConfirm }: AdjustSt
             />
             {adjustmentQty && (
               <p className="text-xs text-gray-500 mt-1">
-                Stok baru: <span className="font-medium">{stock.currentQty + Number(adjustmentQty)}</span> {stock.itemUnit}
+                Stok baru: <span className="font-medium">{stock.remainingQty + Number(adjustmentQty)}</span> {stock.item.unit}
               </p>
             )}
           </div>
@@ -95,11 +95,11 @@ export function AdjustStockModal({ isOpen, stock, onClose, onConfirm }: AdjustSt
               className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">Pilih alasan</option>
-              <option value="USAGE">Penggunaan</option>
-              <option value="DISPOSAL">Pembuangan/Damage</option>
-              <option value="EXPIRED">Kadaluarsa</option>
+              <option value="SPOILAGE">Rusak / Spoilage</option>
+              <option value="THEFT">Pencurian / Theft</option>
+              <option value="DISCREPANCY">Selisih / Discrepancy</option>
               <option value="CORRECTION">Koreksi Stok</option>
-              <option value="RETURN">Retur</option>
+              <option value="OTHER">Lainnya</option>
             </select>
           </div>
 

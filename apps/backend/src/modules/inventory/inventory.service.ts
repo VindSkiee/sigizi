@@ -18,27 +18,46 @@ export class InventoryService {
   /**
    * Input stok manual (MANUAL_ADJUSTMENT).
    * Hanya bisa diakses oleh SPPG_ADMIN.
+   * Membuat SupplierItem baru dari nama input, lalu membuat InventoryStock.
    */
   async createManualStock(
     dto: CreateManualStockDto,
     sppgId: string,
     userId: string,
   ) {
-    // Validasi item exists
-    const item = await this.prisma.supplierItem.findUnique({
-      where: { id: dto.itemId },
+    // 1. Find or create "Stok Manual" supplier untuk SPPG ini
+    let manualSupplier = await this.prisma.supplier.findFirst({
+      where: { name: "Stok Manual" },
     });
-    if (!item) {
-      throw new NotFoundException(
-        `Barang dengan ID ${dto.itemId} tidak ditemukan`,
-      );
+    if (!manualSupplier) {
+      manualSupplier = await this.prisma.supplier.create({
+        data: {
+          name: "Stok Manual",
+          nib: "0000000000",
+          phone: "-",
+          address: "Supplier internal untuk stok manual",
+          province: "-",
+          regency: "-",
+          district: "-",
+        },
+      });
     }
 
-    // Buat lot stok baru
+    // 2. Buat SupplierItem baru dari input
+    const item = await this.prisma.supplierItem.create({
+      data: {
+        name: dto.itemName,
+        unit: dto.unit || "pcs",
+        basePrice: dto.purchasePrice,
+        supplierId: manualSupplier.id,
+      },
+    });
+
+    // 3. Buat lot stok baru
     const stock = await this.prisma.inventoryStock.create({
       data: {
         sppgId,
-        itemId: dto.itemId,
+        itemId: item.id,
         source: StockSource.MANUAL_ADJUSTMENT,
         purchasePrice: dto.purchasePrice,
         initialQty: dto.quantity,

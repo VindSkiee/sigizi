@@ -1,56 +1,77 @@
-export type StockType = 'PURCHASE' | 'USAGE' | 'ADJUSTMENT' | 'DISPOSAL' | 'EXPIRED';
+export type StockSource = 'SYSTEM_ORDER' | 'MANUAL_ADJUSTMENT' | 'BATCH_RETURN';
 
 export interface InventoryStock {
   id: string;
   itemId: string;
-  itemName: string;
-  itemUnit: string;
-  batchNumber?: string;
-  supplierId?: string;
-  supplierName?: string;
+  sppgId: string;
+  source: StockSource;
   purchasePrice: number;
   initialQty: number;
-  currentQty: number;
+  remainingQty: number;
   expiredAt?: string;
   notes?: string;
-  sppgId: string;
+  createdById: string;
   createdAt: string;
   updatedAt: string;
+  item: { id: string; name: string; unit: string };
+  createdBy: { id: string; name: string };
+  adjustments: InventoryAdjustment[];
 }
 
-export interface InventoryBalance {
+export interface InventoryAdjustment {
+  id: string;
+  adjustmentQty: number;
+  reason: string;
+  description?: string;
+  createdAt: string;
+  changedBy: { name: string };
+}
+
+export interface InventoryValuationItem {
   itemId: string;
   itemName: string;
-  itemUnit: string;
+  unit: string;
   totalQty: number;
-  avgPrice: number;
   totalValue: number;
 }
 
 export interface InventoryValuation {
   totalValue: number;
-  totalItems: number;
-  lowStockCount: number;
-  expiringSoonCount: number;
+  items: InventoryValuationItem[];
 }
 
-export interface InventoryAlert {
-  id: string;
-  itemId: string;
-  itemName: string;
-  currentQty: number;
-  minQty: number;
-  alertType: 'LOW_STOCK' | 'EXPIRING_SOON' | 'EXPIRED';
-  message: string;
+export interface InventoryBalanceItem {
+  item: { id: string; name: string; unit: string; minThreshold?: number };
+  totalRemaining: number;
+  totalInitial: number;
+  lotCount: number;
 }
 
-export interface StockHistory {
+export interface InventoryAlertItem {
+  item: { id: string; name: string; unit: string; minThreshold?: number };
+  totalRemaining: number;
+  totalInitial: number;
+  lotCount: number;
+  threshold: number;
+  isLow: boolean;
+}
+
+export interface StockHistoryData {
+  stock: {
+    id: string;
+    itemId: string;
+    initialQty: number;
+    remainingQty: number;
+    item: { name: string; unit: string };
+  };
+  adjustments: StockHistoryAdjustment[];
+}
+
+export interface StockHistoryAdjustment {
   id: string;
-  stockId: string;
-  type: StockType;
-  qtyChange: number;
-  qtyAfter: number;
-  price?: number;
-  notes?: string;
+  adjustmentQty: number;
+  reason: string;
+  description?: string;
   createdAt: string;
+  changedBy: { id: string; name: string; email: string };
 }

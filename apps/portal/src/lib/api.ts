@@ -685,10 +685,12 @@ export async function getMarketPrices(
 // ============================================================================
 export async function getInventoryStocks(
   token: string,
-  params?: { itemId?: string; page?: number; limit?: number },
+  params?: { itemId?: string; source?: string; minRemaining?: number; page?: number; limit?: number },
 ) {
   const searchParams = new URLSearchParams();
   if (params?.itemId) searchParams.append("itemId", params.itemId);
+  if (params?.source) searchParams.append("source", params.source);
+  if (params?.minRemaining !== undefined) searchParams.append("minRemaining", String(params.minRemaining));
   if (params?.page) searchParams.append("page", String(params.page));
   if (params?.limit) searchParams.append("limit", String(params.limit));
   const qs = searchParams.toString() ? `?${searchParams.toString()}` : "";
@@ -726,9 +728,10 @@ export async function getInventoryAlerts(token: string) {
 export async function createManualStock(
   token: string,
   data: {
-    itemId: string;
+    itemName: string;
+    unit?: string;
     purchasePrice: number;
-    initialQty: number;
+    quantity: number;
     expiredAt?: string;
     notes?: string;
   },

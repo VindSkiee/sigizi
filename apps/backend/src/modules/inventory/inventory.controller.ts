@@ -32,7 +32,7 @@ import { PaginationDto } from "../../core/dto/pagination.dto";
 @ApiTags("Inventory")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller("api/inventory")
+@Controller("inventory")
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 

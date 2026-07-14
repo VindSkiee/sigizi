@@ -1,12 +1,12 @@
 'use client';
 
-import { Package, AlertTriangle, Clock } from 'lucide-react';
-import type { InventoryStock } from './types';
+import { Package, AlertTriangle, Clock, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import type { InventoryStock, StockHistoryData } from './types';
 
 interface InventoryTableProps {
   stocks: InventoryStock[];
   onAdjust: (stock: InventoryStock) => void;
-  onViewHistory: (stock: InventoryStock) => void;
+  onViewHistory: (data: StockHistoryData) => void;
 }
 
 function formatCurrency(amount: number): string {
@@ -22,8 +22,8 @@ function formatDate(dateStr?: string): string {
   });
 }
 
-function getStockStatus(currentQty: number, initialQty: number) {
-  const ratio = initialQty > 0 ? currentQty / initialQty : 0;
+function getStockStatus(remainingQty: number, initialQty: number) {
+  const ratio = initialQty > 0 ? remainingQty / initialQty : 0;
   if (ratio <= 0.2) return { label: 'Kritis', className: 'bg-red-100 text-red-700' };
   if (ratio <= 0.5) return { label: 'Menipis', className: 'bg-orange-100 text-orange-700' };
   return { label: 'Aman', className: 'bg-green-100 text-green-700' };
@@ -42,6 +42,19 @@ function isExpired(dateStr?: string): boolean {
   return new Date(dateStr) < new Date();
 }
 
+function getSourceLabel(source: string): { label: string; className: string } {
+  switch (source) {
+    case 'SYSTEM_ORDER':
+      return { label: 'Order', className: 'bg-blue-100 text-blue-700' };
+    case 'MANUAL_ADJUSTMENT':
+      return { label: 'Manual', className: 'bg-purple-100 text-purple-700' };
+    case 'BATCH_RETURN':
+      return { label: 'Retur', className: 'bg-yellow-100 text-yellow-700' };
+    default:
+      return { label: source, className: 'bg-gray-100 text-gray-700' };
+  }
+}
+
 export function InventoryTable({ stocks, onAdjust, onViewHistory }: InventoryTableProps) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -53,7 +66,7 @@ export function InventoryTable({ stocks, onAdjust, onViewHistory }: InventoryTab
                 Item
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                Batch
+                Sumber
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
                 Stok
@@ -85,38 +98,40 @@ export function InventoryTable({ stocks, onAdjust, onViewHistory }: InventoryTab
               </tr>
             ) : (
               stocks.map((stock) => {
-                const stockStatus = getStockStatus(stock.currentQty, stock.initialQty);
+                const stockStatus = getStockStatus(stock.remainingQty, stock.initialQty);
                 const expiring = isExpiringSoon(stock.expiredAt);
                 const expired = isExpired(stock.expiredAt);
+                const sourceInfo = getSourceLabel(stock.source);
+                const nilai = stock.remainingQty * stock.purchasePrice;
                 return (
                   <tr key={stock.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">{stock.itemName}</p>
-                        <p className="text-xs text-gray-500">{stock.supplierName || '-'}</p>
+                        <p className="text-sm font-semibold text-gray-900">{stock.item.name}</p>
+                        <p className="text-xs text-gray-500">oleh {stock.createdBy.name}</p>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-xs font-mono text-gray-600">
-                        {stock.batchNumber || '-'}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${sourceInfo.className}`}>
+                        {sourceInfo.label}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <div>
                         <p className="text-sm font-medium text-gray-900">
-                          {stock.currentQty} / {stock.initialQty} {stock.itemUnit}
+                          {stock.remainingQty} / {stock.initialQty} {stock.item.unit}
                         </p>
                         <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
                           <div
                             className={`h-1.5 rounded-full ${
-                              stock.currentQty / stock.initialQty <= 0.2
+                              stock.remainingQty / stock.initialQty <= 0.2
                                 ? 'bg-red-500'
-                                : stock.currentQty / stock.initialQty <= 0.5
+                                : stock.remainingQty / stock.initialQty <= 0.5
                                 ? 'bg-orange-500'
                                 : 'bg-green-500'
                             }`}
                             style={{
-                              width: `${Math.min((stock.currentQty / stock.initialQty) * 100, 100)}%`,
+                              width: `${Math.min((stock.remainingQty / stock.initialQty) * 100, 100)}%`,
                             }}
                           />
                         </div>
@@ -124,12 +139,12 @@ export function InventoryTable({ stocks, onAdjust, onViewHistory }: InventoryTab
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-sm text-gray-700">
-                        {formatCurrency(stock.purchasePrice)}/{stock.itemUnit}
+                        {formatCurrency(stock.purchasePrice)}/{stock.item.unit}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-sm font-medium text-gray-900">
-                        {formatCurrency(stock.currentQty * stock.purchasePrice)}
+                        {formatCurrency(nilai)}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -163,7 +178,7 @@ export function InventoryTable({ stocks, onAdjust, onViewHistory }: InventoryTab
                           Adjust
                         </button>
                         <button
-                          onClick={() => onViewHistory(stock)}
+                          onClick={() => onViewHistory({ stock, adjustments: stock.adjustments })}
                           className="text-xs text-gray-500 hover:text-gray-700 font-medium"
                         >
                           Histori
