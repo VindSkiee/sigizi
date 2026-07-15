@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import {
   ReportFilter,
   ReportStats,
@@ -15,6 +15,7 @@ import { ReportFilterBar } from "@/components/features/admin/reports/ReportFilte
 import { ReportStatsCards } from "@/components/features/admin/reports/ReportStatsCards";
 import { InvoiceTable } from "@/components/features/admin/reports/InvoiceTable";
 import { ManualExpenseModal } from "@/components/features/admin/reports/ManualExpenseModal";
+import { BgnReportModal } from "@/components/features/admin/reports/BgnReportModal";
 import { generateBgnReport } from "@/components/features/admin/reports/generateBgnReport";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
@@ -27,71 +28,70 @@ function getManualExpenses(): ManualExpense[] {
   }
 }
 
-function filterByDateRange(rows: InvoiceRowType[], start: string, end: string): InvoiceRowType[] {
+function filterByDate(rows: InvoiceRowType[], date: string): InvoiceRowType[] {
+  return rows.filter((r) => r.date === date);
+}
+
+function filterByDateRange(
+  rows: InvoiceRowType[],
+  start: string,
+  end: string,
+): InvoiceRowType[] {
   return rows.filter((r) => r.date >= start && r.date <= end);
 }
 
-function filterBySingleDate(rows: InvoiceRowType[], date: string): InvoiceRowType[] {
-  return rows.filter((r) => r.date === date);
+function getAllRows(manualExpenses: ManualExpense[]): InvoiceRowType[] {
+  const allRows: InvoiceRowType[] = [...MOCK_INVOICES];
+
+  const stored = getManualExpenses();
+  const manualRows: InvoiceRowType[] = stored.map((e) => ({
+    id: e.id,
+    date: e.date,
+    ref: `#MANUAL-${e.id.slice(-2).toUpperCase()}`,
+    category: e.description,
+    nominal: e.amount,
+    statusBukti: e.fileUrl || "Manual",
+    fileUrl: e.fileUrl,
+    isManual: true,
+  }));
+  allRows.push(...manualRows);
+
+  const sessionRows: InvoiceRowType[] = manualExpenses.map((e) => ({
+    id: e.id,
+    date: e.date,
+    ref: `#MANUAL-${e.id.slice(-2).toUpperCase()}`,
+    category: e.description,
+    nominal: e.amount,
+    statusBukti: "Terekam Sistem",
+    isManual: true,
+  }));
+  allRows.push(...sessionRows);
+
+  return allRows;
 }
 
 export default function ReportsPage() {
   const { user } = useAuth();
   const [filter, setFilter] = useState<ReportFilter>(DEFAULT_FILTER);
   const [isLoading, setIsLoading] = useState(false);
-  const [hasFiltered, setHasFiltered] = useState(false);
   const [showManualModal, setShowManualModal] = useState(false);
+  const [showBgnModal, setShowBgnModal] = useState(false);
   const [manualExpenses, setManualExpenses] = useState<ManualExpense[]>([]);
 
+  // Auto-load today's data on mount
+  useEffect(() => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 400);
+  }, []);
+
   const displayRows = useMemo(() => {
-    if (!hasFiltered) return [];
-
-    const allRows: InvoiceRowType[] = [...MOCK_INVOICES];
-
-    // Add manual expenses from localStorage
-    const stored = getManualExpenses();
-    const manualRows: InvoiceRowType[] = stored.map((e) => ({
-      id: e.id,
-      date: e.date,
-      ref: `#MANUAL-${e.id.slice(-2).toUpperCase()}`,
-      category: e.description,
-      nominal: e.amount,
-      statusBukti: e.fileUrl || "Manual",
-      fileUrl: e.fileUrl,
-      isManual: true,
-    }));
-    allRows.push(...manualRows);
-
-    // Add current session manual expenses
-    const sessionRows: InvoiceRowType[] = manualExpenses.map((e) => ({
-      id: e.id,
-      date: e.date,
-      ref: `#MANUAL-${e.id.slice(-2).toUpperCase()}`,
-      category: e.description,
-      nominal: e.amount,
-      statusBukti: "Terekam Sistem",
-      isManual: true,
-    }));
-    allRows.push(...sessionRows);
-
-    if (filter.periodType === "daily") {
-      return filterBySingleDate(allRows, filter.date).sort(
-        (a, b) => a.date.localeCompare(b.date)
-      );
-    }
-
-    // Weekly
-    if (filter.weekStart) {
-      const endDate = new Date(filter.weekStart);
-      endDate.setDate(endDate.getDate() + 6);
-      const endStr = endDate.toISOString().slice(0, 10);
-      return filterByDateRange(allRows, filter.weekStart, endStr).sort(
-        (a, b) => a.date.localeCompare(b.date)
-      );
-    }
-
-    return allRows;
-  }, [filter, hasFiltered, manualExpenses]);
+    const allRows = getAllRows(manualExpenses);
+    return filterByDate(allRows, filter.date).sort((a, b) =>
+      a.date.localeCompare(b.date),
+    );
+  }, [filter, manualExpenses]);
 
   const stats: ReportStats = useMemo(() => {
     const supplierInvoices = displayRows.filter((r) => !r.isManual);
@@ -99,24 +99,44 @@ export default function ReportsPage() {
     return {
       totalPengeluaran: supplierInvoices.reduce((s, r) => s + r.nominal, 0),
       invoiceCount: supplierInvoices.length,
-      totalPorsi: filter.periodType === "daily" ? 1250 : 8750,
+      totalPorsi: 1250,
       totalTambahan: manualInvoices.reduce((s, r) => s + r.nominal, 0),
     };
-  }, [displayRows, filter.periodType]);
+  }, [displayRows]);
 
   const handleFilter = useCallback((newFilter: ReportFilter) => {
     setIsLoading(true);
     setFilter(newFilter);
     setTimeout(() => {
-      setHasFiltered(true);
       setIsLoading(false);
-    }, 500);
+    }, 400);
   }, []);
 
-  const handleGeneratePDF = useCallback(() => {
-    if (displayRows.length === 0) return;
-    generateBgnReport(displayRows, stats, filter, user?.sppg);
-  }, [displayRows, stats, filter, user?.sppg]);
+  const handleGenerateBgn = useCallback(
+    (startDate: string, endDate: string) => {
+      const allRows = getAllRows(manualExpenses);
+      const rangeRows = filterByDateRange(allRows, startDate, endDate).sort(
+        (a, b) => a.date.localeCompare(b.date),
+      );
+      const supplierInvoices = rangeRows.filter((r) => !r.isManual);
+      const manualInvoices = rangeRows.filter((r) => r.isManual);
+      const rangeStats: ReportStats = {
+        totalPengeluaran: supplierInvoices.reduce((s, r) => s + r.nominal, 0),
+        invoiceCount: supplierInvoices.length,
+        totalPorsi: 1250,
+        totalTambahan: manualInvoices.reduce((s, r) => s + r.nominal, 0),
+      };
+      generateBgnReport(
+        rangeRows,
+        rangeStats,
+        { date: filter.date },
+        user?.sppg,
+        startDate,
+        endDate,
+      );
+    },
+    [manualExpenses, filter, user?.sppg],
+  );
 
   const handleSaveManual = useCallback((expense: ManualExpense) => {
     setManualExpenses((prev) => [...prev, expense]);
@@ -124,14 +144,14 @@ export default function ReportsPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <ReportHeader onGeneratePDF={handleGeneratePDF} />
+      <ReportHeader onOpenBgnModal={() => setShowBgnModal(true)} />
 
       <ReportFilterBar onFilter={handleFilter} isLoading={isLoading} />
 
       {isLoading && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {[1, 2, 3].map((i) => (
               <SkeletonCard key={i} />
             ))}
           </div>
@@ -158,27 +178,26 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {hasFiltered && !isLoading && (
+      {!isLoading && (
         <>
           <ReportStatsCards stats={stats} />
-          <InvoiceTable rows={displayRows} onInputManual={() => setShowManualModal(true)} />
+          <InvoiceTable
+            rows={displayRows}
+            onInputManual={() => setShowManualModal(true)}
+          />
         </>
-      )}
-
-      {!hasFiltered && !isLoading && (
-        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-          <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <p className="text-gray-500 text-sm mb-1">Pilih periode laporan dan klik &quot;Terapkan Filter&quot;</p>
-          <p className="text-gray-400 text-xs">Data invoice supplier akan otomatis ditampilkan</p>
-        </div>
       )}
 
       <ManualExpenseModal
         isOpen={showManualModal}
         onClose={() => setShowManualModal(false)}
         onSave={handleSaveManual}
+      />
+
+      <BgnReportModal
+        isOpen={showBgnModal}
+        onClose={() => setShowBgnModal(false)}
+        onGenerate={handleGenerateBgn}
       />
     </div>
   );

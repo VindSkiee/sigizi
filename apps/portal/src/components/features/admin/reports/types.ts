@@ -1,10 +1,5 @@
-export type PeriodType = "daily" | "weekly";
-
 export interface ReportFilter {
-  periodType: PeriodType;
   date: string;
-  weekStart?: string;
-  weekLabel?: string;
 }
 
 export interface ReportStats {
@@ -37,6 +32,5 @@ export interface ManualExpense {
 export const MANUAL_EXPENSE_KEY = "sigizi_manual_expenses";
 
 export const DEFAULT_FILTER: ReportFilter = {
-  periodType: "daily",
   date: new Date().toISOString().slice(0, 10),
 };
