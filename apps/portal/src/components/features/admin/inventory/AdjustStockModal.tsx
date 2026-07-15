@@ -47,7 +47,7 @@ export function AdjustStockModal({ isOpen, stock, onClose, onConfirm }: AdjustSt
               <Sliders className="w-5 h-5 text-orange-600" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Adjust Stok</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Edit Stok</h2>
               <p className="text-xs text-gray-500">{stock.item.name}</p>
             </div>
           </div>

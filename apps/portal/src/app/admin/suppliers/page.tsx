@@ -17,7 +17,6 @@ import { SupplierOrderTable } from "@/components/features/admin/supplier-integra
 import { SupplierOrderDetailModal } from "@/components/features/admin/supplier-integration/SupplierOrderDetailModal";
 import { Pagination } from "@/components/ui/Pagination";
 import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -67,11 +66,6 @@ export default function SupplierIntegrationPage() {
     null,
   );
   const [currentPage, setCurrentPage] = useState(1);
-  const [confirmState, setConfirmState] = useState<{
-    orderId: string;
-    status: string;
-    label: string;
-  } | null>(null);
 
   useEffect(() => {
     async function fetchOrders() {
@@ -180,18 +174,9 @@ export default function SupplierIntegrationPage() {
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     const order = orders.find((o) => o.id === orderId);
 
-    // CONFIRMED → "PAY": show confirm, then navigate
+    // CONFIRMED → "PAY": navigate to payment page
     if (order?.status === OrderStatus.CONFIRMED && newStatus === "PAY") {
-      setConfirmState({ orderId, status: newStatus, label: "Bayar" });
-      return;
-    }
-
-    // DELIVERED → COMPLETED: show confirm, then call API
-    if (
-      order?.status === OrderStatus.DELIVERED &&
-      newStatus === OrderStatus.COMPLETED
-    ) {
-      setConfirmState({ orderId, status: newStatus, label: "Selesai" });
+      router.push(`/admin/payments/${orderId}`);
       return;
     }
 
@@ -218,44 +203,6 @@ export default function SupplierIntegrationPage() {
     } catch (err) {
       console.error("Failed to update order status:", err);
     }
-  };
-
-  const handleConfirmAction = async () => {
-    if (!confirmState || !token) return;
-
-    const { orderId, status } = confirmState;
-
-    // PAY: navigate to payment page
-    if (status === "PAY") {
-      setConfirmState(null);
-      router.push(`/admin/payments/${orderId}`);
-      return;
-    }
-
-    // Other confirmed actions: call API
-    try {
-      const response = await updateOrderStatus(token, orderId, status);
-      if (response.success) {
-        setOrders((prev) =>
-          prev.map((o) =>
-            o.id === orderId
-              ? { ...o, status: status as OrderStatus | "CANCELLED" }
-              : o,
-          ),
-        );
-        if (selectedOrder?.id === orderId) {
-          setSelectedOrder((prev) =>
-            prev
-              ? { ...prev, status: status as OrderStatus | "CANCELLED" }
-              : null,
-          );
-        }
-      }
-    } catch (err) {
-      console.error("Failed to update order status:", err);
-    }
-
-    setConfirmState(null);
   };
 
   const handleViewDetail = (order: SupplierOrder) => {
@@ -287,7 +234,7 @@ export default function SupplierIntegrationPage() {
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
             <div className="flex gap-4">
-              {[1, 2, 3, 4, 5].map((i) => (
+              {[1, 2, 3, 4, 5, 6].map((i) => (
                 <Skeleton key={i} className="h-3 flex-1" />
               ))}
             </div>
@@ -296,7 +243,7 @@ export default function SupplierIntegrationPage() {
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="px-4 py-4">
                 <div className="flex gap-4">
-                  {[1, 2, 3, 4, 5].map((j) => (
+                  {[1, 2, 3, 4, 5, 6].map((j) => (
                     <Skeleton key={j} className="h-4 flex-1" />
                   ))}
                 </div>
@@ -335,7 +282,7 @@ export default function SupplierIntegrationPage() {
       <SupplierSearchBar
         search={search}
         onSearchChange={handleSearchChange}
-        onCreateNew={() => router.push("/admin/market")}
+        onCreateNew={() => router.push("/admin/suppliers/create")}
       />
 
       {/* Table */}
@@ -366,23 +313,6 @@ export default function SupplierIntegrationPage() {
         order={selectedOrder}
         onClose={() => setSelectedOrder(null)}
         onUpdateStatus={handleUpdateStatus}
-      />
-
-      {/* Confirm Modal */}
-      <ConfirmModal
-        isOpen={confirmState !== null}
-        title={`Konfirmasi ${confirmState?.label || ""}`}
-        message={
-          confirmState?.label === "Bayar"
-            ? `Anda akan melakukan pembayaran untuk pesanan ini. Lanjutkan ke halaman pembayaran?`
-            : `Pesanan akan ditandai sebagai selesai. Tindakan ini tidak dapat dibatalkan.`
-        }
-        confirmLabel={
-          confirmState?.label === "Bayar" ? "Ya, Bayar" : "Ya, Selesai"
-        }
-        variant={confirmState?.label === "Bayar" ? "info" : "success"}
-        onConfirm={handleConfirmAction}
-        onClose={() => setConfirmState(null)}
       />
     </div>
   );
