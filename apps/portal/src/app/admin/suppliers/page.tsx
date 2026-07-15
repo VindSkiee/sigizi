@@ -17,6 +17,7 @@ import { SupplierOrderTable } from "@/components/features/admin/supplier-integra
 import { SupplierOrderDetailModal } from "@/components/features/admin/supplier-integration/SupplierOrderDetailModal";
 import { Pagination } from "@/components/ui/Pagination";
 import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -66,6 +67,11 @@ export default function SupplierIntegrationPage() {
     null,
   );
   const [currentPage, setCurrentPage] = useState(1);
+  const [confirmState, setConfirmState] = useState<{
+    orderId: string;
+    status: string;
+    label: string;
+  } | null>(null);
 
   useEffect(() => {
     async function fetchOrders() {
@@ -174,9 +180,18 @@ export default function SupplierIntegrationPage() {
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     const order = orders.find((o) => o.id === orderId);
 
-    // CONFIRMED → "PAY": navigate to payment page
+    // CONFIRMED → "PAY": show confirm, then navigate
     if (order?.status === OrderStatus.CONFIRMED && newStatus === "PAY") {
-      router.push(`/admin/payments/${orderId}`);
+      setConfirmState({ orderId, status: newStatus, label: "Bayar" });
+      return;
+    }
+
+    // DELIVERED → COMPLETED: show confirm, then call API
+    if (
+      order?.status === OrderStatus.DELIVERED &&
+      newStatus === OrderStatus.COMPLETED
+    ) {
+      setConfirmState({ orderId, status: newStatus, label: "Selesai" });
       return;
     }
 
@@ -203,6 +218,44 @@ export default function SupplierIntegrationPage() {
     } catch (err) {
       console.error("Failed to update order status:", err);
     }
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmState || !token) return;
+
+    const { orderId, status } = confirmState;
+
+    // PAY: navigate to payment page
+    if (status === "PAY") {
+      setConfirmState(null);
+      router.push(`/admin/payments/${orderId}`);
+      return;
+    }
+
+    // Other confirmed actions: call API
+    try {
+      const response = await updateOrderStatus(token, orderId, status);
+      if (response.success) {
+        setOrders((prev) =>
+          prev.map((o) =>
+            o.id === orderId
+              ? { ...o, status: status as OrderStatus | "CANCELLED" }
+              : o,
+          ),
+        );
+        if (selectedOrder?.id === orderId) {
+          setSelectedOrder((prev) =>
+            prev
+              ? { ...prev, status: status as OrderStatus | "CANCELLED" }
+              : null,
+          );
+        }
+      }
+    } catch (err) {
+      console.error("Failed to update order status:", err);
+    }
+
+    setConfirmState(null);
   };
 
   const handleViewDetail = (order: SupplierOrder) => {
@@ -313,6 +366,23 @@ export default function SupplierIntegrationPage() {
         order={selectedOrder}
         onClose={() => setSelectedOrder(null)}
         onUpdateStatus={handleUpdateStatus}
+      />
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmState !== null}
+        title={`Konfirmasi ${confirmState?.label || ""}`}
+        message={
+          confirmState?.label === "Bayar"
+            ? `Anda akan melakukan pembayaran untuk pesanan ini. Lanjutkan ke halaman pembayaran?`
+            : `Pesanan akan ditandai sebagai selesai. Tindakan ini tidak dapat dibatalkan.`
+        }
+        confirmLabel={
+          confirmState?.label === "Bayar" ? "Ya, Bayar" : "Ya, Selesai"
+        }
+        variant={confirmState?.label === "Bayar" ? "info" : "success"}
+        onConfirm={handleConfirmAction}
+        onClose={() => setConfirmState(null)}
       />
     </div>
   );
