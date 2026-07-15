@@ -1,6 +1,6 @@
 'use client';
 
-import { Package, AlertTriangle, Clock, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { Package, ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import type { InventoryStock, StockHistoryData } from './types';
 
 interface InventoryTableProps {
@@ -13,33 +13,11 @@ function formatCurrency(amount: number): string {
   return `Rp ${amount.toLocaleString('id-ID')}`;
 }
 
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
 function getStockStatus(remainingQty: number, initialQty: number) {
   const ratio = initialQty > 0 ? remainingQty / initialQty : 0;
   if (ratio <= 0.2) return { label: 'Kritis', className: 'bg-red-100 text-red-700' };
   if (ratio <= 0.5) return { label: 'Menipis', className: 'bg-orange-100 text-orange-700' };
   return { label: 'Aman', className: 'bg-green-100 text-green-700' };
-}
-
-function isExpiringSoon(dateStr?: string): boolean {
-  if (!dateStr) return false;
-  const expDate = new Date(dateStr);
-  const now = new Date();
-  const diffDays = (expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-  return diffDays <= 7 && diffDays > 0;
-}
-
-function isExpired(dateStr?: string): boolean {
-  if (!dateStr) return false;
-  return new Date(dateStr) < new Date();
 }
 
 function getSourceLabel(source: string): { label: string; className: string } {
@@ -78,9 +56,6 @@ export function InventoryTable({ stocks, onAdjust, onViewHistory }: InventoryTab
                 Nilai
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                Kedaluarsa
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
                 Status
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
@@ -91,7 +66,7 @@ export function InventoryTable({ stocks, onAdjust, onViewHistory }: InventoryTab
           <tbody>
             {stocks.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center">
+                <td colSpan={7} className="px-4 py-12 text-center">
                   <Package className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                   <p className="text-gray-400 text-sm">Tidak ada data inventaris</p>
                 </td>
@@ -99,8 +74,6 @@ export function InventoryTable({ stocks, onAdjust, onViewHistory }: InventoryTab
             ) : (
               stocks.map((stock) => {
                 const stockStatus = getStockStatus(stock.remainingQty, stock.initialQty);
-                const expiring = isExpiringSoon(stock.expiredAt);
-                const expired = isExpired(stock.expiredAt);
                 const sourceInfo = getSourceLabel(stock.source);
                 const nilai = stock.remainingQty * stock.purchasePrice;
                 return (
@@ -148,23 +121,6 @@ export function InventoryTable({ stocks, onAdjust, onViewHistory }: InventoryTab
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      {expired ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
-                          <AlertTriangle className="w-3 h-3" />
-                          Kadaluarsa
-                        </span>
-                      ) : expiring ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-orange-600">
-                          <Clock className="w-3 h-3" />
-                          {formatDate(stock.expiredAt)}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-gray-500">
-                          {formatDate(stock.expiredAt)}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${stockStatus.className}`}>
                         {stockStatus.label}
                       </span>
@@ -175,7 +131,7 @@ export function InventoryTable({ stocks, onAdjust, onViewHistory }: InventoryTab
                           onClick={() => onAdjust(stock)}
                           className="text-xs text-primary-600 hover:text-primary-700 font-medium"
                         >
-                          Adjust
+                          Edit
                         </button>
                         <button
                           onClick={() => onViewHistory({ stock, adjustments: stock.adjustments })}

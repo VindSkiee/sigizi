@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, AlertTriangle, Loader2 } from 'lucide-react';
+import { FileUpload } from '@/components/ui/FileUpload';
 
 interface FailBatchModalProps {
   isOpen: boolean;
@@ -19,16 +21,26 @@ export function FailBatchModal({
   onConfirm,
 }: FailBatchModalProps) {
   const [reason, setReason] = useState('');
-  const [evidence, setEvidence] = useState('');
+  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
   const handleSubmit = async () => {
-    if (!reason.trim()) return;
+    if (!reason.trim() || !evidenceFile) return;
     setIsSubmitting(true);
     try {
-      onConfirm(batchId, reason.trim(), evidence.trim() || undefined);
+      const evidenceBase64 = await fileToBase64(evidenceFile);
+      onConfirm(batchId, reason.trim(), evidenceBase64);
       setReason('');
-      setEvidence('');
+      setEvidenceFile(null);
       onClose();
     } finally {
       setIsSubmitting(false);
@@ -37,8 +49,8 @@ export function FailBatchModal({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[9998] flex items-center justify-center">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
       <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
         <div className="flex items-center justify-between p-5 border-b border-gray-100">
@@ -71,15 +83,13 @@ export function FailBatchModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Bukti (opsional)
-            </label>
-            <input
-              type="text"
-              value={evidence}
-              onChange={(e) => setEvidence(e.target.value)}
-              placeholder="URL foto bukti"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            <FileUpload
+              label="Bukti"
+              accept=".jpg,.jpeg,.png,.pdf"
+              maxSize={5}
+              onFileSelect={setEvidenceFile}
+              required
+              helperText="Klik atau seret foto/PDF bukti di sini"
             />
           </div>
         </div>
@@ -94,7 +104,7 @@ export function FailBatchModal({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!reason.trim() || isSubmitting}
+            disabled={!reason.trim() || !evidenceFile || isSubmitting}
             className="flex items-center gap-2 px-4 py-2.5 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
           >
             {isSubmitting ? (
@@ -108,6 +118,7 @@ export function FailBatchModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
