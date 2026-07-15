@@ -43,15 +43,10 @@ export interface DualPriceStatistics {
 interface SupplierItemWithSupplier {
   id: string;
   name: string;
-  unit: string;
   basePrice: number;
-  description: string | null;
-  minOrderQty: number | null;
-  orderStep: number | null;
   supplier: {
     id: string;
     name: string;
-    address: string | null;
     province: string;
     regency: string;
     district: string;
@@ -385,47 +380,20 @@ export class MarketService {
       where.name = { contains: item, mode: "insensitive" };
     }
 
-    if (filter.province || filter.regency || filter.district) {
-      const supplierWhere: Prisma.SupplierWhereInput = {};
-
-      if (filter.province) {
-        supplierWhere.province = {
-          equals: this.normalizeRegionValue(filter.province),
-          mode: "insensitive",
-        };
-      }
-      if (filter.regency) {
-        supplierWhere.regency = {
-          equals: this.normalizeRegionValue(filter.regency),
-          mode: "insensitive",
-        };
-      }
-      if (filter.district) {
-        supplierWhere.district = {
-          equals: this.normalizeRegionValue(filter.district),
-          mode: "insensitive",
-        };
-      }
-
-      where.supplier = { is: supplierWhere };
+    if (filter.province) {
+      where.supplier = {
+        is: {
+          province: {
+            equals: filter.province,
+            mode: "insensitive",
+          },
+        },
+      };
     }
 
     return this.prisma.supplierItem.findMany({
       where,
-      include: {
-        supplier: {
-          select: {
-            id: true,
-            name: true,
-            address: true,
-            province: true,
-            regency: true,
-            district: true,
-            latitude: true,
-            longitude: true,
-          },
-        },
-      },
+      include: { supplier: true },
     });
   }
 
@@ -638,13 +606,6 @@ export class MarketService {
       .trim();
   }
 
-  private normalizeRegionValue(val: string): string {
-    return val
-      .replace(/^(Kab\.|Kota)\s+/i, "")
-      .replace(/\s+/g, "_")
-      .toUpperCase();
-  }
-
   private buildDualStatistics(prices: number[]): DualPriceStatistics {
     const raw = this.computeStatistics(prices);
     const emptyStats = this.emptyStatistics();
@@ -709,7 +670,7 @@ export class MarketService {
         ? new GpsCoordinate(filter.latitude, filter.longitude)
         : null;
 
-    const mapped = items.map((item) => {
+    return items.map((item) => {
       const coordinate = GpsCoordinate.fromPrisma(item.supplier);
       const distanceKm =
         center && coordinate
@@ -722,30 +683,13 @@ export class MarketService {
 
       return {
         id: item.supplier.id,
-        itemId: item.id,
         name: item.supplier.name,
-        itemName: item.name,
         price: item.basePrice,
-        unit: item.unit,
-        description: item.description ?? undefined,
-        minOrderQty: item.minOrderQty ?? undefined,
-        orderStep: item.orderStep ?? undefined,
         isAnomaly,
         latitude: item.supplier.latitude ?? undefined,
         longitude: item.supplier.longitude ?? undefined,
         distanceKm,
-        address: item.supplier.address ?? undefined,
-        province: item.supplier.province,
-        regency: item.supplier.regency,
-        district: item.supplier.district,
       };
-    });
-
-    return mapped.sort((a, b) => {
-      if (a.distanceKm == null && b.distanceKm == null) return 0;
-      if (a.distanceKm == null) return 1;
-      if (b.distanceKm == null) return -1;
-      return a.distanceKm - b.distanceKm;
     });
   }
 

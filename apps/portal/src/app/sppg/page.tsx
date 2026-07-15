@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -39,7 +39,7 @@ interface Pagination {
 
 const RADIUS_OPTIONS = [5, 10, 25, 50];
 
-function SppgSearchContent() {
+export default function SppgSearchPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -403,13 +403,5 @@ function SppgSearchContent() {
         )}
       </div>
     </main>
-  );
-}
-
-export default function SppgSearchPage() {
-  return (
-    <Suspense fallback={null}>
-      <SppgSearchContent />
-    </Suspense>
   );
 }

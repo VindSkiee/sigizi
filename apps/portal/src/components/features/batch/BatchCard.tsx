@@ -31,7 +31,7 @@ function formatDate(dateStr: string): string {
 
 export function BatchCard({ batch, onViewDetail }: BatchCardProps) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col">
       {/* Header */}
       <div className="p-5 pb-0">
         <div className="flex items-start justify-between mb-2">
@@ -53,16 +53,21 @@ export function BatchCard({ batch, onViewDetail }: BatchCardProps) {
       </div>
 
       {/* Content */}
-      <div className="p-5 space-y-3">
+      <div className="p-5 space-y-3 flex-1">
         {/* Target Distribusi */}
         <div className="flex items-start gap-2">
           <School className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
           <div>
             {batch.beneficiaryNames && batch.beneficiaryNames.length > 0 ? (
               <div className="space-y-0.5">
-                {batch.beneficiaryNames.map((name, idx) => (
+                {batch.beneficiaryNames.slice(0, 2).map((name, idx) => (
                   <p key={idx} className="text-sm font-medium text-gray-800">{name}</p>
                 ))}
+                {batch.beneficiaryNames.length > 2 && (
+                  <p className="text-xs text-gray-500">
+                    +{batch.beneficiaryNames.length - 2} lainnya
+                  </p>
+                )}
               </div>
             ) : (
               <p className="text-sm font-medium text-gray-800">-</p>
@@ -96,7 +101,7 @@ export function BatchCard({ batch, onViewDetail }: BatchCardProps) {
       <div className="px-5 pb-5">
         <button
           onClick={() => onViewDetail(batch)}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 active:scale-[0.98] active:shadow-inner transition-all"
         >
           <Eye className="w-4 h-4" />
           Lihat Detail

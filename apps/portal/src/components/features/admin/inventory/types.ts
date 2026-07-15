@@ -73,5 +73,5 @@ export interface StockHistoryAdjustment {
   reason: string;
   description?: string;
   createdAt: string;
-  changedBy: { id?: string; name: string; email?: string };
+  changedBy: { name: string };
 }

@@ -11,7 +11,6 @@ interface ManualStockModalProps {
     unit?: string;
     purchasePrice: number;
     quantity: number;
-    expiredAt?: string;
     notes?: string;
   }) => void;
 }
@@ -21,7 +20,6 @@ export function ManualStockModal({ isOpen, onClose, onConfirm }: ManualStockModa
   const [unit, setUnit] = useState('');
   const [purchasePrice, setPurchasePrice] = useState('');
   const [quantity, setQuantity] = useState('');
-  const [expiredAt, setExpiredAt] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -34,14 +32,12 @@ export function ManualStockModal({ isOpen, onClose, onConfirm }: ManualStockModa
         unit: unit.trim() || undefined,
         purchasePrice: Number(purchasePrice),
         quantity: Number(quantity),
-        expiredAt: expiredAt || undefined,
         notes: notes.trim() || undefined,
       });
       setItemName('');
       setUnit('');
       setPurchasePrice('');
       setQuantity('');
-      setExpiredAt('');
       setNotes('');
       onClose();
     } finally {
@@ -117,18 +113,6 @@ export function ManualStockModal({ isOpen, onClose, onConfirm }: ManualStockModa
               value={purchasePrice}
               onChange={(e) => setPurchasePrice(e.target.value)}
               placeholder="0"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Tanggal Kedaluarsa
-            </label>
-            <input
-              type="date"
-              value={expiredAt}
-              onChange={(e) => setExpiredAt(e.target.value)}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>

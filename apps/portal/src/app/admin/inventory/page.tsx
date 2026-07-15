@@ -48,7 +48,7 @@ export default function InventoryPage() {
       if (stocksRes.success) {
         const data = stocksRes.data as any;
         const items = data?.items || data || [];
-        setStocks(Array.isArray(items) ? items : []);
+        setStocks(Array.isArray(items) ? items.filter((s: any) => s.remainingQty > 0) : []);
       }
 
       if (valuationRes.success) {
@@ -80,7 +80,6 @@ export default function InventoryPage() {
     unit?: string;
     purchasePrice: number;
     quantity: number;
-    expiredAt?: string;
     notes?: string;
   }) => {
     if (!token) return;
@@ -123,12 +122,6 @@ export default function InventoryPage() {
     );
   }
 
-  const expiringSoonCount = stocks.filter((s) => {
-    if (!s.expiredAt) return false;
-    const diff = (new Date(s.expiredAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-    return diff > 0 && diff <= 7;
-  }).length;
-
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
@@ -166,7 +159,7 @@ export default function InventoryPage() {
       )}
 
       {/* Stats */}
-      <InventoryStatsCards valuation={valuation} expiringSoonCount={expiringSoonCount} lowStockCount={alerts.length} />
+      <InventoryStatsCards valuation={valuation} lowStockCount={alerts.length} />
 
       {/* Table */}
       <InventoryTable

@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { X, Clock, School, DollarSign, Package, AlertTriangle, CheckCircle, XCircle, QrCode, Hash } from 'lucide-react';
 import { BatchStatusBadge } from './BatchStatusBadge';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import type { BatchManagement } from './types';
 
 interface BatchDetailModalProps {
@@ -45,6 +47,9 @@ export function BatchDetailModal({
   onFail,
   onPrintQR,
 }: BatchDetailModalProps) {
+  const [confirmComplete, setConfirmComplete] = useState(false);
+  const [showEvidence, setShowEvidence] = useState(false);
+
   if (!batch) return null;
 
   return (
@@ -210,6 +215,25 @@ export function BatchDetailModal({
                 Alasan Kegagalan
               </p>
               <p className="text-sm text-red-600">{batch.failedReason}</p>
+              {batch.failedEvidence && (
+                batch.failedEvidence.startsWith('data:image/') ? (
+                  <button
+                    onClick={() => setShowEvidence(true)}
+                    className="mt-2 inline-flex items-center gap-2 text-sm text-red-600 hover:text-red-700 underline"
+                  >
+                    Lihat Bukti
+                  </button>
+                ) : (
+                  <a
+                    href={batch.failedEvidence}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center gap-2 text-sm text-red-600 hover:text-red-700 underline"
+                  >
+                    Lihat Bukti
+                  </a>
+                )
+              )}
             </div>
           )}
         </div>
@@ -220,7 +244,7 @@ export function BatchDetailModal({
             {batch.status === 'ACTIVE' && (
               <>
                 <button
-                  onClick={() => onComplete(batch.id)}
+                  onClick={() => setConfirmComplete(true)}
                   className="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
                 >
                   <CheckCircle className="w-4 h-4" />
@@ -256,6 +280,43 @@ export function BatchDetailModal({
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={confirmComplete}
+        title="Tandai Selesai"
+        message={`Apakah Anda yakin ingin menandai batch ${batch.batchNumber} sebagai selesai? Tindakan ini tidak dapat dibatalkan.`}
+        variant="success"
+        confirmLabel="Ya, Tandai Selesai"
+        onConfirm={() => {
+          setConfirmComplete(false);
+          onComplete(batch.id);
+        }}
+        onClose={() => setConfirmComplete(false)}
+      />
+
+      {showEvidence && batch.failedEvidence && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setShowEvidence(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <p className="text-sm font-semibold text-gray-800">Bukti Kegagalan</p>
+              <button
+                onClick={() => setShowEvidence(false)}
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto">
+              <img
+                src={batch.failedEvidence}
+                alt="Bukti kegagalan"
+                className="w-full h-auto rounded-lg"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

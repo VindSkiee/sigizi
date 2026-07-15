@@ -141,6 +141,7 @@ export default function BatchManagementPage() {
       setBatches((prev) =>
         prev.map((b) => (b.id === batchId ? { ...b, status: 'COMPLETED' as const } : b))
       );
+      setSelectedBatch(null);
     } catch (err) {
       console.error('Failed to complete batch:', err);
     }
@@ -163,6 +164,7 @@ export default function BatchManagementPage() {
       setBatches((prev) =>
         prev.map((b) => (b.id === batchId ? { ...b, status: 'CANCELLED' as const } : b))
       );
+      setSelectedBatch(null);
     } catch (err) {
       console.error('Failed to cancel batch:', err);
     } finally {
@@ -190,6 +192,7 @@ export default function BatchManagementPage() {
             : b
         )
       );
+      setSelectedBatch(null);
     } catch (err) {
       console.error('Failed to mark batch as failed:', err);
     }
