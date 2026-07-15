@@ -180,9 +180,9 @@ export default function SupplierIntegrationPage() {
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     const order = orders.find((o) => o.id === orderId);
 
-    // CONFIRMED → "PAY": show confirm, then navigate
+    // CONFIRMED → "PAY": navigate directly to payment
     if (order?.status === OrderStatus.CONFIRMED && newStatus === "PAY") {
-      setConfirmState({ orderId, status: newStatus, label: "Bayar" });
+      router.push(`/admin/payments/${orderId}`);
       return;
     }
 
@@ -224,13 +224,6 @@ export default function SupplierIntegrationPage() {
     if (!confirmState || !token) return;
 
     const { orderId, status } = confirmState;
-
-    // PAY: navigate to payment page
-    if (status === "PAY") {
-      setConfirmState(null);
-      router.push(`/admin/payments/${orderId}`);
-      return;
-    }
 
     // Other confirmed actions: call API
     try {
@@ -371,16 +364,10 @@ export default function SupplierIntegrationPage() {
       {/* Confirm Modal */}
       <ConfirmModal
         isOpen={confirmState !== null}
-        title={`Konfirmasi ${confirmState?.label || ""}`}
-        message={
-          confirmState?.label === "Bayar"
-            ? `Anda akan melakukan pembayaran untuk pesanan ini. Lanjutkan ke halaman pembayaran?`
-            : `Pesanan akan ditandai sebagai selesai. Tindakan ini tidak dapat dibatalkan.`
-        }
-        confirmLabel={
-          confirmState?.label === "Bayar" ? "Ya, Bayar" : "Ya, Selesai"
-        }
-        variant={confirmState?.label === "Bayar" ? "info" : "success"}
+        title="Konfirmasi Selesai"
+        message="Pesanan akan ditandai sebagai selesai. Tindakan ini tidak dapat dibatalkan."
+        confirmLabel="Ya, Selesai"
+        variant="success"
         onConfirm={handleConfirmAction}
         onClose={() => setConfirmState(null)}
       />
