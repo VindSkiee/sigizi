@@ -79,7 +79,6 @@ export function AdminSidebar() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm truncate">Budi Santoso</p>
-              <p className="text-xs text-blue-100">ID: ADM-001</p>
               <p className="text-xs text-blue-100 truncate">SPPG Purwakarta</p>
             </div>
           </div>
