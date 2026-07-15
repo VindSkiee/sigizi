@@ -7,12 +7,18 @@ interface MarketCardGridProps {
   items: MarketSupplierItem[];
   medianPrice?: number;
   onAddToDraft: (item: MarketSupplierItem) => void;
+  onOrderClick: (item: MarketSupplierItem) => void;
+  draftItemMap: Map<string, number>;
+  onViewDraft: () => void;
 }
 
 export function MarketCardGrid({
   items,
   medianPrice,
   onAddToDraft,
+  onOrderClick,
+  draftItemMap,
+  onViewDraft,
 }: MarketCardGridProps) {
   if (items.length === 0) {
     return (
@@ -30,9 +36,7 @@ export function MarketCardGrid({
             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
           />
         </svg>
-        <p className="text-gray-500 text-sm">
-          Tidak ada bahan baku ditemukan
-        </p>
+        <p className="text-gray-500 text-sm">Tidak ada bahan baku ditemukan</p>
         <p className="text-gray-400 text-xs mt-1">
           Coba ubah filter pencarian atau kata kunci bahan baku
         </p>
@@ -48,6 +52,9 @@ export function MarketCardGrid({
           item={item}
           medianPrice={medianPrice}
           onAddToDraft={onAddToDraft}
+          onOrderClick={onOrderClick}
+          draftQuantity={draftItemMap.get(item.itemId)}
+          onViewDraft={onViewDraft}
         />
       ))}
     </div>

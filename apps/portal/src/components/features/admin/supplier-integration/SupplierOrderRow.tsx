@@ -24,29 +24,16 @@ export function SupplierOrderRow({
     });
   };
 
-  const formatTime = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   const displayItems = order.items?.slice(0, 2) || [];
   const extraCount = (order.items?.length || 0) - 2;
 
   return (
     <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-      {/* ID Pesanan */}
+      {/* Tanggal Pesanan */}
       <td className="px-4 py-4">
-        <div>
-          <p className="text-sm font-semibold text-gray-900">
-            #PO-{order.id.slice(-4).toUpperCase()}
-          </p>
-          <p className="text-xs text-gray-500">
-            {formatDate(order.createdAt)}, {formatTime(order.createdAt)}
-          </p>
-        </div>
+        <p className="text-sm font-medium text-gray-900">
+          {formatDate(order.createdAt)}
+        </p>
       </td>
 
       {/* Supplier */}
@@ -95,26 +82,6 @@ export function SupplierOrderRow({
               Lihat Detail
             </button>
           )}
-        </div>
-      </td>
-
-      {/* Estimasi Tiba */}
-      <td className="px-4 py-4">
-        <div>
-          <p className="text-sm text-gray-700">
-            {order.estimatedArrival
-              ? new Date(order.estimatedArrival).toLocaleDateString("id-ID", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                }) +
-                ", " +
-                new Date(order.estimatedArrival).toLocaleTimeString("id-ID", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : "-"}
-          </p>
         </div>
       </td>
 

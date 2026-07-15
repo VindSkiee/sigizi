@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { handleSsoCallback } from "@/lib/api";
 
-export default function SsoRedirectPage() {
+function SsoRedirectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const state = searchParams.get("state") || "";
@@ -214,5 +214,13 @@ export default function SsoRedirectPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SsoRedirectPage() {
+  return (
+    <Suspense fallback={null}>
+      <SsoRedirectContent />
+    </Suspense>
   );
 }

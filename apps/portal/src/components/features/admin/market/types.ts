@@ -3,9 +3,9 @@ export type LocationMode = "region" | "gps";
 export interface MarketFilter {
   item: string;
   locationMode: LocationMode;
+  province: string;
   regency: string;
-  latitude: string;
-  longitude: string;
+  district: string;
   radiusKm: string;
 }
 
@@ -19,6 +19,7 @@ export interface MarketPriceStatistics {
 
 export interface MarketSupplierItem {
   id: string;
+  itemId: string;
   supplierId: string;
   supplierName: string;
   itemName?: string;
@@ -27,6 +28,15 @@ export interface MarketSupplierItem {
   isAnomaly: boolean;
   distance?: number;
   mou?: boolean;
+  description?: string;
+  minOrderQty?: number;
+  orderStep?: number;
+  address?: string;
+  province?: string;
+  regency?: string;
+  district?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface MarketPriceResponse {
@@ -64,8 +74,8 @@ export const POPULAR_ITEMS = [
 export const DEFAULT_FILTER: MarketFilter = {
   item: "",
   locationMode: "region",
+  province: "",
   regency: "",
-  latitude: "",
-  longitude: "",
-  radiusKm: "",
+  district: "",
+  radiusKm: "25",
 };

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Search, MapPin, Navigation } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Search, MapPin, Navigation, AlertTriangle } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   MarketFilter,
   LocationMode,
@@ -13,65 +14,94 @@ import { REGIONS } from "./regions";
 interface MarketFilterBarProps {
   onSearch: (filter: MarketFilter) => void;
   isLoading: boolean;
+  initialFilter?: MarketFilter | null;
 }
 
-export function MarketFilterBar({ onSearch, isLoading }: MarketFilterBarProps) {
-  const [filter, setFilter] = useState<MarketFilter>(DEFAULT_FILTER);
-  const [geoLoading, setGeoLoading] = useState(false);
+const RADIUS_PRESETS = [5, 10, 25, 50];
 
-  const regencies = REGIONS.flatMap((r) => r.regencies);
+export function MarketFilterBar({
+  onSearch,
+  isLoading,
+  initialFilter,
+}: MarketFilterBarProps) {
+  const { user, hasLocation } = useAuth();
+  const [filter, setFilter] = useState<MarketFilter>(
+    initialFilter ?? DEFAULT_FILTER,
+  );
+
+  useEffect(() => {
+    if (initialFilter) {
+      setFilter(initialFilter);
+    }
+  }, [initialFilter]);
+
+  const provinces = useMemo(() => REGIONS.map((r) => r.name), []);
+
+  const regencies = useMemo(() => {
+    const province = REGIONS.find((r) => r.name === filter.province);
+    return province ? province.regencies.map((r) => r.name) : [];
+  }, [filter.province]);
+
+  const districts = useMemo(() => {
+    if (!filter.province || !filter.regency) return [];
+    const province = REGIONS.find((r) => r.name === filter.province);
+    const regency = province?.regencies.find((r) => r.name === filter.regency);
+    return regency ? regency.districts : [];
+  }, [filter.province, filter.regency]);
+
+  const sppgLat = user?.sppg?.latitude;
+  const sppgLng = user?.sppg?.longitude;
 
   const handleChange = (field: keyof MarketFilter, value: string) => {
-    setFilter((prev) => ({ ...prev, [field]: value }));
+    setFilter((prev) => {
+      const updated = { ...prev, [field]: value };
+      if (field === "province") {
+        updated.regency = "";
+        updated.district = "";
+      }
+      if (field === "regency") {
+        updated.district = "";
+      }
+      return updated;
+    });
+  };
+
+  const handleRadiusChange = (value: string) => {
+    const num = parseFloat(value);
+    if (isNaN(num)) {
+      handleChange("radiusKm", value);
+      return;
+    }
+    if (num < 1) handleChange("radiusKm", "1");
+    else if (num > 500) handleChange("radiusKm", "500");
+    else handleChange("radiusKm", value);
   };
 
   const handleModeChange = (mode: LocationMode) => {
     setFilter((prev) => ({
       ...prev,
       locationMode: mode,
+      province: "",
       regency: "",
-      latitude: "",
-      longitude: "",
-      radiusKm: "",
+      district: "",
+      radiusKm: "25",
     }));
-  };
-
-  const handleGeolocate = () => {
-    if (!navigator.geolocation) return;
-    setGeoLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setFilter((prev) => ({
-          ...prev,
-          latitude: position.coords.latitude.toFixed(6),
-          longitude: position.coords.longitude.toFixed(6),
-        }));
-        setGeoLoading(false);
-      },
-      () => {
-        setGeoLoading(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!filter.item) return;
     if (filter.locationMode === "region" && !filter.regency) return;
-    if (
-      filter.locationMode === "gps" &&
-      (!filter.latitude || !filter.longitude)
-    )
-      return;
+    if (filter.locationMode === "gps" && !hasLocation) return;
     onSearch(filter);
   };
 
-  const isRegionValid = filter.locationMode === "region" && filter.regency.trim() !== "";
+  const isRegionValid =
+    filter.locationMode === "region" && filter.regency.trim() !== "";
   const isGpsValid =
     filter.locationMode === "gps" &&
-    filter.latitude.trim() !== "" &&
-    filter.longitude.trim() !== "";
+    hasLocation &&
+    filter.radiusKm.trim() !== "";
   const isValid = filter.item.trim() !== "" && (isRegionValid || isGpsValid);
 
   return (
@@ -130,96 +160,177 @@ export function MarketFilterBar({ onSearch, isLoading }: MarketFilterBarProps) {
               }`}
             >
               <Navigation className="w-3.5 h-3.5" />
-              GPS Lokasi
+              Radius
             </button>
           </div>
 
           {filter.locationMode === "region" ? (
-            <div>
-              <select
-                value={filter.regency}
-                onChange={(e) => handleChange("regency", e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              >
-                <option value="">Pilih region</option>
-                {regencies.map((r) => (
-                  <option key={r.name} value={r.name}>
-                    {r.name}
+            <div className="space-y-3">
+              {/* Province */}
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">
+                  Provinsi <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={filter.province}
+                  onChange={(e) => handleChange("province", e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="">Pilih provinsi</option>
+                  {provinces.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Regency */}
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">
+                  Kabupaten / Kota <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={filter.regency}
+                  onChange={(e) => handleChange("regency", e.target.value)}
+                  disabled={!filter.province}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-50 disabled:text-gray-400"
+                >
+                  <option value="">
+                    {filter.province
+                      ? "Pilih kabupaten/kota"
+                      : "Pilih provinsi terlebih dahulu"}
                   </option>
-                ))}
-              </select>
-              <div className="flex items-center gap-1.5 mt-1">
+                  {regencies.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* District (Optional) */}
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">
+                  Kecamatan{" "}
+                  <span className="text-gray-400 font-normal">(opsional)</span>
+                </label>
+                <select
+                  value={filter.district}
+                  onChange={(e) => handleChange("district", e.target.value)}
+                  disabled={!filter.regency}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-50 disabled:text-gray-400"
+                >
+                  <option value="">
+                    {filter.regency
+                      ? "Semua kecamatan"
+                      : "Pilih kabupaten/kota terlebih dahulu"}
+                  </option>
+                  {districts.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1.5">
                 <MapPin className="w-3 h-3 text-gray-400" />
                 <p className="text-xs text-gray-400">
-                  Harga dari supplier di region ini
+                  Harga dari supplier di{" "}
+                  {filter.district
+                    ? `Kec. ${filter.district}`
+                    : filter.regency
+                      ? `Kab. ${filter.regency}`
+                      : "region ini"}
                 </p>
               </div>
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    Latitude <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    min="-90"
-                    max="90"
-                    placeholder="-6.5398"
-                    value={filter.latitude}
-                    onChange={(e) => handleChange("latitude", e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
+              {!hasLocation ? (
+                <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm text-amber-700 font-medium">
+                      Lokasi belum diatur
+                    </p>
+                    <p className="text-xs text-amber-600 mt-0.5">
+                      Silakan atur koordinat GPS SPPG Anda di halaman profil
+                      terlebih dahulu.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    Longitude <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    min="-180"
-                    max="180"
-                    placeholder="107.4471"
-                    value={filter.longitude}
-                    onChange={(e) => handleChange("longitude", e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    Radius (km)
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    min="0.1"
-                    max="500"
-                    placeholder="25"
-                    value={filter.radiusKm}
-                    onChange={(e) => handleChange("radiusKm", e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                  <p className="text-xs text-gray-400 mt-1">
-                    Default: 25 km. Maks: 500 km
-                  </p>
-                </div>
-                <div className="flex items-end">
-                  <button
-                    type="button"
-                    onClick={handleGeolocate}
-                    disabled={geoLoading}
-                    className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 transition-colors"
-                  >
-                    <Navigation className="w-3.5 h-3.5" />
-                    {geoLoading ? "Mencari..." : "Ambil Lokasi Saya"}
-                  </button>
-                </div>
-              </div>
+              ) : (
+                <>
+                  {/* SPPG Location Info */}
+                  <div className="flex items-center gap-2 p-2.5 bg-gray-50 border border-gray-200 rounded-lg">
+                    <Navigation className="w-4 h-4 text-primary-500 flex-shrink-0" />
+                    <div className="text-xs">
+                      <span className="text-gray-500">Lokasi SPPG:</span>{" "}
+                      <span className="font-medium text-gray-700">
+                        {user?.sppg?.name || "-"}
+                      </span>
+                      <span className="text-gray-400 ml-1.5">
+                        ({sppgLat?.toFixed(4)}, {sppgLng?.toFixed(4)})
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Radius Slider + Manual */}
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-2">
+                      Radius pencarian
+                    </label>
+                    <div className="flex items-center gap-3">
+                      {/* Slider */}
+                      <input
+                        type="range"
+                        min="1"
+                        max="50"
+                        step="1"
+                        value={filter.radiusKm || "25"}
+                        onChange={(e) => handleRadiusChange(e.target.value)}
+                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                      />
+                      {/* Manual Input */}
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min="1"
+                          max="500"
+                          value={filter.radiusKm}
+                          onChange={(e) => handleRadiusChange(e.target.value)}
+                          className="w-16 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-700 text-center focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        />
+                        <span className="text-xs text-gray-500">km</span>
+                      </div>
+                    </div>
+                    {/* Preset Buttons */}
+                    <div className="flex gap-1.5 mt-2">
+                      {RADIUS_PRESETS.map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() =>
+                            handleChange("radiusKm", String(preset))
+                          }
+                          className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                            filter.radiusKm === String(preset)
+                              ? "bg-primary-100 text-primary-700 border border-primary-300"
+                              : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
+                          }`}
+                        >
+                          {preset} km
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1.5">
+                      Cari supplier dalam radius tertentu dari lokasi SPPG
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

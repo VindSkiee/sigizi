@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { devLogin } from "@/lib/api";
 
-export default function DevLoginPage() {
+function DevLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const role = searchParams.get("role") || "SPPG_ADMIN";
@@ -53,5 +53,13 @@ export default function DevLoginPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function DevLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <DevLoginContent />
+    </Suspense>
   );
 }

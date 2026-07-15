@@ -1,4 +1,4 @@
-export type StockSource = 'SYSTEM_ORDER' | 'MANUAL_ADJUSTMENT' | 'BATCH_RETURN';
+export type StockSource = "SYSTEM_ORDER" | "MANUAL_ADJUSTMENT" | "BATCH_RETURN";
 
 export interface InventoryStock {
   id: string;
@@ -73,5 +73,5 @@ export interface StockHistoryAdjustment {
   reason: string;
   description?: string;
   createdAt: string;
-  changedBy: { id: string; name: string; email: string };
+  changedBy: { id?: string; name: string; email?: string };
 }

@@ -12,7 +12,7 @@ export function SupplierSearchBar({
   onCreateNew,
 }: SupplierSearchBarProps) {
   return (
-    <div className="flex items-center gap-4 mb-6">
+    <div className="flex items-center justify-between gap-4 mb-6">
       <div className="relative flex-1 max-w-md">
         <svg
           className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
@@ -37,8 +37,9 @@ export function SupplierSearchBar({
       </div>
       <button
         onClick={onCreateNew}
-        className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
+        className="ml-auto flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
       >
+        Buat Pesanan Baru
         <svg
           className="w-4 h-4"
           fill="none"
@@ -49,10 +50,9 @@ export function SupplierSearchBar({
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d="M12 4v16m8-8H4"
+            d="M13 7l5 5m0 0l-5 5m5-5H6"
           />
         </svg>
-        Buat Pesanan Baru
       </button>
     </div>
   );

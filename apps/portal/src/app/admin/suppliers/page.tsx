@@ -234,7 +234,7 @@ export default function SupplierIntegrationPage() {
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
             <div className="flex gap-4">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <Skeleton key={i} className="h-3 flex-1" />
               ))}
             </div>
@@ -243,7 +243,7 @@ export default function SupplierIntegrationPage() {
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="px-4 py-4">
                 <div className="flex gap-4">
-                  {[1, 2, 3, 4, 5, 6].map((j) => (
+                  {[1, 2, 3, 4, 5].map((j) => (
                     <Skeleton key={j} className="h-4 flex-1" />
                   ))}
                 </div>
@@ -282,7 +282,7 @@ export default function SupplierIntegrationPage() {
       <SupplierSearchBar
         search={search}
         onSearchChange={handleSearchChange}
-        onCreateNew={() => router.push("/admin/suppliers/create")}
+        onCreateNew={() => router.push("/admin/market")}
       />
 
       {/* Table */}

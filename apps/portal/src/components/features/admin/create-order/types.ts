@@ -16,6 +16,8 @@ export interface DraftItem {
   unit: string;
   unitPrice: number;
   quantity: number;
+  minOrderQty?: number;
+  orderStep?: number;
 }
 
 export interface MarketPricesResponse {

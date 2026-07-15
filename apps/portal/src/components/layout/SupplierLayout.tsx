@@ -6,7 +6,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  LayoutDashboard,
+  Home,
   Package,
   ShoppingCart,
   FileText,
@@ -19,7 +19,7 @@ interface SupplierLayoutProps {
 }
 
 const allNavItems = [
-  { name: "Dashboard", href: "/supplier", icon: LayoutDashboard },
+  { name: "Beranda", href: "/supplier", icon: Home },
   { name: "Katalog Produk", href: "/supplier/katalog", icon: Package },
   { name: "Pesanan Masuk", href: "/supplier/pesanan", icon: ShoppingCart },
   {
