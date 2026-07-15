@@ -10,6 +10,7 @@ import {
   getComplaints,
 } from "@/lib/api";
 import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
+import { AdminStatsCard, AdminStatsGrid } from "@/components/ui/AdminStatsCard";
 import "@aejkatappaja/phantom-ui";
 
 const getRatingLabel = (rating: number): string => {
@@ -245,83 +246,66 @@ export default function AdminDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <AdminStatsGrid columns={3}>
           {/* Reputasi Vendor */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-600">
-                Reputasi Vendor
-              </span>
-              <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
-                <Star className="w-5 h-5 text-amber-600" />
+          <AdminStatsCard
+            title="Reputasi Vendor"
+            value={stats.rating.toFixed(1)}
+            icon={<Star className="w-5 h-5" />}
+            color="yellow"
+            subtitle={
+              <div className="flex items-center gap-2 mt-1">
+                <div className="flex gap-0.5">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      size={14}
+                      className={
+                        star <= Math.floor(stats.rating)
+                          ? "fill-amber-400 text-amber-400"
+                          : star - 0.5 <= stats.rating
+                            ? "fill-amber-400/50 text-amber-400"
+                            : "text-gray-300"
+                      }
+                    />
+                  ))}
+                </div>
+                <span className="text-xs text-gray-400">
+                  {getRatingLabel(stats.rating)}
+                </span>
               </div>
-            </div>
-            <div className="flex items-center gap-1">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  size={20}
-                  className={
-                    star <= Math.floor(stats.rating)
-                      ? "fill-amber-400 text-amber-400"
-                      : star - 0.5 <= stats.rating
-                        ? "fill-amber-400/50 text-amber-400"
-                        : "text-gray-300"
-                  }
-                />
-              ))}
-            </div>
-            <p className="mt-2 text-sm font-medium text-gray-700">
-              {getRatingLabel(stats.rating)}
-            </p>
-          </div>
+            }
+          />
 
           {/* Porsi Hari Ini */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-600">
-                Porsi Hari Ini
-              </span>
-              <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                <Users className="w-5 h-5 text-emerald-600" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-gray-900">
-                {stats.porsiHariIni}
-              </span>
-              <span className="text-sm text-gray-500">/ Siswa</span>
-            </div>
-          </div>
+          <AdminStatsCard
+            title="Porsi Hari Ini"
+            value={stats.porsiHariIni}
+            unit="/ Siswa"
+            icon={<Users className="w-5 h-5" />}
+            color="green"
+          />
 
           {/* Laporan Aktif */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-600">
-                Laporan Aktif
-              </span>
-              <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-purple-600" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-gray-900">
-                {stats.laporanAktif}
-              </span>
-              <span className="text-sm text-gray-500">Cek laporan</span>
-            </div>
-          </div>
-        </div>
+          <AdminStatsCard
+            title="Laporan Aktif"
+            value={stats.laporanAktif}
+            icon={<FileText className="w-5 h-5" />}
+            color="orange"
+            subtitle={
+              stats.laporanAktif > 0 ? "Perlu ditinjau" : "Tidak ada laporan"
+            }
+          />
+        </AdminStatsGrid>
 
         {/* Total Pengeluaran */}
-        <div className="bg-[#1E40AF] rounded-xl p-6 shadow-sm mb-8">
-          <h2 className="text-lg font-medium text-blue-100 mb-2">
-            Total Pengeluaran Seluruh Batch
-          </h2>
-          <p className="text-3xl font-bold text-white">
-            Rp {stats.totalBiaya.toLocaleString("id-ID")}
-          </p>
-        </div>
+        <AdminStatsCard
+          title="Total Pengeluaran Seluruh Batch"
+          value={`Rp ${stats.totalBiaya.toLocaleString("id-ID")}`}
+          accent
+          color="primary"
+          className="mb-8"
+        />
 
         {/* Riwayat Batch */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6">
