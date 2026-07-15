@@ -42,6 +42,7 @@ export interface SupplierItemData {
   minOrderQty: number | null;
   orderStep: number | null;
   isAvailable: boolean;
+  deletedAt: Date | null;
   supplierId: string;
   createdAt: Date;
 }
@@ -64,6 +65,7 @@ export interface UpdateSupplierItemData {
   minOrderQty?: number;
   orderStep?: number;
   isAvailable?: boolean;
+  deletedAt?: Date | null;
 }
 
 export interface ItemReferenceCheck {

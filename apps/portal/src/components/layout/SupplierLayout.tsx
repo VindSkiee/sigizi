@@ -2,6 +2,7 @@
 
 import { ReactNode, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -55,11 +56,14 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed h-full z-10">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-xl font-bold text-gray-800">Supplier Portal</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            {user?.name || "PT Sumber Makmur"}
-          </p>
+        <div className="p-6 border-b border-gray-100 items-center flex justify-center">
+          <Image
+            src="/logo.png"
+            alt="SIGIZI"
+            width={180}
+            height={40}
+            priority
+          />
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map((item) => {

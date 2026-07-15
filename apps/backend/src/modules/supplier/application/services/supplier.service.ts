@@ -111,10 +111,13 @@ export class SupplierService {
   async removeItem(itemId: string) {
     const refCheck = await this.repository.hasItemReferences(itemId);
     if (refCheck.hasReferences) {
-      throw new BadRequestException(
-        `Produk ini tidak dapat dihapus karena masih digunakan dalam: ${refCheck.reasons.join(", ")}. Nonaktifkan produk (set isAvailable = false) sebagai alternatif.`,
-      );
+      // Soft delete: tandai deletedAt + nonaktifkan
+      return this.repository.updateItem(itemId, {
+        isAvailable: false,
+        deletedAt: new Date(),
+      });
     }
+    // Hard delete: hapus dari DB
     await this.repository.removeItem(itemId);
   }
 }

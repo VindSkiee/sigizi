@@ -96,7 +96,8 @@ export default function KatalogPage() {
     setConfirmModal({
       isOpen: true,
       title: "Hapus Produk",
-      message: "Yakin ingin menghapus produk ini? Tindakan ini tidak dapat dibatalkan.",
+      message:
+        "Jika produk masih terkait pesanan, produk akan dinonaktifkan (sembunyi dari katalog). Jika tidak ada referensi, produk akan dihapus permanen.",
       variant: "danger",
       onConfirm: () => confirmDeleteProduct(productId),
     });
@@ -130,9 +131,9 @@ export default function KatalogPage() {
     setShowEditModal(true);
   };
 
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const filteredProducts = products
+    .filter((p) => !(p as any).deletedAt)
+    .filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   if (loading) {
     return (

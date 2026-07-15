@@ -187,7 +187,7 @@ model Supplier {
 // ----------------------------------------------------------------------------
 
 model SupplierItem {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   name         String
   unit         String
   basePrice    Float
@@ -195,10 +195,11 @@ model SupplierItem {
   minOrderQty  Float?
   orderStep    Float?
   minThreshold Float?   // Batas ambang stok rendah per item (null = gunakan default sistem)
-  isAvailable  Boolean  @default(true) // Status ketersediaan stok katalog
-  supplier     Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  isAvailable  Boolean   @default(true) // Status ketersediaan stok katalog
+  deletedAt    DateTime? // Soft delete: null = aktif, ada = dihapus (karena ada referensi pesanan)
+  supplier     Supplier  @relation(fields: [supplierId], references: [id], onDelete: Restrict)
   supplierId   String
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
   orderItems    OrderItem[]
   batchItems    BatchItem[]
   mouItems      MouItem[]

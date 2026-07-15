@@ -104,7 +104,7 @@ export class PrismaSupplierRepository implements SupplierRepository {
 
   async findItems(supplierId: string): Promise<SupplierItemData[]> {
     const items = await this.prisma.supplierItem.findMany({
-      where: { supplierId },
+      where: { supplierId, deletedAt: null } as any,
       orderBy: { createdAt: "desc" },
     });
     return items.map((item) => ({
@@ -116,6 +116,7 @@ export class PrismaSupplierRepository implements SupplierRepository {
       minOrderQty: item.minOrderQty,
       orderStep: item.orderStep,
       isAvailable: item.isAvailable,
+      deletedAt: item.deletedAt,
       supplierId: item.supplierId,
       createdAt: item.createdAt,
     }));
@@ -135,6 +136,7 @@ export class PrismaSupplierRepository implements SupplierRepository {
       minOrderQty: item.minOrderQty,
       orderStep: item.orderStep,
       isAvailable: item.isAvailable,
+      deletedAt: item.deletedAt,
       supplierId: item.supplierId,
       createdAt: item.createdAt,
     };
@@ -165,6 +167,7 @@ export class PrismaSupplierRepository implements SupplierRepository {
       minOrderQty: item.minOrderQty,
       orderStep: item.orderStep,
       isAvailable: item.isAvailable,
+      deletedAt: item.deletedAt,
       supplierId: item.supplierId,
       createdAt: item.createdAt,
     };
@@ -187,6 +190,7 @@ export class PrismaSupplierRepository implements SupplierRepository {
       minOrderQty: item.minOrderQty,
       orderStep: item.orderStep,
       isAvailable: item.isAvailable,
+      deletedAt: item.deletedAt,
       supplierId: item.supplierId,
       createdAt: item.createdAt,
     };
