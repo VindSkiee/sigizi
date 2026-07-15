@@ -64,9 +64,7 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       {/* Top Navigation */}
       <nav className="absolute top-0 left-0 right-0 px-4 py-4">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <span className="text-xl font-bold text-green-700">SIGIZI</span>
-          <div className="flex items-center gap-3">
+        <div className="max-w-5xl mx-auto flex justify-end items-center gap-3">
             <button
               onClick={() => router.push("/login")}
               className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
@@ -82,16 +80,18 @@ export default function Home() {
                 Gratis!
               </span>
             </button>
-          </div>
+          
         </div>
       </nav>
 
       <div className="container mx-auto px-4 py-16">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-6xl font-bold text-green-700 mb-4">
-            SIGIZI
-          </h1>
+          <img
+            src="/logo.png"
+            alt="SIGIZI"
+            className="h-16 md:h-24 mx-auto mb-4"
+          />
           <p className="text-xl md:text-2xl text-gray-600 mb-2">
             Platform Traceability Makanan MBG
           </p>
@@ -228,28 +228,91 @@ export default function Home() {
         </div>
 
         {/* Features */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          <div className="bg-white rounded-xl shadow-md p-6 text-center">
-            <div className="text-4xl mb-4">📊</div>
-            <h3 className="text-lg font-semibold mb-2">Informasi Gizi</h3>
-            <p className="text-gray-600 text-sm">
-              Lihat detail kalori, protein, lemak, dan karbohidrat setiap
-              makanan
-            </p>
+        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="group relative bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg hover:border-green-200 transition-all duration-200">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-11 h-11 bg-green-50 rounded-lg flex items-center justify-center group-hover:bg-green-100 transition-colors">
+                <svg
+                  className="w-5 h-5 text-green-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-800 mb-1">
+                  Informasi Gizi
+                </h3>
+                <p className="text-gray-500 text-sm leading-relaxed">
+                  Detail kalori, protein, lemak, dan karbohidrat setiap makanan
+                  secara transparan
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="bg-white rounded-xl shadow-md p-6 text-center">
-            <div className="text-4xl mb-4">⚠️</div>
-            <h3 className="text-lg font-semibold mb-2">Deteksi Alergen</h3>
-            <p className="text-gray-600 text-sm">
-              Kenali bahan yang dapat memicu alergi sebelum mengonsumsi
-            </p>
+
+          <div className="group relative bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg hover:border-orange-200 transition-all duration-200">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-11 h-11 bg-orange-50 rounded-lg flex items-center justify-center group-hover:bg-orange-100 transition-colors">
+                <svg
+                  className="w-5 h-5 text-orange-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-800 mb-1">
+                  Deteksi Alergen
+                </h3>
+                <p className="text-gray-500 text-sm leading-relaxed">
+                  Kenali bahan pemicu alergi sebelum mengonsumsi untuk keamanan
+                  pangan
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="bg-white rounded-xl shadow-md p-6 text-center">
-            <div className="text-4xl mb-4">📝</div>
-            <h3 className="text-lg font-semibold mb-2">Lapor Komplain</h3>
-            <p className="text-gray-600 text-sm">
-              Sampaikan keluhan dengan valid menggunakan kode Report Key
-            </p>
+
+          <div className="group relative bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg hover:border-blue-200 transition-all duration-200">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-11 h-11 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                <svg
+                  className="w-5 h-5 text-blue-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-800 mb-1">
+                  Lapor Komplain
+                </h3>
+                <p className="text-gray-500 text-sm leading-relaxed">
+                  Sampaikan keluhan dengan valid menggunakan kode Report Key
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
