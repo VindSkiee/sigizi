@@ -23,7 +23,7 @@ export function OrderActionButtons({
       <div className="flex flex-wrap gap-2 md:items-end">
         <button
           onClick={() => onAccept(order.id)}
-          className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 w-full md:w-auto justify-center"
+          className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 w-full md:w-auto justify-center"
         >
           <CheckCircle size={16} />
           Konfirmasi
@@ -52,7 +52,7 @@ export function OrderActionButtons({
         {isPaid ? (
           <button
             onClick={() => onMarkDelivered(order.id)}
-            className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 w-full md:w-auto justify-center"
+            className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 w-full md:w-auto justify-center"
           >
             <Truck size={16} />
             Kirim

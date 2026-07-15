@@ -1,5 +1,5 @@
-import { cn } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
 export interface StatsCardProps {
   title: string;
@@ -10,12 +10,19 @@ export interface StatsCardProps {
   className?: string;
 }
 
-export function StatsCard({ title, value, icon, trend, loading, className }: StatsCardProps) {
+export function StatsCard({
+  title,
+  value,
+  icon,
+  trend,
+  loading,
+  className,
+}: StatsCardProps) {
   return (
     <div
       className={cn(
-        'bg-white rounded-xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow',
-        className
+        "bg-white rounded-xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow",
+        className,
       )}
     >
       <div className="flex items-start justify-between">
@@ -32,19 +39,18 @@ export function StatsCard({ title, value, icon, trend, loading, className }: Sta
             <div className="flex items-center mt-2">
               <span
                 className={cn(
-                  'text-sm font-medium',
-                  trend.isPositive ? 'text-green-600' : 'text-red-600'
+                  "text-sm font-medium",
+                  trend.isPositive ? "text-green-600" : "text-red-600",
                 )}
               >
-                {trend.isPositive ? '+' : ''}{trend.value}%
+                {trend.isPositive ? "+" : ""}
+                {trend.value}%
               </span>
               <span className="text-xs text-gray-400 ml-1">vs bulan lalu</span>
             </div>
           )}
         </div>
-        <div className="p-3 bg-primary-50 rounded-lg text-primary-600">
-          {icon}
-        </div>
+        <div className="p-3 bg-green-50 rounded-lg text-green-600">{icon}</div>
       </div>
     </div>
   );

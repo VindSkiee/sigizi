@@ -209,7 +209,7 @@ export default function SupplierDashboardPage() {
             </div>
             <Link
               href="/supplier/pesanan"
-              className="text-sm text-primary-600 hover:text-primary-700 flex items-center gap-1"
+              className="text-sm text-green-600 hover:text-green-700 flex items-center gap-1"
             >
               Lihat Semua
               <ArrowRight className="w-4 h-4" />
@@ -296,7 +296,7 @@ export default function SupplierDashboardPage() {
             </div>
             <Link
               href="/supplier/katalog"
-              className="text-sm text-primary-600 hover:text-primary-700 flex items-center gap-1"
+              className="text-sm text-green-600 hover:text-green-700 flex items-center gap-1"
             >
               Kelola
               <ArrowRight className="w-4 h-4" />

@@ -16,7 +16,11 @@ const TAB_CONFIG: { key: FilterType; label: string }[] = [
   { key: "CANCELLED", label: "Batal" },
 ];
 
-export function OrderTabs({ activeFilter, orders, onFilterChange }: OrderTabsProps) {
+export function OrderTabs({
+  activeFilter,
+  orders,
+  onFilterChange,
+}: OrderTabsProps) {
   const getCounts = (filter: FilterType): number => {
     if (filter === "all") return orders.length;
     return orders.filter((o) => o.status === filter).length;
@@ -34,7 +38,7 @@ export function OrderTabs({ activeFilter, orders, onFilterChange }: OrderTabsPro
             onClick={() => onFilterChange(tab.key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 ${
               isActive
-                ? "bg-primary-600 text-white shadow-sm"
+                ? "bg-green-600 text-white shadow-sm"
                 : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
             }`}
           >
@@ -42,7 +46,7 @@ export function OrderTabs({ activeFilter, orders, onFilterChange }: OrderTabsPro
             <span
               className={`px-1.5 py-0.5 rounded-full text-xs ${
                 isActive
-                  ? "bg-primary-500 text-primary-100"
+                  ? "bg-green-500 text-green-100"
                   : "bg-gray-100 text-gray-500"
               }`}
             >

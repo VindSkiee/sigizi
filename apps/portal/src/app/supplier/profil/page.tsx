@@ -5,13 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getSupplierById, updateSupplierProfile } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import {
-  Building2,
-  ArrowLeft,
-  Save,
-  Navigation,
-  Loader2,
-} from "lucide-react";
+import { Building2, ArrowLeft, Save, Navigation, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 const NOMINATIM_HEADERS = { "User-Agent": "SIGIZI-App/1.0" };
@@ -71,9 +65,7 @@ function forwardGeocode(
 }
 
 function SkeletonLine({ className = "" }: { className?: string }) {
-  return (
-    <div className={`animate-pulse bg-gray-200 rounded ${className}`} />
-  );
+  return <div className={`animate-pulse bg-gray-200 rounded ${className}`} />;
 }
 
 export default function ProfilPage() {
@@ -180,9 +172,7 @@ export default function ProfilPage() {
       },
       () => {
         setIsDetecting(false);
-        setError(
-          "Gagal mendeteksi lokasi. Silakan isi alamat secara manual.",
-        );
+        setError("Gagal mendeteksi lokasi. Silakan isi alamat secara manual.");
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
@@ -302,8 +292,8 @@ export default function ProfilPage() {
 
       <div className="mb-8">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-            <Building2 className="w-5 h-5 text-primary-600" />
+          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+            <Building2 className="w-5 h-5 text-green-600" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
@@ -378,7 +368,7 @@ export default function ProfilPage() {
               type="button"
               onClick={handleDetectLocation}
               disabled={isDetecting}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 disabled:opacity-50 transition-colors"
             >
               {isDetecting ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -447,7 +437,7 @@ export default function ProfilPage() {
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Alamat lengkap (opsional)"
               rows={3}
-              className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 resize-none"
+              className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200 resize-none"
             />
           </div>
           {latitude != null && longitude != null && (
