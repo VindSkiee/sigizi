@@ -18,6 +18,16 @@ import { RejectModal } from "@/components/features/supplier/orders/RejectModal";
 
 const ITEMS_PER_PAGE = 5;
 
+function getSortPriority(order: OrderViewModel): number {
+  if (order.status === "PENDING") return 1;
+  if (order.status === "CONFIRMED" && order.paidAt) return 2;
+  if (order.status === "DELIVERED") return 3;
+  if (order.status === "CONFIRMED" && !order.paidAt) return 4;
+  if (order.status === "COMPLETED") return 5;
+  if (order.status === "CANCELLED") return 6;
+  return 7;
+}
+
 function formatProvince(raw: string): string {
   return raw
     .toLowerCase()
@@ -47,6 +57,7 @@ function mapOrderFromBackend(raw: Order): OrderViewModel {
     sppgLat: raw.sppg?.latitude ?? null,
     sppgLng: raw.sppg?.longitude ?? null,
     cancelledReason: raw.cancelledReason,
+    paidAt: raw.paidAt,
     items: raw.items.map((i) => ({
       id: i.id,
       name: i.item?.name || "Item",
@@ -120,6 +131,12 @@ export default function PesananPage() {
         (o) =>
           o.sppgName.toLowerCase().includes(query) ||
           o.items.some((item) => item.name.toLowerCase().includes(query)),
+      );
+    }
+    // Sort by priority only when viewing "all"
+    if (filter === "all") {
+      result = [...result].sort(
+        (a, b) => getSortPriority(a) - getSortPriority(b),
       );
     }
     return result;
@@ -322,7 +339,9 @@ export default function PesananPage() {
         title={confirmModal.title}
         message={confirmModal.message}
         variant={confirmModal.variant}
-        confirmLabel={confirmModal.variant === "success" ? "Ya, Konfirmasi" : "Ya, Hapus"}
+        confirmLabel={
+          confirmModal.variant === "success" ? "Ya, Konfirmasi" : "Ya, Hapus"
+        }
         onConfirm={confirmModal.onConfirm}
         onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
       />

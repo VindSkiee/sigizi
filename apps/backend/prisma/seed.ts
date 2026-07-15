@@ -469,7 +469,6 @@ async function main() {
       mouId: mou.id,
       paidAt: new Date("2026-07-14T10:00:00Z"),
       actualDeliveryDate: new Date("2026-07-14T08:00:00Z"),
-      paymentEvidenceUrl: "/uploads/evidence/bukti-bayar-o1.pdf",
       notes: "Pesanan bahan baku minggu ini via MoU",
       items: {
         create: [
@@ -573,7 +572,6 @@ async function main() {
       createdById: admin.id,
       paidAt: new Date("2026-07-14T14:00:00Z"),
       actualDeliveryDate: new Date("2026-07-14T11:00:00Z"),
-      paymentEvidenceUrl: "/uploads/evidence/bukti-bayar-o2.pdf",
       notes: "Ayam dari Subang, stok lokal langka",
       items: {
         create: [
@@ -652,7 +650,6 @@ async function main() {
       createdById: admin.id,
       paidAt: new Date("2026-07-14T16:00:00Z"),
       actualDeliveryDate: new Date("2026-07-14T14:00:00Z"),
-      paymentEvidenceUrl: "/uploads/evidence/bukti-bayar-o3.pdf",
       notes: "Beras + Telur untuk batch minggu ini",
       items: {
         create: [

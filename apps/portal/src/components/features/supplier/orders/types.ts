@@ -23,6 +23,7 @@ export interface Order {
   total: number;
   notes?: string;
   cancelledReason?: string;
+  paidAt?: string;
   sppgId: string;
   supplierId: string;
   createdAt: string;
@@ -62,6 +63,7 @@ export interface OrderViewModel {
   sppgLat: number | null;
   sppgLng: number | null;
   cancelledReason?: string;
+  paidAt?: string;
   items: {
     id: string;
     name: string;

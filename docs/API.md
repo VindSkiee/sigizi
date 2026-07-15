@@ -1059,7 +1059,6 @@ Authorization: Bearer <token>
         "actualDeliveryDate": null,
         "deliveryEvidence": null,
         "paidAt": null,
-        "paymentEvidenceUrl": null,
         "cancelledAt": null,
         "cancelledReason": null,
         "isLate": false,
@@ -1267,31 +1266,29 @@ Content-Type: application/json
   "status": "CONFIRMED",
   "reason": null,
   "deliveryEvidence": null,
-  "paymentEvidenceUrl": null,
   "notes": "Konfirmasi pesanan"
 }
 ```
 
 **Field Descriptions:**
 
-| Field                | Type   | Required    | Description                                         |
-| -------------------- | ------ | ----------- | --------------------------------------------------- |
-| `status`             | string | Ya          | Status baru (lihat tabel transisi)                  |
-| `reason`             | string | Kondisional | Wajib diisi jika status = CANCELLED                 |
-| `deliveryEvidence`   | string | Kondisional | URL bukti pengiriman (untuk status DELIVERED)       |
-| `paymentEvidenceUrl` | string | Kondisional | URL bukti pembayaran (wajib untuk status COMPLETED) |
-| `notes`              | string | Tidak       | Catatan tambahan                                    |
+| Field              | Type   | Required    | Description                                   |
+| ------------------ | ------ | ----------- | --------------------------------------------- |
+| `status`           | string | Ya          | Status baru (lihat tabel transisi)            |
+| `reason`           | string | Kondisional | Wajib diisi jika status = CANCELLED           |
+| `deliveryEvidence` | string | Kondisional | URL bukti pengiriman (untuk status DELIVERED) |
+| `notes`            | string | Tidak       | Catatan tambahan                              |
 
 **Status Transitions:**
 
-| Dari      | Ke        | Oleh                 | Syarat                           |
-| --------- | --------- | -------------------- | -------------------------------- |
-| PENDING   | CONFIRMED | SUPPLIER             | -                                |
-| PENDING   | CANCELLED | SPPG_ADMIN, SUPPLIER | `reason` wajib diisi             |
-| CONFIRMED | DELIVERED | SUPPLIER             | -                                |
-| CONFIRMED | CANCELLED | SPPG_ADMIN, SUPPLIER | `reason` wajib diisi             |
-| DELIVERED | COMPLETED | SPPG_ADMIN           | `paymentEvidenceUrl` wajib diisi |
-| DELIVERED | CANCELLED | SPPG_ADMIN           | `reason` wajib diisi             |
+| Dari      | Ke        | Oleh                 | Syarat               |
+| --------- | --------- | -------------------- | -------------------- |
+| PENDING   | CONFIRMED | SUPPLIER             | -                    |
+| PENDING   | CANCELLED | SPPG_ADMIN, SUPPLIER | `reason` wajib diisi |
+| CONFIRMED | DELIVERED | SUPPLIER             | -                    |
+| CONFIRMED | CANCELLED | SPPG_ADMIN, SUPPLIER | `reason` wajib diisi |
+| DELIVERED | COMPLETED | SPPG_ADMIN           | -                    |
+| DELIVERED | CANCELLED | SPPG_ADMIN           | `reason` wajib diisi |
 
 **Response (COMPLETED):**
 
@@ -1302,7 +1299,6 @@ Content-Type: application/json
     "id": "clx...",
     "status": "COMPLETED",
     "paidAt": "2026-07-15T10:00:00Z",
-    "paymentEvidenceUrl": "https://example.com/bukti-bayar.jpg",
     "updatedAt": "2026-07-15T10:00:00Z"
   }
 }
@@ -1350,6 +1346,45 @@ Content-Type: application/json
   "error": {
     "code": "BAD_REQUEST",
     "message": "Tidak dapat membatalkan order karena stok barang dengan ID clx... sudah terpakai (tersisa 15 dari 20 unit). Silakan hubungi administrator untuk proses retur secara manual."
+  }
+}
+```
+
+### Confirm Payment
+
+```
+PUT /api/orders/:id/payment
+Authorization: Bearer <token>
+```
+
+**Access:** SPPG_ADMIN only
+
+**Description:** Mengkonfirmasi pembayaran untuk order dengan status CONFIRMED. Field `paidAt` dan `paidById` akan terisi otomatis.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "clx...",
+    "status": "CONFIRMED",
+    "paidAt": "2026-07-15T10:00:00Z",
+    "paidById": "clx...",
+    "updatedAt": "2026-07-15T10:00:00Z"
+  }
+}
+```
+
+**Error Responses:**
+
+```json
+// Status bukan CONFIRMED
+{
+  "success": false,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Hanya order dengan status CONFIRMED yang dapat ditandai sebagai sudah dibayar. Status saat ini: \"DELIVERED\""
   }
 }
 ```

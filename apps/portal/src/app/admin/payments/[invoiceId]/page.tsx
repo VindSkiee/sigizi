@@ -5,7 +5,7 @@ import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { getOrderById, updateOrderStatus } from "@/lib/api";
+import { getOrderById, confirmOrderPayment } from "@/lib/api";
 import { PaymentDetailCard } from "@/components/features/admin/payments/PaymentDetailCard";
 import {
   Invoice,
@@ -23,7 +23,9 @@ export default function PaymentConfirmationPage() {
   const { token } = useAuth();
 
   const [invoice, setInvoice] = useState<Invoice | null>(null);
-  const [bankAccount, setBankAccount] = useState<SupplierBankAccount | null>(null);
+  const [bankAccount, setBankAccount] = useState<SupplierBankAccount | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -87,7 +89,7 @@ export default function PaymentConfirmationPage() {
 
     setSubmitting(true);
     try {
-      const response = await updateOrderStatus(token, orderId, "DELIVERED");
+      const response = await confirmOrderPayment(token, orderId);
       if (response.success) {
         setShowSuccess(true);
       }
@@ -114,7 +116,9 @@ export default function PaymentConfirmationPage() {
     return (
       <div className="w-full h-[calc(100vh-120px)] flex items-center justify-center">
         <div className="max-w-md w-full text-center">
-          <p className="text-gray-500 mb-4">{error || "Pesanan tidak ditemukan"}</p>
+          <p className="text-gray-500 mb-4">
+            {error || "Pesanan tidak ditemukan"}
+          </p>
           <Link
             href="/admin/suppliers"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
@@ -138,7 +142,8 @@ export default function PaymentConfirmationPage() {
             Pembayaran Dikonfirmasi!
           </h2>
           <p className="text-sm text-gray-500 mb-6">
-            Pesanan <span className="font-semibold">{invoice.invoiceNumber}</span> telah
+            Pesanan{" "}
+            <span className="font-semibold">{invoice.invoiceNumber}</span> telah
             ditandai sebagai sudah dikirim.
           </p>
           <Link

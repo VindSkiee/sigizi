@@ -256,7 +256,6 @@ export interface Order {
   deliveryEvidence?: string;
   // Payment tracking
   paidAt?: Date;
-  paymentEvidenceUrl?: string;
   paidById?: string;
   // Cancellation tracking
   cancelledAt?: Date;

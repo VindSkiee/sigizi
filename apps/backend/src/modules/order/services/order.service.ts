@@ -40,7 +40,7 @@ export class OrderService {
 
   private readonly TRANSITION_ROLES: Record<string, Role[]> = {
     [`${OS.PENDING}→${OS.CONFIRMED}`]: [Role.SUPPLIER],
-    [`${OS.CONFIRMED}→${OS.DELIVERED}`]: [Role.SPPG_ADMIN, Role.SUPPLIER],
+    [`${OS.CONFIRMED}→${OS.DELIVERED}`]: [Role.SUPPLIER],
     [`${OS.DELIVERED}→${OS.COMPLETED}`]: [Role.SPPG_ADMIN],
     [`${OS.PENDING}→${OS.CANCELLED}`]: [Role.SPPG_ADMIN, Role.SUPPLIER],
     [`${OS.CONFIRMED}→${OS.CANCELLED}`]: [Role.SPPG_ADMIN, Role.SUPPLIER],
@@ -382,12 +382,6 @@ export class OrderService {
       );
     }
 
-    if (newStatus === OS.COMPLETED && !dto.paymentEvidenceUrl) {
-      throw new BadRequestException(
-        "Bukti pembayaran wajib diunggah saat menyelesaikan order",
-      );
-    }
-
     if (newStatus === OS.CANCELLED && currentStatus === OS.COMPLETED) {
       await this.validateStockRollback(id);
     }
@@ -402,9 +396,7 @@ export class OrderService {
         updateData.actualDeliveryDate = new Date();
         updateData.deliveryEvidence = dto.deliveryEvidence;
       } else if (newStatus === OS.COMPLETED) {
-        updateData.paidAt = new Date();
-        updateData.paidById = currentUser.id;
-        updateData.paymentEvidenceUrl = dto.paymentEvidenceUrl;
+        // Payment already confirmed via confirmPayment endpoint
       } else if (newStatus === OS.CANCELLED) {
         updateData.cancelledAt = new Date();
         updateData.cancelledReason = dto.reason;
@@ -423,7 +415,7 @@ export class OrderService {
           toStatus: newStatus,
           changedById: currentUser.id,
           notes: dto.notes,
-          evidenceUrl: dto.deliveryEvidence || dto.paymentEvidenceUrl,
+          evidenceUrl: dto.deliveryEvidence,
         },
       });
 
@@ -453,6 +445,41 @@ export class OrderService {
       );
       this.eventEmitter.emit("order.cancelled", event);
     }
+
+    return updatedOrder;
+  }
+
+  async confirmPayment(orderId: string, userId: string) {
+    const order = await this.findOne(orderId);
+
+    if (order.status !== OS.CONFIRMED) {
+      throw new BadRequestException(
+        `Hanya order dengan status CONFIRMED yang dapat ditandai sebagai sudah dibayar. Status saat ini: "${order.status}"`,
+      );
+    }
+
+    const updatedOrder = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.order.update({
+        where: { id: orderId },
+        data: {
+          paidAt: new Date(),
+          paidById: userId,
+          updatedById: userId,
+        },
+      });
+
+      await tx.orderStatusHistory.create({
+        data: {
+          orderId: orderId,
+          fromStatus: OS.CONFIRMED,
+          toStatus: OS.CONFIRMED,
+          changedById: userId,
+          notes: "Pembayaran dikonfirmasi oleh SPPG",
+        },
+      });
+
+      return result;
+    });
 
     return updatedOrder;
   }

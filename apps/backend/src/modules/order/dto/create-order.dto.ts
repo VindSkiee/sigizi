@@ -78,13 +78,6 @@ export class UpdateOrderStatusDto {
   @IsString()
   deliveryEvidence?: string;
 
-  @ApiPropertyOptional({
-    description: "Payment evidence URL (required for COMPLETED)",
-  })
-  @IsOptional()
-  @IsString()
-  paymentEvidenceUrl?: string;
-
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

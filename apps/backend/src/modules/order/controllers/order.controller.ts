@@ -62,4 +62,13 @@ export class OrderController {
   ) {
     return this.orderService.updateStatus(id, dto, user);
   }
+
+  @Put(":id/payment")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SPPG_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Confirm payment for order (SPPG_ADMIN only)" })
+  confirmPayment(@Param("id") id: string, @CurrentUser() user: any) {
+    return this.orderService.confirmPayment(id, user.id);
+  }
 }

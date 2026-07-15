@@ -346,6 +346,15 @@ export async function updateOrderStatus(
   });
 }
 
+export async function confirmOrderPayment(token: string, orderId: string) {
+  return fetchApi(`/api/orders/${orderId}/payment`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
 // ============================================================================
 // Complaint API
 // ============================================================================
@@ -356,7 +365,7 @@ export async function getComplaints(
     status?: string;
     page?: number;
     limit?: number;
-  }
+  },
 ) {
   const params = new URLSearchParams();
   if (options?.batchId) params.append("batchId", options.batchId);
@@ -707,12 +716,19 @@ export async function getMarketPrices(
 // ============================================================================
 export async function getInventoryStocks(
   token: string,
-  params?: { itemId?: string; source?: string; minRemaining?: number; page?: number; limit?: number },
+  params?: {
+    itemId?: string;
+    source?: string;
+    minRemaining?: number;
+    page?: number;
+    limit?: number;
+  },
 ) {
   const searchParams = new URLSearchParams();
   if (params?.itemId) searchParams.append("itemId", params.itemId);
   if (params?.source) searchParams.append("source", params.source);
-  if (params?.minRemaining !== undefined) searchParams.append("minRemaining", String(params.minRemaining));
+  if (params?.minRemaining !== undefined)
+    searchParams.append("minRemaining", String(params.minRemaining));
   if (params?.page) searchParams.append("page", String(params.page));
   if (params?.limit) searchParams.append("limit", String(params.limit));
   const qs = searchParams.toString() ? `?${searchParams.toString()}` : "";

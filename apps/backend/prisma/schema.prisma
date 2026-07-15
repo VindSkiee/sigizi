@@ -326,7 +326,6 @@ model Order {
 
   // --- Payment tracking ---
   paidAt               DateTime?
-  paymentEvidenceUrl   String?
   paidById             String?
   paidBy               User?    @relation("OrderPaidBy", fields: [paidById], references: [id], onDelete: SetNull)
 

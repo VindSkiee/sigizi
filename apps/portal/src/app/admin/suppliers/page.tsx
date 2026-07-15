@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { OrderStatus } from "@sigizi/shared";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,14 +20,29 @@ import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
 
 const ITEMS_PER_PAGE = 5;
 
+function getSortPriority(order: SupplierOrder): number {
+  if (order.status === OrderStatus.CONFIRMED && !order.paidAt) return 1;
+  if (order.status === OrderStatus.DELIVERED) return 2;
+  if (order.status === OrderStatus.PENDING) return 3;
+  if (order.status === OrderStatus.CONFIRMED && order.paidAt) return 4;
+  if (order.status === OrderStatus.COMPLETED) return 5;
+  if (order.status === "CANCELLED") return 6;
+  return 7;
+}
+
 function mapApiOrderToSupplierOrder(raw: any): SupplierOrder {
   return {
     id: raw.id,
     status: raw.status,
     total: raw.total,
     notes: raw.notes,
-    supplier: raw.supplier ? { id: raw.supplier.id, name: raw.supplier.name } : { id: "", name: "-" },
-    sppg: raw.sppg ? { id: raw.sppg.id, name: raw.sppg.name } : { id: "", name: "-" },
+    paidAt: raw.paidAt,
+    supplier: raw.supplier
+      ? { id: raw.supplier.id, name: raw.supplier.name }
+      : { id: "", name: "-" },
+    sppg: raw.sppg
+      ? { id: raw.sppg.id, name: raw.sppg.name }
+      : { id: "", name: "-" },
     items: (raw.items || []).map((i: any) => ({
       id: i.id,
       name: i.item?.name || "-",
@@ -48,7 +63,7 @@ export default function SupplierIntegrationPage() {
   const [activeTab, setActiveTab] = useState<OrderFilterTab>("ALL");
   const [search, setSearch] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<SupplierOrder | null>(
-    null
+    null,
   );
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -63,7 +78,9 @@ export default function SupplierIntegrationPage() {
         if (response.success) {
           const data = response.data as any;
           const items = data?.items || data || [];
-          setOrders(Array.isArray(items) ? items.map(mapApiOrderToSupplierOrder) : []);
+          setOrders(
+            Array.isArray(items) ? items.map(mapApiOrderToSupplierOrder) : [],
+          );
         }
       } catch (err) {
         console.error("Failed to fetch orders:", err);
@@ -79,8 +96,7 @@ export default function SupplierIntegrationPage() {
     status === OrderStatus.COMPLETED || status === "CANCELLED";
 
   const stats: SupplierStats = {
-    pendingCount: orders.filter((o) => o.status === OrderStatus.PENDING)
-      .length,
+    pendingCount: orders.filter((o) => o.status === OrderStatus.PENDING).length,
     confirmedCount: orders.filter((o) => o.status === OrderStatus.CONFIRMED)
       .length,
     deliveredCount: orders.filter((o) => o.status === OrderStatus.DELIVERED)
@@ -92,7 +108,7 @@ export default function SupplierIntegrationPage() {
         (o) =>
           o.status === OrderStatus.PENDING ||
           o.status === OrderStatus.CONFIRMED ||
-          o.status === OrderStatus.DELIVERED
+          o.status === OrderStatus.DELIVERED,
       )
       .reduce((sum, o) => sum + o.total, 0),
   };
@@ -105,29 +121,40 @@ export default function SupplierIntegrationPage() {
     completed: stats.completedCount,
   };
 
-  const filteredOrders = orders.filter((order) => {
-    // Tab filter
-    let matchesTab = false;
-    switch (activeTab) {
-      case "ALL":
-        matchesTab = true;
-        break;
-      case "SELESAI":
-        // Group COMPLETED + CANCELLED
-        matchesTab = isCompletedOrCancelled(order.status);
-        break;
-      default:
-        matchesTab = order.status === activeTab;
+  const filteredOrders = useMemo(() => {
+    let result = orders.filter((order) => {
+      // Tab filter
+      let matchesTab = false;
+      switch (activeTab) {
+        case "ALL":
+          matchesTab = true;
+          break;
+        case "SELESAI":
+          // Group COMPLETED + CANCELLED
+          matchesTab = isCompletedOrCancelled(order.status);
+          break;
+        default:
+          matchesTab = order.status === activeTab;
+      }
+
+      // Search filter
+      const matchesSearch =
+        search === "" ||
+        order.id.toLowerCase().includes(search.toLowerCase()) ||
+        order.supplier?.name.toLowerCase().includes(search.toLowerCase());
+
+      return matchesTab && matchesSearch;
+    });
+
+    // Sort by priority only when viewing "ALL"
+    if (activeTab === "ALL") {
+      result = [...result].sort(
+        (a, b) => getSortPriority(a) - getSortPriority(b),
+      );
     }
 
-    // Search filter
-    const matchesSearch =
-      search === "" ||
-      order.id.toLowerCase().includes(search.toLowerCase()) ||
-      order.supplier?.name.toLowerCase().includes(search.toLowerCase());
-
-    return matchesTab && matchesSearch;
-  });
+    return result;
+  }, [orders, activeTab, search]);
 
   const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -145,9 +172,10 @@ export default function SupplierIntegrationPage() {
   };
 
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
-    // If transitioning from CONFIRMED to DELIVERED (Bayar), navigate to payment page
     const order = orders.find((o) => o.id === orderId);
-    if (order?.status === OrderStatus.CONFIRMED && newStatus === OrderStatus.DELIVERED) {
+
+    // CONFIRMED → "PAY": navigate to payment page
+    if (order?.status === OrderStatus.CONFIRMED && newStatus === "PAY") {
       router.push(`/admin/payments/${orderId}`);
       return;
     }
@@ -161,14 +189,14 @@ export default function SupplierIntegrationPage() {
           prev.map((o) =>
             o.id === orderId
               ? { ...o, status: newStatus as OrderStatus | "CANCELLED" }
-              : o
-          )
+              : o,
+          ),
         );
         if (selectedOrder?.id === orderId) {
           setSelectedOrder((prev) =>
             prev
               ? { ...prev, status: newStatus as OrderStatus | "CANCELLED" }
-              : null
+              : null,
           );
         }
       }
@@ -268,7 +296,9 @@ export default function SupplierIntegrationPage() {
       {filteredOrders.length > 0 && (
         <div className="mt-6 flex flex-col items-center gap-2">
           <p className="text-sm text-gray-500">
-            Menampilkan {startIndex + 1}-{Math.min(endIndex, filteredOrders.length)} dari {filteredOrders.length} pesanan
+            Menampilkan {startIndex + 1}-
+            {Math.min(endIndex, filteredOrders.length)} dari{" "}
+            {filteredOrders.length} pesanan
           </p>
           <Pagination
             currentPage={currentPage}

@@ -10,6 +10,7 @@ export interface SupplierOrder {
   total: number;
   notes?: string;
   estimatedArrival?: string;
+  paidAt?: string;
   supplier: {
     id: string;
     name: string;
@@ -43,7 +44,12 @@ export interface SupplierStats {
 
 export const ORDER_STATUS_CONFIG: Record<
   OrderStatusWithCancel,
-  { label: string; color: string; nextAction?: string; nextStatus?: OrderStatus }
+  {
+    label: string;
+    color: string;
+    nextAction?: string;
+    nextStatus?: OrderStatus;
+  }
 > = {
   [OrderStatus.PENDING]: {
     label: "Menunggu Konfirmasi",
@@ -55,7 +61,7 @@ export const ORDER_STATUS_CONFIG: Record<
     label: "Dikonfirmasi",
     color: "bg-blue-100 text-blue-800",
     nextAction: "Bayar",
-    nextStatus: OrderStatus.DELIVERED,
+    nextStatus: "PAY" as OrderStatus,
   },
   [OrderStatus.DELIVERED]: {
     label: "Dikirim",

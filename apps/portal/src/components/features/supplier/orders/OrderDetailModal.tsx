@@ -16,6 +16,16 @@ function formatDate(dateStr: string): string {
   });
 }
 
+function formatDateTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function formatCurrency(amount: number): string {
   return `Rp ${amount.toLocaleString("id-ID")}`;
 }
@@ -137,9 +147,18 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
               {order.status === "CONFIRMED" && (
                 <>
                   <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                  <p className="text-sm text-gray-700">
-                    Pesanan dikonfirmasi. Siap untuk dikirim.
-                  </p>
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      {order.paidAt
+                        ? "Pesanan sudah dibayar. Menunggu pengiriman."
+                        : "Pesanan dikonfirmasi. Menunggu pembayaran."}
+                    </p>
+                    {order.paidAt && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Dibayar: {formatDateTime(order.paidAt)}
+                      </p>
+                    )}
+                  </div>
                 </>
               )}
               {order.status === "DELIVERED" && (
