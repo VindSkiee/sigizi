@@ -2,49 +2,19 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "nextjs-toploader/app";
 import { Logo } from "@/components/features/auth/Logo";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { loginEmail, loginSso } from "@/lib/api";
+
+const isDev = process.env.NODE_ENV !== "production";
 
 interface FormErrors {
   email?: string;
   password?: string;
 }
 
-const isDev = process.env.NODE_ENV !== "production";
-
-// Mock users - fallback saat backend tidak tersedia (hanya dev)
-const mockUsers = isDev
-  ? [
-      {
-        email: "supplier@sumbermakmur.com",
-        password: "supplier123",
-        user: {
-          id: "sup-001",
-          email: "supplier@sumbermakmur.com",
-          name: "PT Sumber Makmur",
-          role: "SUPPLIER",
-          supplierId: "sup-9921",
-        },
-      },
-      {
-        email: "admin@sppg.go.id",
-        password: "admin123",
-        user: {
-          id: "admin-001",
-          email: "admin@sppg.go.id",
-          name: "Budi Santoso",
-          role: "SPPG_ADMIN",
-          sppgId: "sppg-001",
-        },
-      },
-    ]
-  : [];
-
 export function LoginForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -117,21 +87,7 @@ export function LoginForm() {
         setIsLoading(false);
         return;
       }
-    }
-
-    // Fallback ke mock login (dev only)
-    const mockUser = mockUsers.find(
-      (u) => u.email === email && u.password === password,
-    );
-
-    if (mockUser) {
-      const mockToken = "mock-token-" + Date.now();
-      localStorage.setItem("token", mockToken);
-      localStorage.setItem("user", JSON.stringify(mockUser.user));
-      window.location.href =
-        mockUser.user.role === "SUPPLIER" ? "/supplier" : "/admin";
-    } else {
-      setError("Email atau password salah. Silakan coba lagi.");
+      setError("Terjadi kesalahan. Silakan coba lagi.");
       setIsLoading(false);
     }
   }
@@ -140,13 +96,14 @@ export function LoginForm() {
     setIsSsoLoading(true);
     setError("");
     try {
-      const response = await loginSso("mock-code", "mock-state");
+      const response = await loginSso("init", "state");
       if (response.success) {
         const data = response.data as { redirectUrl: string };
         window.location.href = data.redirectUrl;
       }
     } catch (err: any) {
-      router.push("/auth/sso-redirect?state=mock-state");
+      setError("SSO tidak tersedia. Silakan login dengan email.");
+      setIsSsoLoading(false);
     }
   }
 

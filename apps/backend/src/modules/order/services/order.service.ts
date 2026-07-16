@@ -49,6 +49,7 @@ export class OrderService {
 
   async findAll(
     pagination: PaginationDto,
+    currentUser: { id: string; role: Role; sppgId?: string; supplierId?: string },
     sppgId?: string,
     supplierId?: string,
     status?: OrderStatus,
@@ -56,8 +57,28 @@ export class OrderService {
     const page = pagination.page ?? 1;
     const limit = pagination.limit ?? 20;
     const where: any = {};
-    if (sppgId) where.sppgId = sppgId;
-    if (supplierId) where.supplierId = supplierId;
+
+    // Role-based filtering: supplier hanya bisa lihat order sendiri, admin hanya bisa lihat order SPPG sendiri
+    if (currentUser.role === Role.SUPPLIER) {
+      if (!currentUser.supplierId) {
+        throw new BadRequestException(
+          "Akun Anda belum terhubung ke supplier. Silakan hubungi administrator.",
+        );
+      }
+      where.supplierId = currentUser.supplierId;
+    } else if (currentUser.role === Role.SPPG_ADMIN) {
+      if (!currentUser.sppgId) {
+        throw new BadRequestException(
+          "Akun Anda belum terhubung ke SPPG. Silakan hubungi administrator.",
+        );
+      }
+      where.sppgId = currentUser.sppgId;
+    } else {
+      // Fallback: apply explicit query params only if provided
+      if (sppgId) where.sppgId = sppgId;
+      if (supplierId) where.supplierId = supplierId;
+    }
+
     if (status) where.status = status;
 
     const now = new Date();

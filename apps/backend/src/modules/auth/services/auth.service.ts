@@ -54,8 +54,18 @@ export class AuthService {
   }
 
   async handleSsoCallback(dto: SsoCallbackDto): Promise<AuthResponse> {
-    const mockUser = await this.getOrCreateMockUser();
-    return this.buildAuthResponse(mockUser);
+    let user = await this.prisma.user.findFirst({
+      where: { role: "SPPG_ADMIN" },
+      include: { sppg: true, supplier: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException(
+        "Tidak ada admin SPPG di database. Jalankan seed terlebih dahulu.",
+      );
+    }
+
+    return this.buildAuthResponse(user);
   }
 
   async devLogin(role: string): Promise<AuthResponse> {
@@ -72,31 +82,17 @@ export class AuthService {
         where: { role: "SUPPLIER" },
         include: { sppg: true, supplier: true },
       });
-      if (!user) {
-        user = await this.prisma.user.create({
-          data: {
-            email: "supplier@sumberrejeki.go.id",
-            name: "UD. Sumber Rejeki",
-            role: "SUPPLIER",
-          },
-          include: { sppg: true, supplier: true },
-        });
-      }
     } else {
       user = await this.prisma.user.findFirst({
         where: { role: "SPPG_ADMIN" },
         include: { sppg: true, supplier: true },
       });
-      if (!user) {
-        user = await this.prisma.user.create({
-          data: {
-            email: "admin@sppg.go.id",
-            name: "Admin SPPG",
-            role: "SPPG_ADMIN",
-          },
-          include: { sppg: true, supplier: true },
-        });
-      }
+    }
+
+    if (!user) {
+      throw new UnauthorizedException(
+        `Tidak ada user dengan role ${validRole} di database. Jalankan seed terlebih dahulu.`,
+      );
     }
 
     return this.buildAuthResponse(user);
@@ -195,23 +191,5 @@ export class AuthService {
         supplier: stripNulls(user.supplier),
       },
     };
-  }
-
-  private async getOrCreateMockUser() {
-    let user = await this.prisma.user.findFirst({
-      where: { role: "SPPG_ADMIN" },
-      include: { sppg: true, supplier: true },
-    });
-    if (!user) {
-      user = await this.prisma.user.create({
-        data: {
-          email: "admin@sppg.go.id",
-          name: "Admin SPPG",
-          role: "SPPG_ADMIN",
-        },
-        include: { sppg: true, supplier: true },
-      });
-    }
-    return user;
   }
 }

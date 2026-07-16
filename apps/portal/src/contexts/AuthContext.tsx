@@ -58,42 +58,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const isDev = process.env.NODE_ENV !== "production";
-
-const mockUsers = isDev
-  ? [
-      {
-        email: "supplier@sumbermakmur.com",
-        password: "supplier123",
-        user: {
-          id: "sup-001",
-          email: "supplier@sumbermakmur.com",
-          name: "PT Sumber Makmur",
-          role: "SUPPLIER" as const,
-          supplierId: "sup-9921",
-        },
-      },
-      {
-        email: "admin@sppg.go.id",
-        password: "admin123",
-        user: {
-          id: "admin-001",
-          email: "admin@sppg.go.id",
-          name: "Budi Santoso",
-          role: "SPPG_ADMIN" as const,
-          sppgId: "sppg-001",
-          sppg: {
-            id: "sppg-001",
-            name: "SPPG Purwakarta",
-            province: "JAWA_BARAT",
-            regency: "PURWAKARTA",
-            district: "WANAYASA",
-          },
-        },
-      },
-    ]
-  : [];
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -122,33 +86,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user?.sppg?.latitude != null && user?.sppg?.longitude != null;
 
   const login = async (email: string, password: string) => {
-    try {
-      const response = await loginEmail(email, password);
-      if (response.success) {
-        const data = response.data as { token: string; user: User };
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        setToken(data.token);
-        setUser(data.user);
-        return;
-      }
-    } catch (err) {
-      console.log("Backend tidak tersedia, mencoba mock login...");
+    const response = await loginEmail(email, password);
+    if (response.success) {
+      const data = response.data as { token: string; user: User };
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      setToken(data.token);
+      setUser(data.user);
+      return;
     }
-
-    const mockUser = mockUsers.find(
-      (u) => u.email === email && u.password === password,
-    );
-
-    if (mockUser) {
-      const mockToken = "mock-token-" + Date.now();
-      localStorage.setItem("token", mockToken);
-      localStorage.setItem("user", JSON.stringify(mockUser.user));
-      setToken(mockToken);
-      setUser(mockUser.user);
-    } else {
-      throw new Error("Email atau password salah");
-    }
+    throw new Error("Email atau password salah");
   };
 
   const logout = () => {

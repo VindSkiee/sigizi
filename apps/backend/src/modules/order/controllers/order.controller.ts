@@ -26,11 +26,12 @@ export class OrderController {
   @ApiOperation({ summary: "List orders" })
   findAll(
     @Query() pagination: PaginationDto,
+    @CurrentUser() user: any,
     @Query("sppgId") sppgId?: string,
     @Query("supplierId") supplierId?: string,
     @Query("status") status?: OrderStatus,
   ) {
-    return this.orderService.findAll(pagination, sppgId, supplierId, status);
+    return this.orderService.findAll(pagination, user, sppgId, supplierId, status);
   }
 
   @Get(":id")

@@ -12,18 +12,10 @@ function SsoRedirectContent() {
   const [status, setStatus] = useState<"idle" | "processing" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const mockUser = {
-    name: "Budi Santoso",
-    email: "admin@sppg.go.id",
-    role: "SPPG_ADMIN",
-    nip: "198501012010011001",
-    institution: "SPPG Purwakarta",
-  };
-
   async function handleAuthorize() {
     setStatus("processing");
     try {
-      const response = await handleSsoCallback("mock-auth-code", state);
+      const response = await handleSsoCallback("auth-code", state);
       if (response.success) {
         const data = response.data as { token: string; user: any };
         localStorage.setItem("token", data.token);
@@ -89,33 +81,17 @@ function SsoRedirectContent() {
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                   <span className="text-blue-700 font-bold text-lg">
-                    {mockUser.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .slice(0, 2)}
+                    SS
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-800 truncate">
-                    {mockUser.name}
+                    SSO BGN User
                   </p>
                   <p className="text-sm text-gray-500 truncate">
-                    {mockUser.email}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    NIP: {mockUser.nip}
+                    Melalui Single Sign-On
                   </p>
                 </div>
-              </div>
-              <div className="mt-3 pt-3 border-t border-gray-200">
-                <p className="text-xs text-gray-500">
-                  <span className="font-medium">Instansi:</span>{" "}
-                  {mockUser.institution}
-                </p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  <span className="font-medium">Peran:</span> Admin SPPG
-                </p>
               </div>
             </div>
 
