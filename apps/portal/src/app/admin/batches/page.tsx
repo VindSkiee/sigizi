@@ -36,7 +36,6 @@ function mapApiBatchToManagement(apiBatch: any): BatchManagement {
     deliveryTimeStart: '04:00',
     deliveryTimeEnd: '06:30',
     menu: apiBatch.menu || '',
-    cycle: 'SIKLUS B',
     allergens: apiBatch.allergens || [],
     batchItems: (apiBatch.batchItems || []).map((item: any) => ({
       itemId: item.itemId,

@@ -26,7 +26,6 @@ export function BatchCreateModal({
   const [deliveryDate, setDeliveryDate] = useState(new Date().toISOString().split('T')[0]);
   const [deliveryTimeStart, setDeliveryTimeStart] = useState('04:00');
   const [deliveryTimeEnd, setDeliveryTimeEnd] = useState('06:30');
-  const [cycle, setCycle] = useState('SIKLUS B');
   const [menuName, setMenuName] = useState('');
   const [allergens, setAllergens] = useState<string[]>([]);
   const [customAllergen, setCustomAllergen] = useState('');
@@ -36,6 +35,7 @@ export function BatchCreateModal({
   const [inventoryLoading, setInventoryLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasEditedPorsi, setHasEditedPorsi] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Fetch inventory stock when modal opens
@@ -63,15 +63,23 @@ export function BatchCreateModal({
       setDeliveryDate(new Date().toISOString().split('T')[0]);
       setDeliveryTimeStart('04:00');
       setDeliveryTimeEnd('06:30');
-      setCycle('SIKLUS B');
       setMenuName('');
       setAllergens([]);
       setCustomAllergen('');
       setBatchItems([]);
       setShowDropdown(false);
       setError(null);
+      setHasEditedPorsi(false);
     }
   }, [isOpen]);
+
+  // Auto-sync totalPorsi from selected beneficiaries
+  useEffect(() => {
+    if (!hasEditedPorsi && selectedBeneficiaries.length > 0) {
+      const autoTotal = selectedBeneficiaries.reduce((sum, b) => sum + b.portions, 0);
+      setTotalPorsi(autoTotal);
+    }
+  }, [selectedBeneficiaries, hasEditedPorsi]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -171,7 +179,6 @@ export function BatchCreateModal({
         deliveryTimeStart,
         deliveryTimeEnd,
         menu: menuName.trim(),
-        cycle,
         allergens,
         batchItems,
         menus: [],
@@ -227,8 +234,13 @@ export function BatchCreateModal({
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
               {error}
-            </div>
-          )}
+              </div>
+            )}
+            {batchItems.length > 0 && (
+              <p className="text-xs text-gray-500 mt-1.5">
+                Qty adalah jumlah bahan dalam kilogram (kg) yang digunakan
+              </p>
+            )}
 
           {/* Target Distribusi */}
           <div ref={dropdownRef}>
@@ -313,7 +325,10 @@ export function BatchCreateModal({
                 min="1"
                 placeholder="Masukkan total porsi"
                 value={totalPorsi || ''}
-                onChange={(e) => setTotalPorsi(parseInt(e.target.value) || 0)}
+                onChange={(e) => {
+                  setHasEditedPorsi(true);
+                  setTotalPorsi(parseInt(e.target.value) || 0);
+                }}
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white relative z-0"
               />
             </div>
@@ -368,22 +383,6 @@ export function BatchCreateModal({
                 />
               </div>
             </div>
-          </div>
-
-          {/* Siklus */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Siklus Menu *
-            </label>
-            <select
-              value={cycle}
-              onChange={(e) => setCycle(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
-            >
-              <option value="SIKLUS A">SIKLUS A</option>
-              <option value="SIKLUS B">SIKLUS B</option>
-              <option value="SIKLUS C">SIKLUS C</option>
-            </select>
           </div>
 
           {/* Nama Menu */}
@@ -485,7 +484,7 @@ export function BatchCreateModal({
                         Stok
                       </th>
                       <th className="text-left text-xs font-medium text-gray-500 uppercase px-4 py-2 w-28">
-                        Qty *
+                        Qty (kg) *
                       </th>
                       <th className="w-10"></th>
                     </tr>
