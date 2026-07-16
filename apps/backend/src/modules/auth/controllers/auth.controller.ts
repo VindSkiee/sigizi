@@ -52,9 +52,20 @@ export class AuthController {
     return req.user;
   }
 
+  @Get("dev-users")
+  @ApiOperation({
+    summary: "Get list of users for dev login (development only)",
+  })
+  async getDevUsers(@Query("role") role?: string) {
+    return this.authService.getDevUsers(role || "SPPG_ADMIN");
+  }
+
   @Get("dev-login")
-  @ApiOperation({ summary: "Dev-only quick login (not for production)" })
-  async devLogin(@Query("role") role?: string) {
-    return this.authService.devLogin(role || "SPPG_ADMIN");
+  @ApiOperation({ summary: "Dev-only quick login (development only)" })
+  async devLogin(
+    @Query("role") role?: string,
+    @Query("userId") userId?: string,
+  ) {
+    return this.authService.devLogin(role || "SPPG_ADMIN", userId);
   }
 }

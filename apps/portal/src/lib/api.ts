@@ -90,8 +90,14 @@ export async function handleSsoCallback(code: string, state: string) {
   );
 }
 
-export async function devLogin(role: string) {
-  return fetchApi(`/api/auth/dev-login?role=${encodeURIComponent(role)}`);
+export async function getDevUsers(role: string) {
+  return fetchApi(`/api/auth/dev-users?role=${encodeURIComponent(role)}`);
+}
+
+export async function devLogin(role: string, userId?: string) {
+  const params = new URLSearchParams({ role });
+  if (userId) params.append("userId", userId);
+  return fetchApi(`/api/auth/dev-login?${params.toString()}`);
 }
 
 export async function getCurrentUser(token: string) {

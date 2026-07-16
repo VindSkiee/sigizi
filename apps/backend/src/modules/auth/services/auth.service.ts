@@ -68,30 +68,54 @@ export class AuthService {
     return this.buildAuthResponse(user);
   }
 
-  async devLogin(role: string): Promise<AuthResponse> {
-    if (process.env.NODE_ENV === "production") {
-      throw new ForbiddenException("Dev login tidak tersedia di production");
+  async getDevUsers(role: string): Promise<any[]> {
+    if (process.env.NODE_ENV !== "development") {
+      throw new ForbiddenException("Dev login hanya tersedia di development");
+    }
+
+    const validRole =
+      role === "SPPG_ADMIN" || role === "SUPPLIER" ? role : "SPPG_ADMIN";
+
+    return this.prisma.user.findMany({
+      where: { role: validRole },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        sppg: { select: { id: true, name: true } },
+        supplier: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
+  async devLogin(role: string, userId?: string): Promise<AuthResponse> {
+    if (process.env.NODE_ENV !== "development") {
+      throw new ForbiddenException("Dev login hanya tersedia di development");
     }
 
     const validRole =
       role === "SPPG_ADMIN" || role === "SUPPLIER" ? role : "SPPG_ADMIN";
 
     let user;
-    if (validRole === "SUPPLIER") {
+    if (userId) {
       user = await this.prisma.user.findFirst({
-        where: { role: "SUPPLIER" },
+        where: { id: userId, role: validRole },
         include: { sppg: true, supplier: true },
       });
     } else {
       user = await this.prisma.user.findFirst({
-        where: { role: "SPPG_ADMIN" },
+        where: { role: validRole },
         include: { sppg: true, supplier: true },
       });
     }
 
     if (!user) {
       throw new UnauthorizedException(
-        `Tidak ada user dengan role ${validRole} di database. Jalankan seed terlebih dahulu.`,
+        userId
+          ? `User dengan role ${validRole} tidak ditemukan`
+          : `Tidak ada user dengan role ${validRole} di database. Jalankan seed terlebih dahulu.`,
       );
     }
 
