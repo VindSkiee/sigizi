@@ -306,10 +306,10 @@ export default function SupplierIntegrationPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">
-          Manajemen Supplier & Bahan Baku
+          Daftar Pesanan Bahan Baku
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          Pantau pesanan, validasi Quality Control (QC), dan kelola tagihan
+          Pantau pesanan dan kelola tagihan
           supplier di satu tempat.
         </p>
       </div>

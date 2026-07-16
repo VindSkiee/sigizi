@@ -13,7 +13,15 @@ export function SupplierOrderRow({
   onViewDetail,
   onUpdateStatus,
 }: SupplierOrderRowProps) {
-  const statusConfig = ORDER_STATUS_CONFIG[order.status];
+  // Cek environment (muncul di development dan production)
+  const showEstimasiTiba =
+    process.env.NODE_ENV === "development" ||
+    process.env.NODE_ENV === "production";
+
+  const statusConfig = ORDER_STATUS_CONFIG[order.status] || {
+    label: order.status || "Unknown",
+    color: "bg-gray-100 text-gray-800",
+  };
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -37,19 +45,19 @@ export function SupplierOrderRow({
 
   return (
     <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-      {/* ID Pesanan */}
+      {/* 1. Tanggal Pesanan */}
       <td className="px-4 py-4">
         <div>
           <p className="text-sm font-semibold text-gray-900">
-            #PO-{order.id.slice(-4).toUpperCase()}
+            {formatDate(order.createdAt)}
           </p>
           <p className="text-xs text-gray-500">
-            {formatDate(order.createdAt)}, {formatTime(order.createdAt)}
+            {formatTime(order.createdAt)}
           </p>
         </div>
       </td>
 
-      {/* Supplier */}
+      {/* 2. Supplier */}
       <td className="px-4 py-4">
         <div>
           <p className="text-sm font-medium text-gray-900">
@@ -70,7 +78,7 @@ export function SupplierOrderRow({
         </div>
       </td>
 
-      {/* Detail Barang */}
+      {/* 3. Detail Barang */}
       <td className="px-4 py-4">
         <div className="text-sm text-gray-700">
           {displayItems.map((item, idx) => (
@@ -98,27 +106,29 @@ export function SupplierOrderRow({
         </div>
       </td>
 
-      {/* Estimasi Tiba */}
-      <td className="px-4 py-4">
-        <div>
-          <p className="text-sm text-gray-700">
-            {order.estimatedArrival
-              ? new Date(order.estimatedArrival).toLocaleDateString("id-ID", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                }) +
-                ", " +
-                new Date(order.estimatedArrival).toLocaleTimeString("id-ID", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : "-"}
-          </p>
-        </div>
-      </td>
+      {/* 4. Estimasi Tiba (Hanya muncul di Development dan Production) */}
+      {showEstimasiTiba && (
+        <td className="px-4 py-4">
+          <div>
+            <p className="text-sm text-gray-700">
+              {order.estimatedArrival
+                ? new Date(order.estimatedArrival).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  }) +
+                  ", " +
+                  new Date(order.estimatedArrival).toLocaleTimeString("id-ID", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "-"}
+            </p>
+          </div>
+        </td>
+      )}
 
-      {/* Status */}
+      {/* 5. Status */}
       <td className="px-4 py-4">
         <span
           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}
@@ -127,7 +137,7 @@ export function SupplierOrderRow({
         </span>
       </td>
 
-      {/* Aksi */}
+      {/* 6. Aksi */}
       <td className="px-4 py-4">
         <div className="flex items-center gap-4">
           <button
@@ -155,7 +165,8 @@ export function SupplierOrderRow({
             </svg>
             Detail
           </button>
-          {statusConfig.nextAction &&
+          
+          {statusConfig?.nextAction &&
             order.status !== "PENDING" &&
             !(order.status === "CONFIRMED" && order.paidAt) && (
               <button

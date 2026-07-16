@@ -67,6 +67,11 @@ export default function SupplierDashboardPage() {
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
 
+  // Variabel untuk mengecek environment (hanya Dev dan Prod)
+  const showMouCard =
+    process.env.NODE_ENV === "development" ||
+    process.env.NODE_ENV === "production";
+
   const fetchRecentOrders = useCallback(async () => {
     if (!token) return;
     try {
@@ -166,8 +171,9 @@ export default function SupplierDashboardPage() {
       </div>
 
       {/* Stats Cards */}
+      {/* Grid disesuaikan dengan kondisi showMouCard (4 kolom jika true, 3 kolom jika false) */}
       <div
-        className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${process.env.NODE_ENV !== "development" ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}
+        className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${showMouCard ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}
       >
         <StatsCard
           title="Total Produk"
@@ -187,7 +193,9 @@ export default function SupplierDashboardPage() {
           icon={<ClipboardList className="w-6 h-6" />}
           loading={loadingOrders}
         />
-        {process.env.NODE_ENV !== "development" && (
+        
+        {/* Render Card MoU Aktif jika environment valid */}
+        {showMouCard && (
           <StatsCard
             title="MoU Aktif"
             value={3}

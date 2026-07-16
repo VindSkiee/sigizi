@@ -354,7 +354,7 @@ export default function MarketPage() {
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Analitik Pasar</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Pasar Bahan Baku</h1>
         <p className="text-sm text-gray-500 mt-1">
           Pantau harga bahan baku pasar dari supplier di seluruh region.
         </p>
