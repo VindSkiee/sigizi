@@ -11,6 +11,7 @@ import {
 } from "@/lib/api";
 import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
 import { AdminStatsCard, AdminStatsGrid } from "@/components/ui/AdminStatsCard";
+import { BatchStatusBadge } from "@/components/features/batch/BatchStatusBadge";
 import "@aejkatappaja/phantom-ui";
 
 const getRatingLabel = (rating: number): string => {
@@ -332,17 +333,7 @@ export default function AdminDashboard() {
                     </td>
                     <td className="py-3 text-sm text-gray-600">{batch.date}</td>
                     <td className="py-3">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          batch.status === "ACTIVE"
-                            ? "bg-green-100 text-green-700"
-                            : batch.status === "COMPLETED"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        {batch.status}
-                      </span>
+                      <BatchStatusBadge status={batch.status as any} />
                     </td>
                     <td className="py-3 text-sm font-medium text-gray-900 text-right">
                       Rp {batch.total.toLocaleString("id-ID")}
@@ -358,7 +349,7 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
           <div className="p-5 border-b border-gray-100">
             <h2 className="text-lg font-semibold text-gray-900">
-              Sekolah Sekitar (Radius 5km)
+              Penerima Manfaat (Radius 5km)
             </h2>
           </div>
           <div className="p-5 space-y-4">
@@ -375,22 +366,6 @@ export default function AdminDashboard() {
                     {school.name}
                   </p>
                   <p className="text-xs text-gray-500">{school.distance}</p>
-                </div>
-                <div className="text-right">
-                  {school.hasVendor ? (
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        CV. Dapur Sehat
-                      </p>
-                      <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                        Sudah Ada Vendor
-                      </span>
-                    </div>
-                  ) : (
-                    <button className="text-sm font-medium text-[#1E40AF] hover:text-blue-800">
-                      Pilih sekolah
-                    </button>
-                  )}
                 </div>
               </div>
             ))}

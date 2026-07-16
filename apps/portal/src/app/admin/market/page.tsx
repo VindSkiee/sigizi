@@ -24,7 +24,7 @@ import {
   removeDraftItem,
 } from "@/lib/draft";
 import { getMarketState, saveMarketState } from "@/lib/market-persist";
-import { getMarketPrices } from "@/lib/api";
+import { getMarketPrices, getSupplierItems } from "@/lib/api";
 
 const ITEMS_PER_PAGE = 9;
 
@@ -145,26 +145,55 @@ export default function MarketPage() {
 
         if (response.success) {
           const data = response.data as any;
-          const mapped = (data.suppliers || []).map((s: any) => ({
-            id: s.id,
-            itemId: s.itemId,
-            supplierId: s.id,
-            supplierName: s.name ?? "-",
-            itemName: s.itemName ?? undefined,
-            unit: s.unit ?? undefined,
-            price: s.price,
-            isAnomaly: s.isAnomaly,
-            distance: s.distanceKm,
-            description: s.description ?? undefined,
-            minOrderQty: s.minOrderQty ?? undefined,
-            orderStep: s.orderStep ?? undefined,
-            address: s.address ?? undefined,
-            province: s.province ?? undefined,
-            regency: s.regency ?? undefined,
-            district: s.district ?? undefined,
-            latitude: s.latitude ?? undefined,
-            longitude: s.longitude ?? undefined,
-          }));
+          const rawSuppliers = (data.suppliers || []) as any[];
+
+          // Fetch supplier items for each unique supplier to get itemId, unit, etc.
+          const uniqueSupplierIds = [...new Set(rawSuppliers.map((s) => s.id))];
+          const supplierItemsMap = new Map<string, any[]>();
+
+          await Promise.allSettled(
+            uniqueSupplierIds.map(async (sid) => {
+              try {
+                const res = await getSupplierItems(token!, sid);
+                if (res.success) {
+                  const itemsData = res.data as any;
+                  supplierItemsMap.set(sid, itemsData?.items || itemsData || []);
+                }
+              } catch {
+                // ignore
+              }
+            }),
+          );
+
+          const mapped = rawSuppliers.map((s: any) => {
+            const supplierItems = supplierItemsMap.get(s.id) || [];
+            // Find the matching item by searching the item name (case-insensitive contains)
+            const searchedName = filter.item.toLowerCase();
+            const matchedItem = supplierItems.find(
+              (it: any) => it.name?.toLowerCase().includes(searchedName),
+            );
+
+            return {
+              id: s.id,
+              itemId: matchedItem?.id || "",
+              supplierId: s.id,
+              supplierName: s.name ?? "-",
+              itemName: matchedItem?.name ?? filter.item,
+              unit: matchedItem?.unit ?? "-",
+              price: s.price,
+              isAnomaly: s.isAnomaly,
+              distance: s.distanceKm,
+              description: matchedItem?.description ?? undefined,
+              minOrderQty: matchedItem?.minOrderQty ?? 1,
+              orderStep: matchedItem?.orderStep ?? 1,
+              address: s.address ?? undefined,
+              province: s.province ?? undefined,
+              regency: s.regency ?? undefined,
+              district: s.district ?? undefined,
+              latitude: s.latitude ?? undefined,
+              longitude: s.longitude ?? undefined,
+            };
+          });
 
           setItems(mapped);
           setRawStats(data.statistics?.raw || null);

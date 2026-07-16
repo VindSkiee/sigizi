@@ -1,9 +1,11 @@
 export type InstitutionType =
   | 'SEKOLAH'
-  | 'PONDOK'
-  | 'PANTI'
-  | 'Pesantren'
-  | 'Lembaga Kesejahteraan Sosial';
+  | 'PANTI_ASUHAN'
+  | 'PESANTREN'
+  | 'RUMAH_SAKIT'
+  | 'POSYANDU'
+  | 'PUSKESMAS'
+  | 'LAINNYA';
 
 export interface Beneficiary {
   id: string;
