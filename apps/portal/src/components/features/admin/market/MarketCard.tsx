@@ -9,6 +9,7 @@ import {
   Navigation,
   Package,
   ShoppingCart,
+  Store,
 } from "lucide-react";
 
 interface MarketCardProps {
@@ -52,6 +53,12 @@ export function MarketCard({
           <h3 className="text-sm font-semibold text-gray-900 truncate">
             {item.supplierName}
           </h3>
+          {item.isMarketSeller && item.marketName && (
+            <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full mt-1">
+              <Store className="w-3 h-3" />
+              {item.marketName}
+            </span>
+          )}
           {item.mou && (
             <span className="inline-flex items-center gap-1 text-xs text-primary-600 mt-0.5">
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">

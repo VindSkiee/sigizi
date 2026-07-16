@@ -25,6 +25,11 @@ export class MarketLocationFilterDto {
   @IsString()
   district?: string;
 
+  @ApiPropertyOptional({ example: "Pasar Cibeunying" })
+  @IsOptional()
+  @IsString()
+  marketName?: string;
+
   @ApiPropertyOptional({ example: -6.5398 })
   @ValidateIf((dto: MarketLocationFilterDto) => dto.longitude !== undefined)
   @Type(() => Number)

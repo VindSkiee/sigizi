@@ -79,6 +79,10 @@ export function useMarketData(): UseMarketDataReturn {
             filter.locationMode === "region" && filter.district
               ? filter.district
               : undefined,
+          marketName:
+            filter.locationMode === "region" && filter.marketName
+              ? filter.marketName
+              : undefined,
           latitude:
             filter.locationMode === "gps"
               ? (user?.sppg?.latitude ?? undefined)
@@ -147,6 +151,8 @@ export function useMarketData(): UseMarketDataReturn {
             district: s.district ?? undefined,
             latitude: s.latitude ?? undefined,
             longitude: s.longitude ?? undefined,
+            isMarketSeller: s.isMarketSeller ?? false,
+            marketName: s.marketName ?? undefined,
           };
         });
 

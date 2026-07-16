@@ -48,8 +48,10 @@ export default function AdminLayout({
   return (
     <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar />
-      <main className="flex-1 ml-64 p-8">
-        <PageErrorBoundary pageName="Dashboard Admin">{children}</PageErrorBoundary>
+      <main className="flex-1 ml-64 p-8 overflow-x-hidden">
+        <PageErrorBoundary pageName="Dashboard Admin">
+          {children}
+        </PageErrorBoundary>
       </main>
     </div>
   );

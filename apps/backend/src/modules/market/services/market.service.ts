@@ -54,6 +54,8 @@ interface SupplierItemWithSupplier {
     district: string | null;
     latitude: number | null;
     longitude: number | null;
+    isMarketSeller: boolean;
+    marketName: string | null;
   };
 }
 
@@ -132,6 +134,70 @@ export class MarketService {
       iqrBounds: bounds,
       suppliers,
     };
+  }
+
+  async getDistinctMarkets(province: string, regency: string, item?: string) {
+    const where: any = {
+      isMarketSeller: true,
+      province: { equals: normalizeRegion(province), mode: "insensitive" },
+      regency: { equals: normalizeRegion(regency), mode: "insensitive" },
+      marketName: { not: null },
+    };
+
+    if (item) {
+      where.items = {
+        some: {
+          name: { contains: item, mode: "insensitive" },
+        },
+      };
+    }
+
+    const suppliers = await this.prisma.supplier.findMany({
+      where,
+      select: { marketName: true },
+      orderBy: { marketName: "asc" },
+    });
+
+    const marketCounts = new Map<string, number>();
+    for (const s of suppliers) {
+      if (s.marketName) {
+        marketCounts.set(
+          s.marketName,
+          (marketCounts.get(s.marketName) || 0) + 1,
+        );
+      }
+    }
+
+    return {
+      markets: Array.from(marketCounts.entries())
+        .map(([name, supplierCount]) => ({ name, supplierCount }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    };
+  }
+
+  async getSupplierRegions() {
+    const suppliers = await this.prisma.supplier.findMany({
+      select: { province: true, regency: true },
+      distinct: ["province", "regency"],
+      orderBy: [{ province: "asc" }, { regency: "asc" }],
+    });
+
+    const provinceMap = new Map<string, Set<string>>();
+    for (const s of suppliers) {
+      if (!provinceMap.has(s.province)) {
+        provinceMap.set(s.province, new Set());
+      }
+      provinceMap.get(s.province)!.add(s.regency);
+    }
+
+    const provinces = Array.from(provinceMap.entries()).map(
+      ([province, regencies]) => ({
+        province,
+        regencies: Array.from(regencies).sort(),
+      }),
+    );
+
+    return { provinces };
   }
 
   async getAnomalies(filter: MarketLocationFilterDto = {}) {
@@ -382,15 +448,31 @@ export class MarketService {
       where.name = { contains: item, mode: "insensitive" };
     }
 
+    const supplierFilter: Record<string, any> = {};
+
     if (filter.province) {
-      where.supplier = {
-        is: {
-          province: {
-            equals: normalizeRegion(filter.province),
-            mode: "insensitive",
-          },
-        },
+      supplierFilter.province = {
+        equals: normalizeRegion(filter.province),
+        mode: "insensitive",
       };
+    }
+
+    if (filter.regency) {
+      supplierFilter.regency = {
+        equals: normalizeRegion(filter.regency),
+        mode: "insensitive",
+      };
+    }
+
+    if (filter.marketName) {
+      supplierFilter.marketName = {
+        equals: filter.marketName,
+        mode: "insensitive",
+      };
+    }
+
+    if (Object.keys(supplierFilter).length > 0) {
+      where.supplier = { is: supplierFilter };
     }
 
     return this.prisma.supplierItem.findMany({
@@ -680,6 +762,8 @@ export class MarketService {
         latitude: item.supplier.latitude ?? undefined,
         longitude: item.supplier.longitude ?? undefined,
         distanceKm,
+        isMarketSeller: item.supplier.isMarketSeller,
+        marketName: item.supplier.marketName ?? undefined,
       };
     });
   }

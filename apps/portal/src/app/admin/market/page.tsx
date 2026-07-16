@@ -7,11 +7,13 @@ import {
   MarketFilter,
   MarketSupplierItem,
   MarketSortOption,
+  HETReference,
 } from "@/components/features/admin/market/types";
 import { MarketFilterBar } from "@/components/features/admin/market/MarketFilterBar";
 import { MarketStatsBar } from "@/components/features/admin/market/MarketStatsBar";
 import { MarketSortFilter } from "@/components/features/admin/market/MarketSortFilter";
 import { MarketCardGrid } from "@/components/features/admin/market/MarketCardGrid";
+import { HETReferenceList } from "@/components/features/admin/market/HETReferenceList";
 import { DraftOrderModal } from "@/components/features/admin/market/DraftOrderModal";
 import { OrderQuantityModal } from "@/components/features/admin/market/OrderQuantityModal";
 import { RadiusWarningModal } from "@/components/features/admin/market/RadiusWarningModal";
@@ -27,6 +29,11 @@ import {
 import { saveMarketState } from "@/lib/market-persist";
 import { useMarketData } from "@/hooks/useMarketData";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  getHETReferences,
+  addHETReference,
+  removeHETReference,
+} from "@/lib/het-reference";
 
 const ITEMS_PER_PAGE = 9;
 
@@ -62,9 +69,11 @@ export default function MarketPage() {
   } | null>(null);
   const [orderModalItem, setOrderModalItem] =
     useState<MarketSupplierItem | null>(null);
+  const [hetReferences, setHetReferences] = useState<HETReference[]>([]);
 
   useEffect(() => {
     setDraftItems(getDraftItems());
+    setHetReferences(getHETReferences());
   }, []);
 
   const persistMarketState = useCallback(
@@ -220,8 +229,36 @@ export default function MarketPage() {
     [orderModalItem],
   );
 
+  const handleUseAsReference = useCallback(
+    (dataSource: "clean" | "raw") => {
+      const stats = dataSource === "clean" ? cleanStats : rawStats;
+      if (!stats || !lastFilter) return;
+
+      const ref: Omit<HETReference, "id" | "createdAt"> = {
+        item: searchedItem,
+        location: {
+          regency: lastFilter.regency,
+          district: lastFilter.district || undefined,
+          market: lastFilter.marketName || undefined,
+        },
+        dataSource,
+        maxPrice: stats.max,
+        medianPrice: stats.median,
+      };
+
+      const updated = addHETReference(ref);
+      setHetReferences(updated);
+    },
+    [cleanStats, rawStats, lastFilter, searchedItem],
+  );
+
+  const handleRemoveReference = useCallback((id: string) => {
+    const updated = removeHETReference(id);
+    setHetReferences(updated);
+  }, []);
+
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto overflow-x-hidden">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Pasar Bahan Baku</h1>
         <p className="text-sm text-gray-500 mt-1">
@@ -263,6 +300,7 @@ export default function MarketPage() {
             rawStats={rawStats}
             cleanStats={cleanStats}
             item={searchedItem}
+            onUseAsReference={handleUseAsReference}
           />
 
           {isRefetching && (
@@ -296,6 +334,11 @@ export default function MarketPage() {
             value={sortOption}
             onChange={setSortOption}
             hasDistanceData={items.some((item) => item.distance != null)}
+          />
+
+          <HETReferenceList
+            references={hetReferences}
+            onRemove={handleRemoveReference}
           />
 
           <MarketCardGrid

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { Search, MapPin, Navigation, AlertTriangle } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Search, MapPin, Navigation, AlertTriangle, Store } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   MarketFilter,
@@ -9,7 +9,8 @@ import {
   POPULAR_ITEMS,
   DEFAULT_FILTER,
 } from "./types";
-import { REGIONS } from "./regions";
+import { getSupplierRegions, getDistinctMarkets } from "@/lib/api";
+import { denormalizeRegion } from "@sigizi/shared";
 
 interface MarketFilterBarProps {
   onSearch: (filter: MarketFilter) => void;
@@ -19,15 +20,30 @@ interface MarketFilterBarProps {
 
 const RADIUS_PRESETS = [5, 10, 25, 50];
 
+interface RegionData {
+  province: string;
+  regencies: string[];
+}
+
+interface MarketData {
+  name: string;
+  supplierCount: number;
+}
+
 export function MarketFilterBar({
   onSearch,
   isLoading,
   initialFilter,
 }: MarketFilterBarProps) {
-  const { user, hasLocation } = useAuth();
+  const { user, token, hasLocation } = useAuth();
   const [filter, setFilter] = useState<MarketFilter>(
     initialFilter ?? DEFAULT_FILTER,
   );
+
+  const [regions, setRegions] = useState<RegionData[]>([]);
+  const [markets, setMarkets] = useState<MarketData[]>([]);
+  const [loadingRegions, setLoadingRegions] = useState(false);
+  const [loadingMarkets, setLoadingMarkets] = useState(false);
 
   useEffect(() => {
     if (initialFilter) {
@@ -35,66 +51,105 @@ export function MarketFilterBar({
     }
   }, [initialFilter]);
 
-  const provinces = useMemo(() => REGIONS.map((r) => r.name), []);
+  useEffect(() => {
+    if (!token) return;
+    setLoadingRegions(true);
+    getSupplierRegions(token)
+      .then((res) => {
+        if (res.success) {
+          const data = res.data as any;
+          setRegions(data?.provinces || []);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingRegions(false));
+  }, [token]);
 
-  const regencies = useMemo(() => {
-    const province = REGIONS.find((r) => r.name === filter.province);
-    return province ? province.regencies.map((r) => r.name) : [];
-  }, [filter.province]);
+  useEffect(() => {
+    if (!token || !filter.province || !filter.regency) {
+      setMarkets([]);
+      return;
+    }
+    setLoadingMarkets(true);
+    getDistinctMarkets(
+      token,
+      filter.province,
+      filter.regency,
+      filter.item || undefined,
+    )
+      .then((res) => {
+        if (res.success) {
+          const data = res.data as any;
+          setMarkets(data?.markets || []);
+        }
+      })
+      .catch(() => setMarkets([]))
+      .finally(() => setLoadingMarkets(false));
+  }, [token, filter.province, filter.regency, filter.item]);
 
-  const districts = useMemo(() => {
-    if (!filter.province || !filter.regency) return [];
-    const province = REGIONS.find((r) => r.name === filter.province);
-    const regency = province?.regencies.find((r) => r.name === filter.regency);
-    return regency ? regency.districts : [];
-  }, [filter.province, filter.regency]);
+  const provinces = regions.map((r) => r.province);
+
+  const regencies =
+    regions.find((r) => r.province === filter.province)?.regencies || [];
 
   const sppgLat = user?.sppg?.latitude;
   const sppgLng = user?.sppg?.longitude;
 
-  const handleChange = (field: keyof MarketFilter, value: string) => {
-    setFilter((prev) => {
-      const updated = { ...prev, [field]: value };
-      if (field === "province") {
-        updated.regency = "";
-        updated.district = "";
-      }
-      if (field === "regency") {
-        updated.district = "";
-      }
-      return updated;
-    });
-  };
+  const handleChange = useCallback(
+    (field: keyof MarketFilter, value: string) => {
+      setFilter((prev) => {
+        const updated = { ...prev, [field]: value };
+        if (field === "province") {
+          updated.regency = "";
+          updated.district = "";
+          updated.marketName = "";
+        }
+        if (field === "regency") {
+          updated.district = "";
+          updated.marketName = "";
+        }
+        return updated;
+      });
+    },
+    [],
+  );
 
-  const handleRadiusChange = (value: string) => {
-    const num = parseFloat(value);
-    if (isNaN(num)) {
-      handleChange("radiusKm", value);
-      return;
-    }
-    if (num < 1) handleChange("radiusKm", "1");
-    else if (num > 500) handleChange("radiusKm", "500");
-    else handleChange("radiusKm", value);
-  };
+  const handleRadiusChange = useCallback(
+    (value: string) => {
+      const num = parseFloat(value);
+      if (isNaN(num)) {
+        handleChange("radiusKm", value);
+        return;
+      }
+      if (num < 1) handleChange("radiusKm", "1");
+      else if (num > 500) handleChange("radiusKm", "500");
+      else handleChange("radiusKm", value);
+    },
+    [handleChange],
+  );
 
-  const handleModeChange = (mode: LocationMode) => {
+  const handleModeChange = useCallback((mode: LocationMode) => {
     setFilter((prev) => ({
       ...prev,
       locationMode: mode,
       province: "",
       regency: "",
       district: "",
+      marketName: "",
       radiusKm: "25",
     }));
-  };
+  }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!filter.item) return;
-    if (filter.locationMode === "region" && !filter.regency) return;
-    if (filter.locationMode === "gps" && !hasLocation) return;
-    onSearch(filter);
-  };
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!filter.item) return;
+      if (filter.locationMode === "region" && !filter.regency) return;
+      if (filter.locationMode === "gps" && !hasLocation) return;
+      onSearch(filter);
+    },
+    [filter, hasLocation, onSearch],
+  );
 
   const isRegionValid =
     filter.locationMode === "region" && filter.regency.trim() !== "";
@@ -174,12 +229,15 @@ export function MarketFilterBar({
                 <select
                   value={filter.province}
                   onChange={(e) => handleChange("province", e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  disabled={loadingRegions}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-50 disabled:text-gray-400"
                 >
-                  <option value="">Pilih provinsi</option>
+                  <option value="">
+                    {loadingRegions ? "Memuat provinsi..." : "Pilih provinsi"}
+                  </option>
                   {provinces.map((p) => (
                     <option key={p} value={p}>
-                      {p}
+                      {denormalizeRegion(p)}
                     </option>
                   ))}
                 </select>
@@ -203,11 +261,39 @@ export function MarketFilterBar({
                   </option>
                   {regencies.map((r) => (
                     <option key={r} value={r}>
-                      {r}
+                      {denormalizeRegion(r)}
                     </option>
                   ))}
                 </select>
               </div>
+
+              {/* Market (Pasar) */}
+              {markets.length > 0 && (
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">
+                    Pasar{" "}
+                    <span className="text-gray-400 font-normal">
+                      (opsional)
+                    </span>
+                  </label>
+                  <select
+                    value={filter.marketName}
+                    onChange={(e) => handleChange("marketName", e.target.value)}
+                    disabled={loadingMarkets}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-50 disabled:text-gray-400"
+                  >
+                    <option value="">Semua pasar</option>
+                    {markets.map((m) => (
+                      <option key={m.name} value={m.name}>
+                        {m.name} ({m.supplierCount})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Filter harga dari supplier di pasar tertentu
+                  </p>
+                </div>
+              )}
 
               {/* District (Optional) */}
               <div>
@@ -221,29 +307,32 @@ export function MarketFilterBar({
                   disabled={!filter.regency}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-50 disabled:text-gray-400"
                 >
-                  <option value="">
-                    {filter.regency
-                      ? "Semua kecamatan"
-                      : "Pilih kabupaten/kota terlebih dahulu"}
-                  </option>
-                  {districts.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
+                  <option value="">Semua kecamatan</option>
                 </select>
               </div>
 
               <div className="flex items-center gap-1.5">
-                <MapPin className="w-3 h-3 text-gray-400" />
-                <p className="text-xs text-gray-400">
-                  Harga dari supplier di{" "}
-                  {filter.district
-                    ? `Kec. ${filter.district}`
-                    : filter.regency
-                      ? `Kab. ${filter.regency}`
-                      : "region ini"}
-                </p>
+                {filter.marketName ? (
+                  <>
+                    <Store className="w-3 h-3 text-gray-400" />
+                    <p className="text-xs text-gray-400">
+                      Harga dari supplier di {filter.marketName}
+                      {filter.regency
+                        ? `, ${denormalizeRegion(filter.regency)}`
+                        : ""}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="w-3 h-3 text-gray-400" />
+                    <p className="text-xs text-gray-400">
+                      Harga dari supplier di{" "}
+                      {filter.regency
+                        ? denormalizeRegion(filter.regency)
+                        : "region ini"}
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           ) : (

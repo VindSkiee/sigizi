@@ -10,6 +10,24 @@ import { ValidatePriceDto } from "../dto/validate-price.dto";
 export class MarketController {
   constructor(private readonly marketService: MarketService) {}
 
+  @Get("regions")
+  @ApiOperation({
+    summary: "Get distinct provinces & regencies from suppliers",
+  })
+  getRegions() {
+    return this.marketService.getSupplierRegions();
+  }
+
+  @Get("markets")
+  @ApiOperation({ summary: "Get distinct market names by province + regency" })
+  getMarkets(
+    @Query("province") province: string,
+    @Query("regency") regency: string,
+    @Query("item") item?: string,
+  ) {
+    return this.marketService.getDistinctMarkets(province, regency, item);
+  }
+
   @Get("prices")
   @ApiOperation({ summary: "Get market prices for an item" })
   getPrices(@Query() query: MarketPricesQueryDto) {
@@ -39,6 +57,7 @@ export class MarketController {
       district: dto.district,
       latitude: dto.latitude,
       longitude: dto.longitude,
+      marketName: undefined,
     };
     const result = await this.marketService.validatePrice(
       dto.itemName,

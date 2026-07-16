@@ -1039,4 +1039,4 @@ export const PROVINCE_OPTIONS = [
  * DB format: "JAWA_BARAT", "PURWAKARTA" (UPPER_SNAKE_CASE)
  * Dropdown format: "Jawa Barat", "Kab. Purwakarta" (human-readable)
  */
-export { normalizeRegion, matchesRegion } from "./region";
+export { normalizeRegion, matchesRegion, denormalizeRegion } from "./region";

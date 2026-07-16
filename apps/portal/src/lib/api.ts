@@ -390,6 +390,7 @@ export interface MarketLocationParams {
   province?: string;
   regency?: string;
   district?: string;
+  marketName?: string;
   latitude?: number;
   longitude?: number;
   radiusKm?: number;
@@ -404,6 +405,7 @@ function appendMarketLocationParams(
   if (location.province) params.append("province", location.province);
   if (location.regency) params.append("regency", location.regency);
   if (location.district) params.append("district", location.district);
+  if (location.marketName) params.append("marketName", location.marketName);
   if (location.latitude !== undefined) {
     params.append("latitude", String(location.latitude));
   }
@@ -413,6 +415,29 @@ function appendMarketLocationParams(
   if (location.radiusKm !== undefined) {
     params.append("radiusKm", String(location.radiusKm));
   }
+}
+
+export async function getSupplierRegions(token: string) {
+  return fetchApi(`/api/market/regions`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function getDistinctMarkets(
+  token: string,
+  province: string,
+  regency: string,
+  item?: string,
+) {
+  const params = new URLSearchParams({ province, regency });
+  if (item) params.append("item", item);
+  return fetchApi(`/api/market/markets?${params.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 }
 
 export async function getMarketAnomalies(

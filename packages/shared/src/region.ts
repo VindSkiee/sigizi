@@ -25,3 +25,16 @@ export function matchesRegion(value: string, expected: string): boolean {
   const b = normalizeRegion(expected);
   return a === b || a.includes(b) || b.includes(a);
 }
+
+/**
+ * Convert DB region format to human-readable display.
+ * "JAWA_BARAT" → "Jawa Barat"
+ * "CIREBON" → "Cirebon"
+ * "DKI_JAKARTA" → "Dki Jakarta"
+ */
+export function denormalizeRegion(value: string): string {
+  return value
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}

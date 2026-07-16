@@ -9,6 +9,7 @@ export interface MarketFilter {
   province: string;
   regency: string;
   district: string;
+  marketName: string;
   radiusKm: string;
 }
 
@@ -40,6 +41,8 @@ export interface MarketSupplierItem {
   district?: string;
   latitude?: number;
   longitude?: number;
+  isMarketSeller?: boolean;
+  marketName?: string;
 }
 
 export interface MarketPriceResponse {
@@ -56,6 +59,20 @@ export interface MarketStats {
   minPrice: number;
   maxPrice: number;
   medianPrice: number;
+}
+
+export interface HETReference {
+  id: string;
+  item: string;
+  location: {
+    regency: string;
+    district?: string;
+    market?: string;
+  };
+  dataSource: "clean" | "raw";
+  maxPrice: number;
+  medianPrice: number;
+  createdAt: number;
 }
 
 export const POPULAR_ITEMS = [
@@ -80,5 +97,6 @@ export const DEFAULT_FILTER: MarketFilter = {
   province: "",
   regency: "",
   district: "",
+  marketName: "",
   radiusKm: "25",
 };
