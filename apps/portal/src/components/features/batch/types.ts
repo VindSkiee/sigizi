@@ -41,7 +41,6 @@ export interface BatchManagement {
 
   // Menu
   menu: string;
-  cycle: string;
   allergens: string[];
   menus: BatchMenuItem[];
   batchItems: BatchFormItem[];
