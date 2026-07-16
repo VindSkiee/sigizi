@@ -158,7 +158,7 @@ model Supplier {
   id        String   @id @default(cuid())
   name      String
   phone     String?
-  nib       String   @unique // File URL/path ke scan NIB
+  nib       String   @unique // Nomor Induk Berusaha
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -166,13 +166,17 @@ model Supplier {
   address     String?  // Alamat bebas teks
   province    String   // Provinsi
   regency     String   // Kabupaten/Kota
-  district    String   // Kecamatan
+  district    String?  // Kecamatan (wajib untuk non-penjual pasar)
   village     String?  // Kelurahan/Desa
   postalCode  String?  // Kode Pos
 
   // --- Koordinat GPS ---
   latitude    Float?   // -90 to 90
   longitude   Float?   // -180 to 180
+
+  // --- Market Seller Info ---
+  isMarketSeller  Boolean  @default(false) // Apakah supplier penjual di pasar
+  marketName      String?  // Nama pasar (contoh: "Pasar Cibeunying")
 
   users     User[]
   items     SupplierItem[]

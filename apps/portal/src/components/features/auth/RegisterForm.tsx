@@ -16,8 +16,7 @@ import { Logo } from "@/components/features/auth/Logo";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
-import { FileUpload } from "@/components/ui/FileUpload";
-import { registerSupplier, uploadFile } from "@/lib/api";
+import { registerSupplier } from "@/lib/api";
 
 // ─── Geocoding helpers ────────────────────────────────────────
 
@@ -115,10 +114,11 @@ export function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [nibFile, setNibFile] = useState<File | null>(null);
   const [phone, setPhone] = useState("");
 
   // Step 2 — Lokasi
+  const [isMarketSeller, setIsMarketSeller] = useState(false);
+  const [marketName, setMarketName] = useState("");
   const [province, setProvince] = useState("");
   const [regency, setRegency] = useState("");
   const [district, setDistrict] = useState("");
@@ -236,14 +236,18 @@ export function RegisterForm() {
       if (!confirmPassword) e.confirmPassword = "Wajib diisi";
       else if (password !== confirmPassword)
         e.confirmPassword = "Password tidak cocok";
-
-      if (!nibFile) e.nibFile = "File NIB wajib diupload";
     }
 
     if (s === 1) {
       if (!province) e.province = "Provinsi wajib dipilih";
       if (!regency.trim()) e.regency = "Kabupaten/Kota wajib diisi";
-      if (!district.trim()) e.district = "Kecamatan wajib diisi";
+      if (isMarketSeller) {
+        if (!marketName.trim()) e.marketName = "Nama pasar wajib diisi";
+        else if (marketName.trim().length < 3)
+          e.marketName = "Minimal 3 karakter";
+      } else {
+        if (!district.trim()) e.district = "Kecamatan wajib diisi";
+      }
     }
 
     setErrors(e);
@@ -283,24 +287,17 @@ export function RegisterForm() {
     setApiError("");
 
     try {
-      let nibFileUrl = "";
-      if (nibFile) {
-        const uploadResponse = await uploadFile(nibFile);
-        if (uploadResponse.success) {
-          nibFileUrl = (uploadResponse.data as any).url;
-        }
-      }
-
       const registerResponse = await registerSupplier({
         name: name.trim(),
         nib: nib.trim(),
         email: email.trim(),
         password,
-        nibFileUrl,
         phone: phone.trim() || undefined,
         province,
         regency: regency.trim(),
-        district: district.trim(),
+        district: isMarketSeller ? undefined : district.trim(),
+        isMarketSeller,
+        marketName: isMarketSeller ? marketName.trim() : undefined,
       });
 
       if (registerResponse.success) {
@@ -547,16 +544,6 @@ export function RegisterForm() {
                     Nomor Induk Berusaha dari OSS
                   </p>
                 </div>
-
-                <FileUpload
-                  label="Upload Dokumen NIB"
-                  accept=".pdf"
-                  maxSize={5}
-                  onFileSelect={setNibFile}
-                  error={errors.nibFile}
-                  required
-                  helperText="Klik atau seret file PDF NIB di sini"
-                />
               </div>
             </div>
           </div>
@@ -581,20 +568,74 @@ export function RegisterForm() {
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={handleDetectLocation}
-                disabled={isDetecting}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 disabled:opacity-50 transition-colors"
-              >
-                {isDetecting ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <Navigation className="w-3 h-3" />
-                )}
-                {isDetecting ? "Mendeteksi..." : "Deteksi Lokasi"}
-              </button>
+              {!isMarketSeller && (
+                <button
+                  type="button"
+                  onClick={handleDetectLocation}
+                  disabled={isDetecting}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 disabled:opacity-50 transition-colors"
+                >
+                  {isDetecting ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Navigation className="w-3 h-3" />
+                  )}
+                  {isDetecting ? "Mendeteksi..." : "Deteksi Lokasi"}
+                </button>
+              )}
             </div>
+
+            <label className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl cursor-pointer hover:bg-amber-100 transition-colors">
+              <input
+                type="checkbox"
+                checked={isMarketSeller}
+                onChange={(e) => {
+                  setIsMarketSeller(e.target.checked);
+                  setErrors({});
+                }}
+                className="w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
+              />
+              <div>
+                <span className="text-sm font-medium text-gray-800">
+                  Saya adalah penjual di pasar
+                </span>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Centang jika Anda berjualan di pasar tradisional/modern
+                </p>
+              </div>
+            </label>
+
+            {isMarketSeller && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Nama Pasar <span className="text-red-500">*</span>
+                </label>
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 py-2.5 text-sm bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-500 font-medium">
+                    Pasar
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="contoh: Cibeunying"
+                    value={marketName}
+                    onChange={(e) => {
+                      setMarketName(e.target.value);
+                      clearError("marketName");
+                    }}
+                    className={`w-full px-4 py-2.5 text-sm border rounded-r-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 transition-colors duration-200 ${
+                      errors.marketName
+                        ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                        : "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
+                    }`}
+                  />
+                </div>
+                {errors.marketName && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {errors.marketName}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -622,9 +663,7 @@ export function RegisterForm() {
                   ))}
                 </select>
                 {errors.province && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.province}
-                  </p>
+                  <p className="mt-1 text-xs text-red-500">{errors.province}</p>
                 )}
               </div>
 
@@ -642,61 +681,71 @@ export function RegisterForm() {
                 required
               />
 
-              <Input
-                id="district"
-                type="text"
-                label="Kecamatan"
-                placeholder="contoh: WANAYASA"
-                value={district}
-                onChange={(e) => {
-                  handleAddressChange("district", e.target.value);
-                  clearError("district");
-                }}
-                error={errors.district}
-                required
-              />
+              {!isMarketSeller && (
+                <Input
+                  id="district"
+                  type="text"
+                  label="Kecamatan"
+                  placeholder="contoh: WANAYASA"
+                  value={district}
+                  onChange={(e) => {
+                    handleAddressChange("district", e.target.value);
+                    clearError("district");
+                  }}
+                  error={errors.district}
+                  required
+                />
+              )}
 
-              <Input
-                id="village"
-                type="text"
-                label="Desa/Kelurahan"
-                placeholder="contoh: Desa Baru"
-                value={village}
-                onChange={(e) =>
-                  handleAddressChange("village", e.target.value)
-                }
-              />
+              {!isMarketSeller && (
+                <Input
+                  id="village"
+                  type="text"
+                  label="Desa/Kelurahan"
+                  placeholder="contoh: Desa Baru"
+                  value={village}
+                  onChange={(e) =>
+                    handleAddressChange("village", e.target.value)
+                  }
+                />
+              )}
 
-              <Input
-                id="postalCode"
-                type="text"
-                label="Kode Pos"
-                placeholder="contoh: 41175"
-                value={postalCode}
-                onChange={(e) => setPostalCode(e.target.value)}
-              />
+              {!isMarketSeller && (
+                <Input
+                  id="postalCode"
+                  type="text"
+                  label="Kode Pos"
+                  placeholder="contoh: 41175"
+                  value={postalCode}
+                  onChange={(e) => setPostalCode(e.target.value)}
+                />
+              )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Alamat Lengkap (Opsional)
-              </label>
-              <textarea
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Jalan, nomor, RT/RW, dll."
-                rows={2}
-                className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 resize-none"
-              />
-            </div>
+            {!isMarketSeller && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Alamat Lengkap (Opsional)
+                  </label>
+                  <textarea
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Jalan, nomor, RT/RW, dll."
+                    rows={2}
+                    className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 resize-none"
+                  />
+                </div>
 
-            {latitude != null && longitude != null && (
-              <div className="flex items-center gap-2 text-xs text-gray-400 font-mono bg-white rounded-lg px-3 py-2 border border-gray-100">
-                <MapPin className="w-3 h-3 shrink-0" />
-                <span>
-                  Koordinat: {latitude.toFixed(6)}, {longitude.toFixed(6)}
-                </span>
-              </div>
+                {latitude != null && longitude != null && (
+                  <div className="flex items-center gap-2 text-xs text-gray-400 font-mono bg-white rounded-lg px-3 py-2 border border-gray-100">
+                    <MapPin className="w-3 h-3 shrink-0" />
+                    <span>
+                      Koordinat: {latitude.toFixed(6)}, {longitude.toFixed(6)}
+                    </span>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -742,12 +791,6 @@ export function RegisterForm() {
                   <span className="text-gray-400">Telepon</span>
                   <p className="font-medium text-gray-800">{phone || "-"}</p>
                 </div>
-                <div>
-                  <span className="text-gray-400">File NIB</span>
-                  <p className="font-medium text-gray-800">
-                    {nibFile ? nibFile.name : "-"}
-                  </p>
-                </div>
               </div>
             </div>
 
@@ -756,45 +799,84 @@ export function RegisterForm() {
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
                 Lokasi & Alamat
               </h3>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                <div>
-                  <span className="text-gray-400">Provinsi</span>
-                  <p className="font-medium text-gray-800">
-                    {provinceLabel(province)}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-gray-400">Kabupaten/Kota</span>
-                  <p className="font-medium text-gray-800">{regency}</p>
-                </div>
-                <div>
-                  <span className="text-gray-400">Kecamatan</span>
-                  <p className="font-medium text-gray-800">{district}</p>
-                </div>
-                <div>
-                  <span className="text-gray-400">Desa/Kelurahan</span>
-                  <p className="font-medium text-gray-800">{village || "-"}</p>
-                </div>
-                <div>
-                  <span className="text-gray-400">Kode Pos</span>
-                  <p className="font-medium text-gray-800">
-                    {postalCode || "-"}
-                  </p>
-                </div>
-                {latitude != null && longitude != null && (
+              {isMarketSeller ? (
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
                   <div>
-                    <span className="text-gray-400">Koordinat</span>
-                    <p className="font-medium text-gray-800 font-mono text-xs">
-                      {latitude.toFixed(6)}, {longitude.toFixed(6)}
+                    <span className="text-gray-400">Tipe</span>
+                    <p className="font-medium text-gray-800">Penjual Pasar</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Nama Pasar</span>
+                    <p className="font-medium text-gray-800">
+                      Pasar {marketName}
                     </p>
                   </div>
-                )}
-              </div>
-              {address && (
-                <div className="mt-3">
-                  <span className="text-gray-400 text-sm">Alamat Lengkap</span>
-                  <p className="font-medium text-gray-800 text-sm">{address}</p>
+                  <div>
+                    <span className="text-gray-400">Provinsi</span>
+                    <p className="font-medium text-gray-800">
+                      {provinceLabel(province)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Kabupaten/Kota</span>
+                    <p className="font-medium text-gray-800">{regency}</p>
+                  </div>
                 </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                    <div>
+                      <span className="text-gray-400">Tipe</span>
+                      <p className="font-medium text-gray-800">
+                        Bukan Penjual Pasar
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Provinsi</span>
+                      <p className="font-medium text-gray-800">
+                        {provinceLabel(province)}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Kabupaten/Kota</span>
+                      <p className="font-medium text-gray-800">{regency}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Kecamatan</span>
+                      <p className="font-medium text-gray-800">{district}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Desa/Kelurahan</span>
+                      <p className="font-medium text-gray-800">
+                        {village || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Kode Pos</span>
+                      <p className="font-medium text-gray-800">
+                        {postalCode || "-"}
+                      </p>
+                    </div>
+                    {latitude != null && longitude != null && (
+                      <div>
+                        <span className="text-gray-400">Koordinat</span>
+                        <p className="font-medium text-gray-800 font-mono text-xs">
+                          {latitude.toFixed(6)}, {longitude.toFixed(6)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  {address && (
+                    <div className="mt-3">
+                      <span className="text-gray-400 text-sm">
+                        Alamat Lengkap
+                      </span>
+                      <p className="font-medium text-gray-800 text-sm">
+                        {address}
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 

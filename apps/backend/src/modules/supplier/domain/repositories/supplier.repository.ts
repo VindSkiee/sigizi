@@ -13,11 +13,13 @@ export interface CreateSupplierData {
   address?: string;
   province: string;
   regency: string;
-  district: string;
+  district?: string;
   village?: string;
   postalCode?: string;
   latitude?: number;
   longitude?: number;
+  isMarketSeller?: boolean;
+  marketName?: string;
 }
 
 export interface UpdateSupplierData {
@@ -31,6 +33,8 @@ export interface UpdateSupplierData {
   postalCode?: string;
   latitude?: number;
   longitude?: number;
+  isMarketSeller?: boolean;
+  marketName?: string;
 }
 
 export interface SupplierItemData {

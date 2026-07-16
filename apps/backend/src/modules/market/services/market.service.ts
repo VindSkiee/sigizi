@@ -51,7 +51,7 @@ interface SupplierItemWithSupplier {
     address: string | null;
     province: string;
     regency: string;
-    district: string;
+    district: string | null;
     latitude: number | null;
     longitude: number | null;
   };
@@ -581,7 +581,7 @@ export class MarketService {
 
     if (
       scope.district &&
-      !this.matchesRegionField(item.supplier.district, scope.district)
+      !this.matchesRegionField(item.supplier.district ?? "", scope.district)
     ) {
       return false;
     }

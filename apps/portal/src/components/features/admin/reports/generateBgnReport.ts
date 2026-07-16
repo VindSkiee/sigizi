@@ -112,7 +112,7 @@ export function generateBgnReport(
   const periode =
     startDate && endDate
       ? `${formatDateID(startDate)} - ${formatDateID(endDate)}`
-      : formatDateID(filter.date);
+      : `${formatDateID(filter.startDate)} - ${formatDateID(filter.endDate)}`;
   doc.text(periode, margin + 25, y);
 
   y += 5;

@@ -543,10 +543,17 @@ export class ReportsService {
         date: (order.paidAt ?? order.updatedAt).toISOString(),
         referenceId: order.id,
         title: order.supplier.name,
-        description: "Order COMPLETED",
+        description: "Pembayaran Pesanan",
         amount: order.total,
         meta: {
           orderId: order.id,
+          orderItems: order.items.map((item) => ({
+            itemName: item.item.name,
+            unit: item.item.unit,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            subtotal: item.subtotal,
+          })),
           warningBypassCount: warningBypassItems.length,
           priceValidation:
             warningBypassItems.length > 0

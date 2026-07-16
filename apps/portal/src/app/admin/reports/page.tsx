@@ -5,11 +5,11 @@ import {
   ReportFilter,
   ReportStats,
   InvoiceRow as InvoiceRowType,
-  ManualExpense,
-  MANUAL_EXPENSE_KEY,
+  ExpenseSource,
+  FinancialSourceType,
+  OrderItemDetail,
   DEFAULT_FILTER,
 } from "@/components/features/admin/reports/types";
-import { MOCK_INVOICES } from "@/components/features/admin/reports/mockData";
 import { ReportHeader } from "@/components/features/admin/reports/ReportHeader";
 import { ReportFilterBar } from "@/components/features/admin/reports/ReportFilterBar";
 import { ReportStatsCards } from "@/components/features/admin/reports/ReportStatsCards";
@@ -19,128 +19,185 @@ import { BgnReportModal } from "@/components/features/admin/reports/BgnReportMod
 import { generateBgnReport } from "@/components/features/admin/reports/generateBgnReport";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
+import { getExpenseBreakdown, createOperationalExpense } from "@/lib/api";
 
-function getManualExpenses(): ManualExpense[] {
-  try {
-    return JSON.parse(localStorage.getItem(MANUAL_EXPENSE_KEY) || "[]");
-  } catch {
-    return [];
+interface FinancialLogEntry {
+  source: FinancialSourceType;
+  date: string;
+  referenceId: string;
+  title: string;
+  description?: string | null;
+  amount: number;
+  meta?: {
+    batchId?: string;
+    batchNumber?: string;
+    orderId?: string;
+    quantity?: number;
+    unit?: string;
+    beneficiaryCount?: number;
+    category?: string;
+    orderItems?: OrderItemDetail[];
+  };
+}
+
+interface ExpenseBreakdownResponse {
+  source: string;
+  sppgId: string;
+  startDate: string;
+  endDate: string;
+  items: FinancialLogEntry[];
+  summary: {
+    totalCogs: number;
+    totalProcured: number;
+    totalOpex: number;
+    grandTotal: number;
+  };
+}
+
+function filterItemsBySource(
+  items: FinancialLogEntry[],
+  source: ExpenseSource,
+): FinancialLogEntry[] {
+  if (source === "CASH") {
+    return items.filter(
+      (item) => item.source === "PROCUREMENT" || item.source === "OPEX",
+    );
   }
+  if (source === "PRODUCTION") {
+    return items.filter((item) => item.source === "COGS");
+  }
+  return items;
 }
 
-function filterByDate(rows: InvoiceRowType[], date: string): InvoiceRowType[] {
-  return rows.filter((r) => r.date === date);
-}
-
-function filterByDateRange(
-  rows: InvoiceRowType[],
-  start: string,
-  end: string,
-): InvoiceRowType[] {
-  return rows.filter((r) => r.date >= start && r.date <= end);
-}
-
-function getAllRows(manualExpenses: ManualExpense[]): InvoiceRowType[] {
-  const allRows: InvoiceRowType[] = [...MOCK_INVOICES];
-
-  const stored = getManualExpenses();
-  const manualRows: InvoiceRowType[] = stored.map((e) => ({
-    id: e.id,
-    date: e.date,
-    ref: `#MANUAL-${e.id.slice(-2).toUpperCase()}`,
-    category: e.description,
-    nominal: e.amount,
-    statusBukti: e.fileUrl || "Manual",
-    fileUrl: e.fileUrl,
-    isManual: true,
-  }));
-  allRows.push(...manualRows);
-
-  const sessionRows: InvoiceRowType[] = manualExpenses.map((e) => ({
-    id: e.id,
-    date: e.date,
-    ref: `#MANUAL-${e.id.slice(-2).toUpperCase()}`,
-    category: e.description,
-    nominal: e.amount,
+function mapToInvoiceRows(items: FinancialLogEntry[]): InvoiceRowType[] {
+  return items.map((item) => ({
+    id: item.referenceId,
+    date: item.date,
+    ref:
+      item.source === "PROCUREMENT"
+        ? `#ORD-${item.referenceId.slice(-6).toUpperCase()}`
+        : item.source === "COGS"
+          ? `#BATCH-${item.meta?.batchNumber || item.referenceId.slice(-6).toUpperCase()}`
+          : `#OPEX-${item.referenceId.slice(-6).toUpperCase()}`,
+    supplierName: item.source === "PROCUREMENT" ? item.title : undefined,
+    category: item.description || item.title,
+    nominal: item.amount,
     statusBukti: "Terekam Sistem",
-    isManual: true,
+    isManual: item.source === "OPEX",
+    source: item.source,
+    meta: item.meta,
   }));
-  allRows.push(...sessionRows);
-
-  return allRows;
 }
 
 export default function ReportsPage() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [filter, setFilter] = useState<ReportFilter>(DEFAULT_FILTER);
   const [isLoading, setIsLoading] = useState(false);
   const [showManualModal, setShowManualModal] = useState(false);
   const [showBgnModal, setShowBgnModal] = useState(false);
-  const [manualExpenses, setManualExpenses] = useState<ManualExpense[]>([]);
+  const [allItems, setAllItems] = useState<FinancialLogEntry[]>([]);
+  const [summary, setSummary] = useState({
+    totalCogs: 0,
+    totalProcured: 0,
+    totalOpex: 0,
+    grandTotal: 0,
+  });
 
-  // Auto-load today's data on mount
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
+    if (!token) return;
+
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 400);
-  }, []);
+    try {
+      const response = await getExpenseBreakdown(token, {
+        source: "ALL",
+        startDate: filter.startDate,
+        endDate: filter.endDate,
+      });
 
-  const displayRows = useMemo(() => {
-    const allRows = getAllRows(manualExpenses);
-    return filterByDate(allRows, filter.date).sort((a, b) =>
-      a.date.localeCompare(b.date),
-    );
-  }, [filter, manualExpenses]);
+      if (response.success) {
+        const data = response.data as ExpenseBreakdownResponse;
+        setAllItems(data.items);
+        setSummary(data.summary);
+      }
+    } catch (error) {
+      console.error("Failed to fetch expense breakdown:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [token, filter.startDate, filter.endDate]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const filteredItems = useMemo(
+    () => filterItemsBySource(allItems, filter.source),
+    [allItems, filter.source],
+  );
+
+  const displayRows = useMemo(
+    () =>
+      mapToInvoiceRows(filteredItems).sort((a, b) =>
+        a.date.localeCompare(b.date),
+      ),
+    [filteredItems],
+  );
 
   const stats: ReportStats = useMemo(() => {
-    const supplierInvoices = displayRows.filter((r) => !r.isManual);
-    const manualInvoices = displayRows.filter((r) => r.isManual);
+    const totalPortions = allItems
+      .filter((item) => item.source === "COGS")
+      .reduce((sum, item) => sum + (item.meta?.beneficiaryCount || 0), 0);
+
     return {
-      totalPengeluaran: supplierInvoices.reduce((s, r) => s + r.nominal, 0),
-      invoiceCount: supplierInvoices.length,
-      totalPorsi: 1250,
-      totalTambahan: manualInvoices.reduce((s, r) => s + r.nominal, 0),
+      totalPengeluaran: summary.totalProcured + summary.totalOpex,
+      invoiceCount: allItems.filter(
+        (item) => item.source === "PROCUREMENT" || item.source === "OPEX",
+      ).length,
+      totalPorsi: totalPortions,
+      totalTambahan: summary.totalOpex,
+      totalCogs: summary.totalCogs,
+      totalProcured: summary.totalProcured,
+      totalOpex: summary.totalOpex,
     };
-  }, [displayRows]);
+  }, [allItems, summary]);
 
   const handleFilter = useCallback((newFilter: ReportFilter) => {
-    setIsLoading(true);
     setFilter(newFilter);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 400);
   }, []);
+
+  const handleSaveManual = useCallback(
+    async (expense: {
+      category: string;
+      amount: number;
+      expenseDate: string;
+      description: string;
+      evidenceUrl?: string;
+    }) => {
+      if (!token) throw new Error("Not authenticated");
+
+      await createOperationalExpense(token, expense);
+      await fetchData();
+    },
+    [token, fetchData],
+  );
 
   const handleGenerateBgn = useCallback(
     (startDate: string, endDate: string) => {
-      const allRows = getAllRows(manualExpenses);
-      const rangeRows = filterByDateRange(allRows, startDate, endDate).sort(
-        (a, b) => a.date.localeCompare(b.date),
-      );
-      const supplierInvoices = rangeRows.filter((r) => !r.isManual);
-      const manualInvoices = rangeRows.filter((r) => r.isManual);
-      const rangeStats: ReportStats = {
-        totalPengeluaran: supplierInvoices.reduce((s, r) => s + r.nominal, 0),
-        invoiceCount: supplierInvoices.length,
-        totalPorsi: 1250,
-        totalTambahan: manualInvoices.reduce((s, r) => s + r.nominal, 0),
-      };
+      const rangeRows = mapToInvoiceRows(filteredItems)
+        .filter((r) => r.date >= startDate && r.date <= endDate)
+        .sort((a, b) => a.date.localeCompare(b.date));
+
       generateBgnReport(
         rangeRows,
-        rangeStats,
-        { date: filter.date },
+        stats,
+        filter,
         user?.sppg,
         startDate,
         endDate,
       );
     },
-    [manualExpenses, filter, user?.sppg],
+    [filteredItems, stats, filter, user?.sppg],
   );
-
-  const handleSaveManual = useCallback((expense: ManualExpense) => {
-    setManualExpenses((prev) => [...prev, expense]);
-  }, []);
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -180,10 +237,11 @@ export default function ReportsPage() {
 
       {!isLoading && (
         <>
-          <ReportStatsCards stats={stats} />
+          <ReportStatsCards stats={stats} activeSource={filter.source} />
           <InvoiceTable
             rows={displayRows}
             onInputManual={() => setShowManualModal(true)}
+            activeSource={filter.source}
           />
         </>
       )}

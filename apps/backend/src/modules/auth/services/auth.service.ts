@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ConflictException,
   ForbiddenException,
+  BadRequestException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
@@ -130,6 +131,27 @@ export class AuthService {
       throw new ConflictException("Email sudah terdaftar");
     }
 
+    if (dto.isMarketSeller) {
+      if (!dto.marketName?.trim()) {
+        throw new BadRequestException("Nama pasar wajib diisi");
+      }
+      if (!dto.province || !dto.regency) {
+        throw new BadRequestException(
+          "Provinsi dan kabupaten/kota wajib diisi",
+        );
+      }
+    } else {
+      if (!dto.province || !dto.regency || !dto.district) {
+        throw new BadRequestException(
+          "Provinsi, kabupaten/kota, dan kecamatan wajib diisi",
+        );
+      }
+    }
+
+    const marketName = dto.isMarketSeller
+      ? `Pasar ${dto.marketName!.trim().replace(/^Pasar\s+/i, "")}`
+      : null;
+
     const hashedPassword = await hash(dto.password, BCRYPT_ROUNDS);
 
     const result = await this.prisma.$transaction(async (tx) => {
@@ -146,6 +168,8 @@ export class AuthService {
           postalCode: dto.postalCode,
           latitude: dto.latitude,
           longitude: dto.longitude,
+          isMarketSeller: dto.isMarketSeller ?? false,
+          marketName,
         },
       });
 

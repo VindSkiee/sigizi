@@ -3,8 +3,12 @@ import {
   IsNotEmpty,
   IsOptional,
   IsNumber,
+  IsBoolean,
   Min,
   Max,
+  MinLength,
+  MaxLength,
+  Matches,
 } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
@@ -39,10 +43,10 @@ export class CreateSupplierDto {
   @IsNotEmpty()
   regency!: string;
 
-  @ApiProperty({ example: "Purwakarta" })
+  @ApiPropertyOptional({ example: "Purwakarta" })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  district!: string;
+  district?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -67,4 +71,23 @@ export class CreateSupplierDto {
   @Min(-180)
   @Max(180)
   longitude?: number;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  isMarketSeller?: boolean;
+
+  @ApiPropertyOptional({
+    description: "Nama pasar tanpa prefix 'Pasar' (contoh: 'Cibeunying')",
+    example: "Cibeunying",
+  })
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(100)
+  @Matches(/^[a-zA-Z0-9\s.'\-]+$/, {
+    message:
+      "Nama pasar hanya boleh mengandung huruf, angka, spasi, titik, strip, dan apostrof",
+  })
+  marketName?: string;
 }

@@ -65,11 +65,12 @@ export async function registerSupplier(data: {
   nib: string;
   email: string;
   password: string;
-  nibFileUrl?: string;
   phone?: string;
   province: string;
   regency: string;
-  district: string;
+  district?: string;
+  isMarketSeller?: boolean;
+  marketName?: string;
 }) {
   return fetchApi("/api/auth/register", {
     method: "POST",
@@ -106,36 +107,6 @@ export async function getCurrentUser(token: string) {
       Authorization: `Bearer ${token}`,
     },
   });
-}
-
-// ============================================================================
-// File Upload API
-// ============================================================================
-export async function uploadFile(file: File) {
-  const formData = new FormData();
-  formData.append("file", file);
-
-  const url = `${API_URL}/api/upload`;
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-  const response = await fetch(url, {
-    method: "POST",
-    body: formData,
-    signal: controller.signal,
-  });
-
-  clearTimeout(timeoutId);
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({
-      message: "Upload gagal",
-    }));
-    throw new Error(error.message || "Upload failed");
-  }
-
-  return response.json();
 }
 
 // ============================================================================
@@ -497,6 +468,70 @@ export async function getWeeklyReport(
   const params = new URLSearchParams({ week });
   if (sppgId) params.append("sppgId", sppgId);
   return fetchApi(`/api/reports/weekly?${params.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function getExpenseBreakdown(
+  token: string,
+  params: {
+    source?: "COGS" | "PROCUREMENT" | "OPEX" | "ALL";
+    startDate: string;
+    endDate: string;
+  },
+) {
+  const searchParams = new URLSearchParams();
+  if (params.source) searchParams.append("source", params.source);
+  searchParams.append("startDate", params.startDate);
+  searchParams.append("endDate", params.endDate);
+  return fetchApi(`/api/reports/expenses?${searchParams.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function createOperationalExpense(
+  token: string,
+  data: {
+    category: string;
+    amount: number;
+    expenseDate: string;
+    description?: string;
+    evidenceUrl?: string;
+    notes?: string;
+  },
+) {
+  return fetchApi("/api/reports/operational-expenses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function listOperationalExpenses(
+  token: string,
+  params?: {
+    category?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+  },
+) {
+  const searchParams = new URLSearchParams();
+  if (params?.category) searchParams.append("category", params.category);
+  if (params?.startDate) searchParams.append("startDate", params.startDate);
+  if (params?.endDate) searchParams.append("endDate", params.endDate);
+  if (params?.page) searchParams.append("page", String(params.page));
+  if (params?.limit) searchParams.append("limit", String(params.limit));
+  const qs = searchParams.toString() ? `?${searchParams.toString()}` : "";
+  return fetchApi(`/api/reports/operational-expenses${qs}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

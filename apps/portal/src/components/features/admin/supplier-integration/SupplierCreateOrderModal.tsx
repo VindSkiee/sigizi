@@ -28,23 +28,35 @@ interface SupplierCreateOrderModalProps {
 }
 
 const MOCK_SUPPLIERS: Supplier[] = [
-  { id: "clx00000000000000000000s1", name: "UD. Sumber Rejeki", nib: "/uploads/nib/sumber-rejeki-2026.pdf" },
-  { id: "clx00000000000000000000s2", name: "UD. Murah Jaya", nib: "/uploads/nib/murah-jaya-2026.pdf" },
-  { id: "clx00000000000000000000s3", name: "Tani Segar Farm", nib: "/uploads/nib/tani-segar-2026.pdf" },
+  {
+    id: "clx00000000000000000000s1",
+    name: "UD. Sumber Rejeki",
+    nib: "1234567890123",
+  },
+  {
+    id: "clx00000000000000000000s2",
+    name: "UD. Murah Jaya",
+    nib: "2345678901234",
+  },
+  {
+    id: "clx00000000000000000000s3",
+    name: "Tani Segar Farm",
+    nib: "3456789012345",
+  },
 ];
 
 const MOCK_ITEMS_BY_SUPPLIER: Record<string, SupplierItem[]> = {
-  "clx00000000000000000000s1": [
+  clx00000000000000000000s1: [
     { id: "mock-i1", name: "Beras Premium", unit: "kg", basePrice: 11500 },
     { id: "mock-i2", name: "Ayam Potong", unit: "kg", basePrice: 34000 },
     { id: "mock-i3", name: "Sayur Bayam", unit: "kg", basePrice: 7500 },
   ],
-  "clx00000000000000000000s2": [
+  clx00000000000000000000s2: [
     { id: "mock-i4", name: "Beras Premium", unit: "kg", basePrice: 11500 },
     { id: "mock-i5", name: "Ayam Potong", unit: "kg", basePrice: 33000 },
     { id: "mock-i6", name: "Telur Ayam", unit: "kg", basePrice: 28000 },
   ],
-  "clx00000000000000000000s3": [
+  clx00000000000000000000s3: [
     { id: "mock-i7", name: "Beras Premium", unit: "kg", basePrice: 15000 },
     { id: "mock-i8", name: "Sayur Kangkung", unit: "kg", basePrice: 6000 },
     { id: "mock-i9", name: "Wortel", unit: "kg", basePrice: 10000 },
@@ -82,7 +94,7 @@ export function SupplierCreateOrderModal({
   const handleItemChange = (
     index: number,
     field: keyof OrderItemForm,
-    value: string | number
+    value: string | number,
   ) => {
     const updated = [...items];
     if (field === "itemId") {
@@ -102,16 +114,23 @@ export function SupplierCreateOrderModal({
     if (!selectedSupplierId || items.length === 0) return;
 
     const selectedSupplier = MOCK_SUPPLIERS.find(
-      (s) => s.id === selectedSupplierId
+      (s) => s.id === selectedSupplierId,
     );
 
     const newOrder = {
       id: `mock-${Date.now()}`,
       createdAt: new Date().toISOString(),
       status: "PENDING",
-      total: items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
+      total: items.reduce(
+        (sum, item) => sum + item.quantity * item.unitPrice,
+        0,
+      ),
       supplier: selectedSupplier
-        ? { id: selectedSupplier.id, name: selectedSupplier.name, nib: selectedSupplier.nib }
+        ? {
+            id: selectedSupplier.id,
+            name: selectedSupplier.name,
+            nib: selectedSupplier.nib,
+          }
         : { id: selectedSupplierId, name: "Unknown Supplier", nib: "" },
       items: items.map((item, idx) => {
         const si = supplierItems.find((s) => s.id === item.itemId);
@@ -139,7 +158,10 @@ export function SupplierCreateOrderModal({
     onClose();
   };
 
-  const total = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+  const total = items.reduce(
+    (sum, item) => sum + item.quantity * item.unitPrice,
+    0,
+  );
 
   if (!isOpen) return null;
 
@@ -236,7 +258,8 @@ export function SupplierCreateOrderModal({
                   >
                     {supplierItems.map((si) => (
                       <option key={si.id} value={si.id}>
-                        {si.name} - Rp {si.basePrice.toLocaleString("id-ID")}/{si.unit}
+                        {si.name} - Rp {si.basePrice.toLocaleString("id-ID")}/
+                        {si.unit}
                       </option>
                     ))}
                   </select>
@@ -248,7 +271,7 @@ export function SupplierCreateOrderModal({
                       handleItemChange(
                         index,
                         "quantity",
-                        parseInt(e.target.value) || 1
+                        parseInt(e.target.value) || 1,
                       )
                     }
                     className="w-20 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"

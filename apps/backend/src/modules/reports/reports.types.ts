@@ -29,6 +29,14 @@ export interface PriceValidationMeta {
   bypassedItems: PriceValidationBypassItem[];
 }
 
+export interface OrderItemDetail {
+  itemName: string;
+  unit: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+}
+
 export interface FinancialLogEntryMeta {
   batchId?: string;
   batchNumber?: string;
@@ -39,6 +47,7 @@ export interface FinancialLogEntryMeta {
   category?: string;
   warningBypassCount?: number;
   priceValidation?: PriceValidationMeta | null;
+  orderItems?: OrderItemDetail[];
 }
 
 export interface FinancialLogEntry {

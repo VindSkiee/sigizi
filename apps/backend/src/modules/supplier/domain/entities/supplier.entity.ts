@@ -7,11 +7,13 @@ export class Supplier {
     public address: string | null,
     public province: string,
     public regency: string,
-    public district: string,
+    public district: string | null,
     public village: string | null,
     public postalCode: string | null,
     public latitude: number | null,
     public longitude: number | null,
+    public isMarketSeller: boolean = false,
+    public marketName: string | null = null,
     public readonly createdAt: Date = new Date(),
     public updatedAt: Date = new Date(),
   ) {}
@@ -27,6 +29,8 @@ export class Supplier {
     postalCode?: string;
     latitude?: number;
     longitude?: number;
+    isMarketSeller?: boolean;
+    marketName?: string;
   }): void {
     if (data.name !== undefined) this.name = data.name;
     if (data.phone !== undefined) this.phone = data.phone;
@@ -38,6 +42,9 @@ export class Supplier {
     if (data.postalCode !== undefined) this.postalCode = data.postalCode;
     if (data.latitude !== undefined) this.latitude = data.latitude;
     if (data.longitude !== undefined) this.longitude = data.longitude;
+    if (data.isMarketSeller !== undefined)
+      this.isMarketSeller = data.isMarketSeller;
+    if (data.marketName !== undefined) this.marketName = data.marketName;
     this.updatedAt = new Date();
   }
 }

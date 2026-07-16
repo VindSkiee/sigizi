@@ -82,6 +82,8 @@ export class PrismaSupplierRepository implements SupplierRepository {
         postalCode: data.postalCode,
         latitude: data.latitude,
         longitude: data.longitude,
+        isMarketSeller: data.isMarketSeller ?? false,
+        marketName: data.marketName,
       },
       include: { items: true },
     });
@@ -233,6 +235,8 @@ export class PrismaSupplierRepository implements SupplierRepository {
       prismaItem.postalCode,
       prismaItem.latitude,
       prismaItem.longitude,
+      prismaItem.isMarketSeller ?? false,
+      prismaItem.marketName ?? null,
       prismaItem.createdAt,
       prismaItem.updatedAt,
     );
