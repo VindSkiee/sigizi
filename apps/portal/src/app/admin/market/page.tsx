@@ -34,6 +34,7 @@ import {
   addHETReference,
   removeHETReference,
 } from "@/lib/het-reference";
+import { calculateDistance } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 9;
 
@@ -123,11 +124,40 @@ export default function MarketPage() {
     [persistMarketState],
   );
 
+  // Enrich items with calculated distance for region mode
+  const enrichedItems = useMemo(() => {
+    const sppgLat = user?.sppg?.latitude;
+    const sppgLng = user?.sppg?.longitude;
+
+    // If SPPG location not available, return items as-is
+    if (!sppgLat || !sppgLng) return items;
+
+    return items.map((item) => {
+      // If distance already exists (GPS mode), keep it
+      if (item.distance !== undefined) return item;
+
+      // Calculate distance for region mode
+      if (item.latitude && item.longitude) {
+        const distance = calculateDistance(
+          sppgLat,
+          sppgLng,
+          item.latitude,
+          item.longitude,
+        );
+        return { ...item, distance };
+      }
+
+      return item;
+    });
+  }, [items, user]);
+
   const filteredItems = useMemo(() => {
     const base =
       showExpanded || !requestedRadius
-        ? items
-        : items.filter((item) => (item.distance ?? 0) <= requestedRadius);
+        ? enrichedItems
+        : enrichedItems.filter(
+            (item) => (item.distance ?? 0) <= requestedRadius,
+          );
 
     switch (sortOption) {
       case "price_desc":
@@ -141,7 +171,7 @@ export default function MarketPage() {
       default:
         return base;
     }
-  }, [items, sortOption, requestedRadius, showExpanded]);
+  }, [enrichedItems, sortOption, requestedRadius, showExpanded]);
 
   const paginatedFilteredItems = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -333,7 +363,14 @@ export default function MarketPage() {
           <MarketSortFilter
             value={sortOption}
             onChange={setSortOption}
-            hasDistanceData={items.some((item) => item.distance != null)}
+            hasDistanceData={
+              enrichedItems.some((item) => item.distance != null) ||
+              (user?.sppg?.latitude != null &&
+                user?.sppg?.longitude != null &&
+                enrichedItems.some(
+                  (item) => item.latitude != null && item.longitude != null,
+                ))
+            }
           />
 
           <HETReferenceList
