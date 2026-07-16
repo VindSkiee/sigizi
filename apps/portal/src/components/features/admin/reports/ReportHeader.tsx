@@ -9,7 +9,7 @@ export function ReportHeader({ onOpenBgnModal }: ReportHeaderProps) {
     <div className="flex items-start justify-between mb-8">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
-          Generasi Laporan SPJ & Ekspor Data
+          Generasi Laporan & Ekspor Data
         </h1>
         <p className="text-sm text-gray-500 mt-1 max-w-xl">
           Data pengeluaran dari supplier otomatis terekam di sini. Ekspor data

@@ -14,7 +14,7 @@ import {
   UserCircle,
   LogOut,
   Store,
-  ReceiptText,
+  ShoppingCart,
   Home,
 } from "lucide-react";
 
@@ -22,8 +22,8 @@ const navigation = [
   { name: "Beranda", href: "/admin", icon: Home },
   { name: "Penerima Manfaat", href: "/admin/beneficiaries", icon: Users },
   { name: "Batch Makanan", href: "/admin/batches", icon: Utensils },
-  { name: "Daftar Pesanan", href: "/admin/suppliers", icon: ReceiptText },
-  { name: "Pesan Bahan Baku", href: "/admin/market", icon: Store },
+  { name: "Keranjang Pesanan", href: "/admin/suppliers", icon: ShoppingCart },
+  { name: "Pasar Bahan Baku", href: "/admin/market", icon: Store },
   { name: "Inventaris", href: "/admin/inventory", icon: Package },
   { name: "Laporan Keuangan", href: "/admin/reports", icon: FileText },
   { name: "Komplain", href: "/admin/complaints", icon: AlertTriangle },

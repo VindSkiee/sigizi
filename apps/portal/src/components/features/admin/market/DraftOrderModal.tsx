@@ -65,8 +65,10 @@ export function DraftOrderModal({
       clearDraft();
       onClose();
       onOrderSuccess();
-    } catch {
-      alert("Gagal membuat pesanan. Silakan coba lagi.");
+    } catch (err: any) {
+      const message =
+        err?.message || err?.error?.message || "Gagal membuat pesanan. Silakan coba lagi.";
+      alert(message);
     } finally {
       setIsSubmitting(false);
     }

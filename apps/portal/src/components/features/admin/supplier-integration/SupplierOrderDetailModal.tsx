@@ -1,5 +1,6 @@
 "use client";
 
+import { X, ShieldCheck, Check, Info } from "lucide-react";
 import { SupplierOrder, ORDER_STATUS_CONFIG } from "./types";
 
 interface SupplierOrderDetailModalProps {
@@ -20,7 +21,7 @@ export function SupplierOrderDetailModal({
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("id-ID", {
       day: "numeric",
-      month: "long",
+      month: "short",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
@@ -28,129 +29,93 @@ export function SupplierOrderDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              Detail Pesanan
-            </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+      {/* Subtle Backdrop with slight blur */}
+      <div 
+        className="absolute inset-0 bg-gray-900/20 backdrop-blur-sm transition-opacity" 
+        onClick={onClose} 
+      />
+      
+      {/* Modal Container */}
+      <div className="relative w-full max-w-3xl bg-white rounded-[24px] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        
+        {/* HEADER */}
+        <div className="flex items-start justify-between px-8 pt-4 pb-3 border-b border-gray-100">
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-semibold text-gray-900 tracking-tight">
+                Order #PO-{order.id.slice(-4).toUpperCase()}
+              </h2>
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide uppercase ${statusConfig.color}`}>
+                {statusConfig.label}
+              </span>
+            </div>
             <p className="text-sm text-gray-500">
-              #PO-{order.id.slice(-4).toUpperCase()}
+              Diterbitkan pada {formatDate(order.createdAt)}
             </p>
           </div>
+          
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 -mr-2 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-full transition-colors focus:outline-none"
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* Status */}
-          <div className="flex items-center gap-3">
-            <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusConfig.color}`}
-            >
-              {statusConfig.label}
-            </span>
-            <span className="text-sm text-gray-500">
-              Dibuat: {formatDate(order.createdAt)}
-            </span>
-          </div>
-
-          {/* Supplier Info */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">
+        {/* SCROLLABLE CONTENT */}
+        <div className="overflow-y-auto px-8 py-8 space-y-10">
+          
+          {/* Supplier Info (Clean layout, no gray box) */}
+          <section>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
               Informasi Supplier
             </h3>
-            <div className="text-sm">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
               <div>
-                <p className="text-gray-500">Nama</p>
-                <p className="font-medium">{order.supplier?.name || "-"}</p>
+                <p className="text-lg font-medium text-gray-900">
+                  {order.supplier?.name || "Unknown Supplier"}
+                </p>
+                {order.mou && (
+                  <p className="flex items-center gap-1.5 text-sm text-green-600 mt-1">
+                    <ShieldCheck className="w-4 h-4" strokeWidth={2.5} />
+                    <span className="font-medium">Mitra Resmi</span>
+                    <span className="text-green-600/50 mx-1">•</span>
+                    <span>{order.mou.mouNumber}</span>
+                  </p>
+                )}
               </div>
             </div>
-            {order.mou && (
-              <div className="mt-3 pt-3 border-t border-gray-200">
-                <p className="text-xs text-green-600 flex items-center gap-1">
-                  <svg
-                    className="w-3.5 h-3.5"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Mitra Resmi - {order.mou.mouNumber}
-                </p>
-              </div>
-            )}
-          </div>
+          </section>
 
-          {/* Items */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">
+          {/* Items Table */}
+          <section>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
               Detail Barang
             </h3>
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
-                      Item
-                    </th>
-                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">
-                      Qty
-                    </th>
-                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">
-                      Harga Satuan
-                    </th>
-                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">
-                      Subtotal
-                    </th>
+                  <tr className="border-b border-gray-200">
+                    <th className="pb-3 text-left font-medium text-gray-500">Item</th>
+                    <th className="pb-3 text-right font-medium text-gray-500 w-24">Qty</th>
+                    <th className="pb-3 text-right font-medium text-gray-500 w-36">Harga Satuan</th>
+                    <th className="pb-3 text-right font-medium text-gray-900 w-40">Subtotal</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-100">
                   {order.items?.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="border-b border-gray-100 last:border-0"
-                    >
-                      <td className="px-4 py-2.5">
-                        <p className="font-medium text-gray-900">
-                          {item.name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {item.unit} × Rp{" "}
-                          {item.unitPrice.toLocaleString("id-ID")}
-                        </p>
+                    <tr key={item.id} className="group">
+                      <td className="py-4 pr-4">
+                        <p className="font-medium text-gray-900">{item.name}</p>
                       </td>
-                      <td className="px-4 py-2.5 text-right text-gray-700">
-                        {item.quantity}
+                      <td className="py-4 text-right text-gray-600 tabular-nums">
+                        {item.quantity} <span className="text-gray-400 text-xs ml-0.5">{item.unit}</span>
                       </td>
-                      <td className="px-4 py-2.5 text-right text-gray-700">
+                      <td className="py-4 text-right text-gray-600 tabular-nums">
                         Rp {item.unitPrice.toLocaleString("id-ID")}
                       </td>
-                      <td className="px-4 py-2.5 text-right font-medium text-gray-900">
+                      <td className="py-4 text-right font-medium text-gray-900 tabular-nums">
                         Rp {item.subtotal.toLocaleString("id-ID")}
                       </td>
                     </tr>
@@ -158,54 +123,56 @@ export function SupplierOrderDetailModal({
                 </tbody>
               </table>
             </div>
-          </div>
 
-          {/* Total */}
-          <div className="flex justify-end">
-            <div className="bg-blue-50 rounded-lg p-4 min-w-[250px]">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Total Pesanan</span>
-                <span className="text-lg font-bold text-blue-700">
+            {/* Elegant Total Section */}
+            <div className="flex justify-end mt-6 pt-6 border-t border-gray-100">
+              <div className="flex items-center justify-between w-full sm:w-72">
+                <span className="text-sm text-gray-500">Total Keseluruhan</span>
+                <span className="text-2xl font-semibold text-gray-900 tracking-tight tabular-nums">
                   Rp {order.total.toLocaleString("id-ID")}
                 </span>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Notes */}
+          {/* Notes (Minimalist Quote Style instead of Yellow Box) */}
           {order.notes && (
-            <div className="bg-yellow-50 rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-1">
-                Catatan
-              </h3>
-              <p className="text-sm text-gray-600">{order.notes}</p>
-            </div>
+            <section className="bg-white">
+              <div className="pl-4 border-l-2 border-gray-200 py-1">
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Info className="w-3.5 h-3.5" /> Catatan Pesanan
+                </h3>
+                <p className="text-sm text-gray-600 leading-relaxed max-w-2xl">
+                  {order.notes}
+                </p>
+              </div>
+            </section>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+        {/* FOOTER ACTIONS */}
+        <div className="flex items-center justify-end gap-3 px-8 py-5 border-t border-gray-100 bg-gray-50/50">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-colors focus:outline-none focus:ring-4 focus:ring-gray-100"
           >
             Tutup
           </button>
+          
           {statusConfig.nextAction && order.status !== "PENDING" && (
             <button
               onClick={() => {
                 onUpdateStatus(order.id, statusConfig.nextStatus!);
                 onClose();
               }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-green-600 rounded-xl hover:bg-green-700 transition-all focus:outline-none focus:ring-4 focus:ring-green-20 shadow-sm"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+              <Check className="w-4 h-4" strokeWidth={2.5} />
               {statusConfig.nextAction}
             </button>
           )}
         </div>
+
       </div>
     </div>
   );

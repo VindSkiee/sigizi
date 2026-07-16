@@ -8,13 +8,12 @@ const INSTITUTION_TYPE_CONFIG: Record<
   { label: string; className: string }
 > = {
   SEKOLAH: { label: "Sekolah", className: "bg-blue-100 text-blue-700" },
-  PONDOK: { label: "Pondok Pesantren", className: "bg-purple-100 text-purple-700" },
-  PANTI: { label: "Panti Asuhan", className: "bg-orange-100 text-orange-700" },
-  Pesantren: { label: "Pesantren", className: "bg-indigo-100 text-indigo-700" },
-  "Lembaga Kesejahteraan Sosial": {
-    label: "LKS",
-    className: "bg-teal-100 text-teal-700",
-  },
+  PANTI_ASUHAN: { label: "Panti Asuhan", className: "bg-orange-100 text-orange-700" },
+  PESANTREN: { label: "Pesantren", className: "bg-indigo-100 text-indigo-700" },
+  RUMAH_SAKIT: { label: "Rumah Sakit", className: "bg-red-100 text-red-700" },
+  POSYANDU: { label: "Posyandu", className: "bg-green-100 text-green-700" },
+  PUSKESMAS: { label: "Puskesmas", className: "bg-teal-100 text-teal-700" },
+  LAINNYA: { label: "Lainnya", className: "bg-gray-100 text-gray-700" },
 };
 
 function InstitutionTypeBadge({ type }: { type: InstitutionType }) {
