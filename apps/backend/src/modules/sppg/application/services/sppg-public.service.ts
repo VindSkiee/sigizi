@@ -7,6 +7,7 @@ import {
 } from "../../../../core/dto/pagination.dto";
 import { GpsCoordinate } from "../../../../core/domain/value-objects/gps-coordinate.vo";
 import { findWithinRadius } from "../../../../core/utils/geolocation";
+import { normalizeRegion } from "@sigizi/shared";
 
 const SPPG_SELECT_PUBLIC = {
   id: true,
@@ -54,17 +55,17 @@ export class SppgPublicService {
     const where: any = {};
     if (filter.province)
       where.province = {
-        equals: this.normalizeRegionValue(filter.province),
+        equals: normalizeRegion(filter.province),
         mode: "insensitive",
       };
     if (filter.regency)
       where.regency = {
-        equals: this.normalizeRegionValue(filter.regency),
+        equals: normalizeRegion(filter.regency),
         mode: "insensitive",
       };
     if (filter.district)
       where.district = {
-        equals: this.normalizeRegionValue(filter.district),
+        equals: normalizeRegion(filter.district),
         mode: "insensitive",
       };
     if (filter.village)
@@ -248,19 +249,5 @@ export class SppgPublicService {
         "Filter admin (province/regency/district) dan filter GPS (latitude/longitude) tidak bisa digunakan bersamaan.",
       );
     }
-  }
-
-  /**
-   * Normalize dropdown display values to DB format.
-   * DB stores: "JAWA_BARAT", "PURWAKARTA"
-   * Dropdown sends: "Jawa Barat", "Kab. Purwakarta"
-   *
-   * Steps: strip "Kab. "/"Kota " prefix → replace spaces with underscores → uppercase
-   */
-  private normalizeRegionValue(val: string): string {
-    return val
-      .replace(/^(Kab\.|Kota)\s+/i, "")
-      .replace(/\s+/g, "_")
-      .toUpperCase();
   }
 }

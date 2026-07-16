@@ -1,5 +1,8 @@
 export type LocationMode = "region" | "gps";
 
+export type MarketSortOption =
+  "default" | "price_desc" | "price_asc" | "distance_asc";
+
 export interface MarketFilter {
   item: string;
   locationMode: LocationMode;

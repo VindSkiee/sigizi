@@ -521,6 +521,10 @@ export interface SupplierPrice {
   name: string;
   price: number;
   isAnomaly: boolean;
+  address?: string;
+  province?: string;
+  regency?: string;
+  district?: string;
   latitude?: number;
   longitude?: number;
   distanceKm?: number;
@@ -1022,3 +1026,17 @@ export const PROVINCE_OPTIONS = [
   { value: "SULAWESI_TENGGARA", label: "Sulawesi Tenggara" },
   { value: "PAPUA", label: "Papua" },
 ] as const;
+
+// ============================================================================
+// Region Utilities
+// ============================================================================
+
+/**
+ * IMPORTANT: All region values (province, regency, district) MUST be
+ * written in consistent format before querying the database.
+ * Use `normalizeRegion()` to normalize any region input.
+ *
+ * DB format: "JAWA_BARAT", "PURWAKARTA" (UPPER_SNAKE_CASE)
+ * Dropdown format: "Jawa Barat", "Kab. Purwakarta" (human-readable)
+ */
+export { normalizeRegion, matchesRegion } from "./region";

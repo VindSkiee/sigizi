@@ -6,10 +6,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   MarketFilter,
   MarketSupplierItem,
-  MarketPriceStatistics,
+  MarketSortOption,
 } from "@/components/features/admin/market/types";
 import { MarketFilterBar } from "@/components/features/admin/market/MarketFilterBar";
 import { MarketStatsBar } from "@/components/features/admin/market/MarketStatsBar";
+import { MarketSortFilter } from "@/components/features/admin/market/MarketSortFilter";
 import { MarketCardGrid } from "@/components/features/admin/market/MarketCardGrid";
 import { DraftOrderModal } from "@/components/features/admin/market/DraftOrderModal";
 import { OrderQuantityModal } from "@/components/features/admin/market/OrderQuantityModal";
@@ -23,24 +24,35 @@ import {
   updateDraftQuantity,
   removeDraftItem,
 } from "@/lib/draft";
-import { getMarketState, saveMarketState } from "@/lib/market-persist";
-import { getMarketPrices, getSupplierItems } from "@/lib/api";
+import { saveMarketState } from "@/lib/market-persist";
+import { useMarketData } from "@/hooks/useMarketData";
+import { motion, AnimatePresence } from "framer-motion";
 
 const ITEMS_PER_PAGE = 9;
 
 export default function MarketPage() {
   const router = useRouter();
-  const { token, user } = useAuth();
-  const [items, setItems] = useState<MarketSupplierItem[]>([]);
-  const [rawStats, setRawStats] = useState<MarketPriceStatistics | null>(null);
-  const [cleanStats, setCleanStats] = useState<MarketPriceStatistics | null>(
-    null,
-  );
-  const [searchedItem, setSearchedItem] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
+  const { user } = useAuth();
+
+  const {
+    items,
+    filter: lastFilter,
+    rawStats,
+    cleanStats,
+    searchedItem,
+    isLoading,
+    isRefetching,
+    hasSearched,
+    error,
+    radiusInfo,
+    handleSearch: handleSearchFromHook,
+    dismissRadiusWarning,
+  } = useMarketData();
+
   const [currentPage, setCurrentPage] = useState(1);
-  const [error, setError] = useState<string | null>(null);
+  const [sortOption, setSortOption] = useState<MarketSortOption>("default");
+  const [showExpanded, setShowExpanded] = useState(true);
+  const [requestedRadius, setRequestedRadius] = useState<number | null>(null);
 
   const [draftItems, setDraftItems] = useState<DraftItem[]>([]);
   const [showDraftModal, setShowDraftModal] = useState(false);
@@ -51,30 +63,8 @@ export default function MarketPage() {
   const [orderModalItem, setOrderModalItem] =
     useState<MarketSupplierItem | null>(null);
 
-  const [radiusWarning, setRadiusWarning] = useState<{
-    requested: number;
-    effective: number;
-    supplierCount: number;
-  } | null>(null);
-  const [requestedRadius, setRequestedRadius] = useState<number | null>(null);
-  const [showExpanded, setShowExpanded] = useState(true);
-  const [lastFilter, setLastFilter] = useState<MarketFilter | null>(null);
-
   useEffect(() => {
     setDraftItems(getDraftItems());
-    const persisted = getMarketState();
-    if (!persisted) return;
-
-    setLastFilter(persisted.filter);
-    setItems(persisted.items);
-    setRawStats(persisted.rawStats);
-    setCleanStats(persisted.cleanStats);
-    setSearchedItem(persisted.searchedItem);
-    setHasSearched(Boolean(persisted.searchedItem));
-    setCurrentPage(persisted.currentPage);
-    setShowExpanded(persisted.showExpanded);
-    setRequestedRadius(persisted.requestedRadius);
-    setError(persisted.error);
   }, []);
 
   const persistMarketState = useCallback(
@@ -107,172 +97,13 @@ export default function MarketPage() {
 
   const handleSearch = useCallback(
     async (filter: MarketFilter) => {
-      if (!token) return;
-      setIsLoading(true);
-      setHasSearched(true);
-      setError(null);
       setCurrentPage(1);
-      setLastFilter(filter);
-
-      try {
-        const response = await getMarketPrices(token, {
-          item: filter.item,
-          province:
-            filter.locationMode === "region" && filter.province
-              ? filter.province
-              : undefined,
-          regency:
-            filter.locationMode === "region" && filter.regency
-              ? filter.regency
-              : undefined,
-          district:
-            filter.locationMode === "region" && filter.district
-              ? filter.district
-              : undefined,
-          latitude:
-            filter.locationMode === "gps"
-              ? (user?.sppg?.latitude ?? undefined)
-              : undefined,
-          longitude:
-            filter.locationMode === "gps"
-              ? (user?.sppg?.longitude ?? undefined)
-              : undefined,
-          radiusKm:
-            filter.locationMode === "gps" && filter.radiusKm
-              ? parseFloat(filter.radiusKm)
-              : undefined,
-        });
-
-        if (response.success) {
-          const data = response.data as any;
-          const rawSuppliers = (data.suppliers || []) as any[];
-
-          // Fetch supplier items for each unique supplier to get itemId, unit, etc.
-          const uniqueSupplierIds = [...new Set(rawSuppliers.map((s) => s.id))];
-          const supplierItemsMap = new Map<string, any[]>();
-
-          await Promise.allSettled(
-            uniqueSupplierIds.map(async (sid) => {
-              try {
-                const res = await getSupplierItems(token!, sid);
-                if (res.success) {
-                  const itemsData = res.data as any;
-                  supplierItemsMap.set(sid, itemsData?.items || itemsData || []);
-                }
-              } catch {
-                // ignore
-              }
-            }),
-          );
-
-          const mapped = rawSuppliers.map((s: any) => {
-            const supplierItems = supplierItemsMap.get(s.id) || [];
-            // Find the matching item by searching the item name (case-insensitive contains)
-            const searchedName = filter.item.toLowerCase();
-            const matchedItem = supplierItems.find(
-              (it: any) => it.name?.toLowerCase().includes(searchedName),
-            );
-
-            return {
-              id: s.id,
-              itemId: matchedItem?.id || "",
-              supplierId: s.id,
-              supplierName: s.name ?? "-",
-              itemName: matchedItem?.name ?? filter.item,
-              unit: matchedItem?.unit ?? "-",
-              price: s.price,
-              isAnomaly: s.isAnomaly,
-              distance: s.distanceKm,
-              description: matchedItem?.description ?? undefined,
-              minOrderQty: matchedItem?.minOrderQty ?? 1,
-              orderStep: matchedItem?.orderStep ?? 1,
-              address: s.address ?? undefined,
-              province: s.province ?? undefined,
-              regency: s.regency ?? undefined,
-              district: s.district ?? undefined,
-              latitude: s.latitude ?? undefined,
-              longitude: s.longitude ?? undefined,
-            };
-          });
-
-          setItems(mapped);
-          setRawStats(data.statistics?.raw || null);
-          setCleanStats(data.statistics?.clean || null);
-          setSearchedItem(filter.item);
-
-          let nextShowExpanded = showExpanded;
-          let nextRequestedRadius: number | null = requestedRadius;
-
-          if (filter.locationMode === "gps" && filter.radiusKm) {
-            const requested = parseFloat(filter.radiusKm);
-            const effective = data.effectiveRadiusKm;
-            if (effective && effective > requested) {
-              setRadiusWarning({
-                requested,
-                effective,
-                supplierCount: data.sampleCount,
-              });
-              setRequestedRadius(requested);
-              setShowExpanded(true);
-              nextRequestedRadius = requested;
-              nextShowExpanded = true;
-            } else {
-              setRadiusWarning(null);
-              setRequestedRadius(null);
-              nextRequestedRadius = null;
-            }
-          } else {
-            setRadiusWarning(null);
-            setRequestedRadius(null);
-            nextRequestedRadius = null;
-          }
-
-          saveMarketState({
-            filter,
-            items: mapped,
-            rawStats: data.statistics?.raw || null,
-            cleanStats: data.statistics?.clean || null,
-            searchedItem: filter.item,
-            currentPage: 1,
-            showExpanded: nextShowExpanded,
-            requestedRadius: nextRequestedRadius,
-            error: null,
-          });
-        } else {
-          setError("Gagal memuat data harga pasar");
-          setItems([]);
-          saveMarketState({
-            filter,
-            items: [],
-            rawStats: null,
-            cleanStats: null,
-            searchedItem: filter.item,
-            currentPage: 1,
-            showExpanded,
-            requestedRadius,
-            error: "Gagal memuat data harga pasar",
-          });
-        }
-      } catch (err) {
-        console.error("Failed to fetch market prices:", err);
-        setError("Gagal memuat data harga pasar");
-        setItems([]);
-        saveMarketState({
-          filter,
-          items: [],
-          rawStats: null,
-          cleanStats: null,
-          searchedItem: filter.item,
-          currentPage: 1,
-          showExpanded,
-          requestedRadius,
-          error: "Gagal memuat data harga pasar",
-        });
-      } finally {
-        setIsLoading(false);
-      }
+      setSortOption("default");
+      setShowExpanded(true);
+      setRequestedRadius(null);
+      await handleSearchFromHook(filter);
     },
-    [requestedRadius, showExpanded, token, user],
+    [handleSearchFromHook],
   );
 
   const handlePageChange = useCallback(
@@ -283,16 +114,25 @@ export default function MarketPage() {
     [persistMarketState],
   );
 
-  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedItems = items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-
   const filteredItems = useMemo(() => {
-    if (showExpanded || !requestedRadius) {
-      return items;
+    const base =
+      showExpanded || !requestedRadius
+        ? items
+        : items.filter((item) => (item.distance ?? 0) <= requestedRadius);
+
+    switch (sortOption) {
+      case "price_desc":
+        return [...base].sort((a, b) => b.price - a.price);
+      case "price_asc":
+        return [...base].sort((a, b) => a.price - b.price);
+      case "distance_asc":
+        return [...base].sort(
+          (a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity),
+        );
+      default:
+        return base;
     }
-    return items.filter((item) => (item.distance ?? 0) <= requestedRadius);
-  }, [items, requestedRadius, showExpanded]);
+  }, [items, sortOption, requestedRadius, showExpanded]);
 
   const paginatedFilteredItems = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -396,7 +236,7 @@ export default function MarketPage() {
       />
 
       {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
@@ -412,7 +252,7 @@ export default function MarketPage() {
       )}
 
       {!isLoading && hasSearched && error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center mt-6">
           <p className="text-red-600 text-sm">{error}</p>
         </div>
       )}
@@ -425,13 +265,47 @@ export default function MarketPage() {
             item={searchedItem}
           />
 
+          {isRefetching && (
+            <div className="mb-4 flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+              <svg
+                className="animate-spin h-4 w-4 text-amber-600"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+              <p className="text-xs text-amber-700">
+                Memperbarui data harga terkini...
+              </p>
+            </div>
+          )}
+
+          <MarketSortFilter
+            value={sortOption}
+            onChange={setSortOption}
+            hasDistanceData={items.some((item) => item.distance != null)}
+          />
+
           <MarketCardGrid
-            items={showExpanded ? paginatedItems : paginatedFilteredItems}
+            items={paginatedFilteredItems}
             medianPrice={cleanStats.median}
             onAddToDraft={handleAddToDraft}
             onOrderClick={handleOrderClick}
             draftItemMap={draftItemMap}
             onViewDraft={handleViewDraft}
+            isRefetching={isRefetching}
           />
           {filteredItems.length > 0 && (
             <div className="mt-6 flex flex-col items-center gap-2">
@@ -450,7 +324,7 @@ export default function MarketPage() {
         </>
       )}
 
-      {!hasSearched && (
+      {!hasSearched && !isLoading && (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <svg
             className="w-16 h-16 text-gray-300 mx-auto mb-4"
@@ -474,9 +348,17 @@ export default function MarketPage() {
         </div>
       )}
 
-      <button
+      <motion.button
+        key={draftItems.length}
         onClick={() => setShowDraftModal(true)}
-        className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 px-5 py-3 bg-primary-600 text-white text-sm font-medium rounded-full shadow-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all hover:scale-105"
+        initial={{ scale: 1 }}
+        animate={{
+          scale: [1, 1.15, 1],
+          transition: { duration: 0.4, ease: "easeInOut" },
+        }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 px-5 py-3 bg-primary-600 text-white text-sm font-medium rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
       >
         <svg
           className="w-5 h-5"
@@ -492,12 +374,29 @@ export default function MarketPage() {
           />
         </svg>
         Keranjang
-        {draftItems.length > 0 && (
-          <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-bold bg-white text-primary-600 rounded-full">
-            {draftItems.length}
-          </span>
-        )}
-      </button>
+        <AnimatePresence mode="wait">
+          {draftItems.length > 0 && (
+            <motion.span
+              key={draftItems.length}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{
+                scale: [0, 1.3, 1],
+                opacity: 1,
+                transition: {
+                  type: "spring",
+                  damping: 15,
+                  stiffness: 400,
+                  mass: 0.6,
+                },
+              }}
+              exit={{ scale: 0, opacity: 0 }}
+              className="inline-flex items-center justify-center w-6 h-6 text-xs font-bold bg-white text-primary-600 rounded-full"
+            >
+              {draftItems.length}
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </motion.button>
 
       <DraftOrderModal
         isOpen={showDraftModal}
@@ -516,24 +415,24 @@ export default function MarketPage() {
       />
 
       <RadiusWarningModal
-        isOpen={!!radiusWarning}
-        requested={radiusWarning?.requested ?? 0}
-        effective={radiusWarning?.effective ?? 0}
-        totalSupplier={radiusWarning?.supplierCount ?? 0}
+        isOpen={!!radiusInfo}
+        requested={radiusInfo?.requested ?? 0}
+        effective={radiusInfo?.effective ?? 0}
+        totalSupplier={radiusInfo?.sampleCount ?? 0}
         filteredCount={
-          items.filter(
-            (i) => (i.distance ?? 0) <= (radiusWarning?.requested ?? 0),
-          ).length
+          items.filter((i) => (i.distance ?? 0) <= (radiusInfo?.requested ?? 0))
+            .length
         }
         onExpand={() => {
           setShowExpanded(true);
-          setRadiusWarning(null);
           setRequestedRadius(null);
+          dismissRadiusWarning();
           persistMarketState({ showExpanded: true, requestedRadius: null });
         }}
         onFilter={() => {
           setShowExpanded(false);
-          setRadiusWarning(null);
+          setRequestedRadius(radiusInfo?.requested ?? null);
+          dismissRadiusWarning();
           persistMarketState({ showExpanded: false });
         }}
       />

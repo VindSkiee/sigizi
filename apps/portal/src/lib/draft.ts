@@ -17,8 +17,27 @@ export function saveDraftItems(items: DraftItem[]): void {
   localStorage.setItem(DRAFT_KEY, JSON.stringify(items));
 }
 
-export function addDraftItem(item: Omit<DraftItem, "draftId" | "addedAt">): DraftItem[] {
+export function addDraftItem(
+  item: Omit<DraftItem, "draftId" | "addedAt">,
+): DraftItem[] {
   const items = getDraftItems();
+  const existingIndex = items.findIndex((i) => i.itemId === item.itemId);
+
+  if (existingIndex >= 0) {
+    items[existingIndex] = {
+      ...items[existingIndex],
+      quantity: items[existingIndex].quantity + item.quantity,
+      unitPrice: item.unitPrice,
+      supplierName: item.supplierName,
+      itemName: item.itemName,
+      unit: item.unit,
+      minOrderQty: item.minOrderQty,
+      orderStep: item.orderStep,
+    };
+    saveDraftItems(items);
+    return items;
+  }
+
   const newItem: DraftItem = {
     ...item,
     draftId: crypto.randomUUID(),
@@ -35,9 +54,12 @@ export function removeDraftItem(draftId: string): DraftItem[] {
   return items;
 }
 
-export function updateDraftQuantity(draftId: string, quantity: number): DraftItem[] {
+export function updateDraftQuantity(
+  draftId: string,
+  quantity: number,
+): DraftItem[] {
   const items = getDraftItems().map((i) =>
-    i.draftId === draftId ? { ...i, quantity: Math.max(1, quantity) } : i
+    i.draftId === draftId ? { ...i, quantity: Math.max(1, quantity) } : i,
   );
   saveDraftItems(items);
   return items;

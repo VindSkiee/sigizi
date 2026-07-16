@@ -10,6 +10,7 @@ interface MarketCardGridProps {
   onOrderClick: (item: MarketSupplierItem) => void;
   draftItemMap: Map<string, number>;
   onViewDraft: () => void;
+  isRefetching?: boolean;
 }
 
 export function MarketCardGrid({
@@ -19,6 +20,7 @@ export function MarketCardGrid({
   onOrderClick,
   draftItemMap,
   onViewDraft,
+  isRefetching,
 }: MarketCardGridProps) {
   if (items.length === 0) {
     return (
@@ -55,6 +57,7 @@ export function MarketCardGrid({
           onOrderClick={onOrderClick}
           draftQuantity={draftItemMap.get(item.itemId)}
           onViewDraft={onViewDraft}
+          isRefetching={isRefetching}
         />
       ))}
     </div>

@@ -7,6 +7,7 @@ import {
 } from "../../../core/utils/geolocation";
 import { GpsCoordinate } from "../../../core/domain/value-objects/gps-coordinate.vo";
 import { MarketLocationFilterDto } from "../dto/market-location-filter.dto";
+import { normalizeRegion, matchesRegion } from "@sigizi/shared";
 
 const MIN_MATURE_SAMPLE = 5;
 const MIN_IQR_SAMPLE = 4;
@@ -47,6 +48,7 @@ interface SupplierItemWithSupplier {
   supplier: {
     id: string;
     name: string;
+    address: string | null;
     province: string;
     regency: string;
     district: string;
@@ -384,7 +386,7 @@ export class MarketService {
       where.supplier = {
         is: {
           province: {
-            equals: filter.province,
+            equals: normalizeRegion(filter.province),
             mode: "insensitive",
           },
         },
@@ -588,22 +590,7 @@ export class MarketService {
   }
 
   private matchesRegionField(value: string, expected: string): boolean {
-    const normalizedValue = this.normalizeRegion(value);
-    const normalizedExpected = this.normalizeRegion(expected);
-
-    return (
-      normalizedValue === normalizedExpected ||
-      normalizedValue.includes(normalizedExpected) ||
-      normalizedExpected.includes(normalizedValue)
-    );
-  }
-
-  private normalizeRegion(value: string): string {
-    return value
-      .toLowerCase()
-      .replace(/^kab\.?\s*/i, "")
-      .replace(/\s+/g, "_")
-      .trim();
+    return matchesRegion(value, expected);
   }
 
   private buildDualStatistics(prices: number[]): DualPriceStatistics {
@@ -686,6 +673,10 @@ export class MarketService {
         name: item.supplier.name,
         price: item.basePrice,
         isAnomaly,
+        address: item.supplier.address ?? undefined,
+        province: item.supplier.province ?? undefined,
+        regency: item.supplier.regency ?? undefined,
+        district: item.supplier.district ?? undefined,
         latitude: item.supplier.latitude ?? undefined,
         longitude: item.supplier.longitude ?? undefined,
         distanceKm,

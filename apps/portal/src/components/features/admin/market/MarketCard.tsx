@@ -5,11 +5,10 @@ import { formatCurrency } from "@/lib/utils";
 import {
   AlertTriangle,
   CheckCircle,
-  FileText,
   MapPin,
   Navigation,
   Package,
-  ShoppingCart
+  ShoppingCart,
 } from "lucide-react";
 
 interface MarketCardProps {
@@ -19,6 +18,7 @@ interface MarketCardProps {
   onOrderClick: (item: MarketSupplierItem) => void;
   draftQuantity?: number;
   onViewDraft: () => void;
+  isRefetching?: boolean;
 }
 
 export function MarketCard({
@@ -28,6 +28,7 @@ export function MarketCard({
   onOrderClick,
   draftQuantity,
   onViewDraft,
+  isRefetching,
 }: MarketCardProps) {
   const priceDiff =
     medianPrice && medianPrice > 0
@@ -46,7 +47,6 @@ export function MarketCard({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow flex flex-col">
-      {/* Header: Supplier Name + Anomaly Badge */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-gray-900 truncate">
@@ -73,10 +73,8 @@ export function MarketCard({
         )}
       </div>
 
-      {/* Item Name */}
       <p className="text-sm font-medium text-gray-700 mb-2">{item.itemName}</p>
 
-      {/* Address + Distance */}
       <div className="space-y-1.5 mb-3">
         {(item.address || locationParts.length > 0) && (
           <a
@@ -116,7 +114,6 @@ export function MarketCard({
         )}
       </div>
 
-      {/* Price + Min Order */}
       <div className="flex items-end justify-between mb-3 mt-auto">
         <div>
           <p className="text-xs text-gray-500 mb-0.5">Harga per {item.unit}</p>
@@ -157,14 +154,12 @@ export function MarketCard({
         )}
       </div>
 
-      {/* Description */}
       {item.description && (
         <p className="text-xs text-gray-400 mb-3 line-clamp-2 leading-relaxed">
           {item.description}
         </p>
       )}
 
-      {/* Action Button */}
       {draftQuantity != null && draftQuantity > 0 ? (
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
@@ -175,21 +170,74 @@ export function MarketCard({
           </div>
           <button
             onClick={onViewDraft}
-            className="block w-full text-center px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+            disabled={isRefetching}
+            className="block w-full text-center px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
-            <span className="inline-flex items-center gap-1.5">
-              <ShoppingCart className="w-4 h-4" />
-              Lihat Keranjang
-            </span>
+            {isRefetching ? (
+              <span className="inline-flex items-center gap-1.5">
+                <svg
+                  className="animate-spin h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
+                Memperbarui...
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                <ShoppingCart className="w-4 h-4" />
+                Lihat Keranjang
+              </span>
+            )}
           </button>
         </div>
       ) : (
         <button
           onClick={() => onOrderClick(item)}
-          disabled={item.isAnomaly}
+          disabled={item.isAnomaly || isRefetching}
           className="block w-full text-center px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
-          {item.isAnomaly ? "Harga Anomali" : "Pesan Bahan"}
+          {isRefetching ? (
+            <span className="inline-flex items-center gap-1.5">
+              <svg
+                className="animate-spin h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+              Memperbarui...
+            </span>
+          ) : item.isAnomaly ? (
+            "Harga Anomali"
+          ) : (
+            "Pesan Bahan"
+          )}
         </button>
       )}
     </div>
