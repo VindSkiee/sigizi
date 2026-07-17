@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { PageErrorBoundary } from "@/components/features/PageErrorBoundary";
+import { DemoNoticeModal } from "@/components/ui/DemoNoticeModal";
 
 const PUBLIC_ADMIN_ROUTES = ["/admin/setup-location"];
 
@@ -47,6 +48,7 @@ export default function AdminLayout({
 
   return (
     <div className="flex min-h-screen bg-gray-50">
+      <DemoNoticeModal />
       <AdminSidebar />
       <main className="flex-1 ml-64 p-8 overflow-x-hidden">
         <PageErrorBoundary pageName="Dashboard Admin">

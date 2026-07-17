@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RegionCascadingSelect } from "@/components/ui/RegionCascadingSelect";
 import { LocationToggle } from "@/components/ui/LocationToggle";
+import { DemoNoticeModal } from "@/components/ui/DemoNoticeModal";
 
 type Tab = "batch" | "sppg";
 
@@ -62,6 +63,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-green-50 to-white">
+      <DemoNoticeModal />
       {/* Top Navigation */}
       <nav className="absolute top-0 left-0 right-0 px-4 py-4">
         <div className="max-w-5xl mx-auto flex justify-end items-center gap-3">
