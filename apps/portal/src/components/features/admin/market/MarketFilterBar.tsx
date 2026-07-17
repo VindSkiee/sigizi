@@ -28,6 +28,7 @@ interface RegionData {
 interface MarketData {
   name: string;
   supplierCount: number;
+  itemCount: number;
 }
 
 export function MarketFilterBar({
@@ -285,7 +286,8 @@ export function MarketFilterBar({
                     <option value="">Semua pasar</option>
                     {markets.map((m) => (
                       <option key={m.name} value={m.name}>
-                        {m.name} ({m.supplierCount})
+                        {m.name} ({m.supplierCount} supplier, {m.itemCount}{" "}
+                        items)
                       </option>
                     ))}
                   </select>

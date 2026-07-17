@@ -127,7 +127,8 @@ export function useMarketData(): UseMarketDataReturn {
         );
 
         const mapped = rawSuppliers.map((s: any) => {
-          const supplierItems = supplierItemsMap.get(s.id) || [];
+          const supplierItems =
+            supplierItemsMap.get(s.supplierId || s.id) || [];
           const searchedName = filter.item.toLowerCase();
           const matchedItem = supplierItems.find((it: any) =>
             it.name?.toLowerCase().includes(searchedName),
@@ -135,8 +136,8 @@ export function useMarketData(): UseMarketDataReturn {
 
           return {
             id: s.id,
-            itemId: matchedItem?.id || "",
-            supplierId: s.id,
+            itemId: s.itemId || matchedItem?.id || "",
+            supplierId: s.supplierId || s.id,
             supplierName: s.name ?? "-",
             itemName: matchedItem?.name ?? filter.item,
             unit: matchedItem?.unit ?? "-",

@@ -144,33 +144,49 @@ export class MarketService {
       marketName: { not: null },
     };
 
-    if (item) {
-      where.items = {
-        some: {
-          name: { contains: item, mode: "insensitive" },
-        },
-      };
-    }
-
+    // Query suppliers dengan items yang match
     const suppliers = await this.prisma.supplier.findMany({
       where,
-      select: { marketName: true },
+      select: {
+        id: true,
+        marketName: true,
+        items: {
+          where: item
+            ? { name: { contains: item, mode: "insensitive" } }
+            : undefined,
+          select: { id: true },
+        },
+      },
       orderBy: { marketName: "asc" },
     });
 
-    const marketCounts = new Map<string, number>();
+    // Group by marketName dan count
+    const marketData = new Map<
+      string,
+      { suppliers: Set<string>; items: Set<string> }
+    >();
+
     for (const s of suppliers) {
-      if (s.marketName) {
-        marketCounts.set(
-          s.marketName,
-          (marketCounts.get(s.marketName) || 0) + 1,
-        );
+      if (s.marketName && s.items.length > 0) {
+        if (!marketData.has(s.marketName)) {
+          marketData.set(s.marketName, {
+            suppliers: new Set(),
+            items: new Set(),
+          });
+        }
+        const data = marketData.get(s.marketName)!;
+        data.suppliers.add(s.id);
+        s.items.forEach((item) => data.items.add(item.id));
       }
     }
 
     return {
-      markets: Array.from(marketCounts.entries())
-        .map(([name, supplierCount]) => ({ name, supplierCount }))
+      markets: Array.from(marketData.entries())
+        .map(([name, data]) => ({
+          name,
+          supplierCount: data.suppliers.size,
+          itemCount: data.items.size,
+        }))
         .sort((a, b) => a.name.localeCompare(b.name)),
     };
   }
@@ -753,7 +769,9 @@ export class MarketService {
         (item.basePrice < bounds.lower || item.basePrice > bounds.upper);
 
       return {
-        id: item.supplier.id,
+        id: `${item.supplier.id}-${item.id}`,
+        supplierId: item.supplier.id,
+        itemId: item.id,
         name: item.supplier.name,
         price: item.basePrice,
         isAnomaly,
