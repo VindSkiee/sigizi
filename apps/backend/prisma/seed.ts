@@ -553,18 +553,18 @@ async function main() {
   addItem(13, "Beras Premium", "kg", 12100, "Beras premium lokal");
 
   // AYAM POTONG (12 suppliers) - Mature market
-  addItem(0, "Ayam Potong", "kg", 35000, "Ayam potong segar");
-  addItem(1, "Ayam Potong", "kg", 36000, "Ayam potong pilihan");
-  addItem(2, "Ayam Potong", "kg", 34000, "Ayam potong segar harian");
-  addItem(3, "Ayam Potong", "kg", 37000, "Ayam potong premium");
-  addItem(4, "Ayam Potong", "kg", 35500, "Ayam potong lokal");
-  addItem(5, "Ayam Potong", "kg", 38000, "Ayam potong super");
-  addItem(6, "Ayam Potong", "kg", 33000, "Ayam potong ekonomis");
-  addItem(7, "Ayam Potong", "kg", 42000, "Ayam potong organik"); // outlier
-  addItem(8, "Ayam Potong", "kg", 36500, "Ayam potong standar");
-  addItem(9, "Ayam Potong", "kg", 34500, "Ayam potong segar");
-  addItem(10, "Ayam Potong", "kg", 37500, "Ayam potong pilihan");
-  addItem(11, "Ayam Potong", "kg", 35000, "Ayam potong harian");
+  addItem(0, "Daging Ayam", "kg", 35000, "Ayam potong segar");
+  addItem(1, "Daging Ayam", "kg", 36000, "Ayam potong pilihan");
+  addItem(2, "Daging Ayam", "kg", 34000, "Ayam potong segar harian");
+  addItem(3, "Daging Ayam", "kg", 37000, "Ayam potong premium");
+  addItem(4, "Daging Ayam", "kg", 35500, "Ayam potong lokal");
+  addItem(5, "Daging Ayam", "kg", 38000, "Ayam potong super");
+  addItem(6, "Daging Ayam", "kg", 33000, "Ayam potong ekonomis");
+  addItem(7, "Daging Ayam", "kg", 42000, "Ayam potong organik"); // outlier
+  addItem(8, "Daging Ayam", "kg", 36500, "Ayam potong standar");
+  addItem(9, "Daging Ayam", "kg", 34500, "Ayam potong segar");
+  addItem(10, "Daging Ayam", "kg", 37500, "Ayam potong pilihan");
+  addItem(11, "Daging Ayam", "kg", 35000, "Ayam potong harian");
 
   // TELUR AYAM (10 suppliers) - Mature market
   addItem(0, "Telur Ayam", "kg", 28000, "Telur ayam segar");
@@ -643,6 +643,28 @@ async function main() {
   addItem(1, "Ikan Tongkol", "kg", 30000, "Ikan tongkol pilihan");
   addItem(2, "Ikan Tongkol", "kg", 35000, "Ikan tongkol premium");
 
+  // IKAN LELE (9 suppliers) - Mature market
+  addItem(0, "Ikan Lele", "kg", 25000, "Ikan lele segar");
+  addItem(1, "Ikan Lele", "kg", 27000, "Ikan lele pilihan");
+  addItem(2, "Ikan Lele", "kg", 24000, "Ikan lele lokal");
+  addItem(3, "Ikan Lele", "kg", 28000, "Ikan lele premium");
+  addItem(4, "Ikan Lele", "kg", 26000, "Ikan lele segar harian");
+  addItem(5, "Ikan Lele", "kg", 30000, "Ikan lele super");
+  addItem(6, "Ikan Lele", "kg", 23000, "Ikan lele ekonomis");
+  addItem(7, "Ikan Lele", "kg", 40000, "Ikan lele organik"); // outlier
+  addItem(8, "Ikan Lele", "kg", 26500, "Ikan lele standar");
+
+  // TEPUNG TERIGU (9 suppliers) - Mature market
+  addItem(0, "Tepung Terigu", "kg", 10000, "Tepung terigu segar");
+  addItem(1, "Tepung Terigu", "kg", 11000, "Tepung terigu pilihan");
+  addItem(2, "Tepung Terigu", "kg", 9500, "Tepung terigu lokal");
+  addItem(3, "Tepung Terigu", "kg", 12000, "Tepung terigu premium");
+  addItem(4, "Tepung Terigu", "kg", 10500, "Tepung terigu standar");
+  addItem(5, "Tepung Terigu", "kg", 13000, "Tepung terigu super");
+  addItem(6, "Tepung Terigu", "kg", 9000, "Tepung terigu ekonomis");
+  addItem(7, "Tepung Terigu", "kg", 18000, "Tepung terigu organik"); // outlier
+  addItem(8, "Tepung Terigu", "kg", 10800, "Tepung terigu harian");
+
   // ============================================================================
   // TAMBAHAN ITEMS UNTUK SETIAP PASAR (Realistic Market Simulation)
   // ============================================================================
@@ -654,10 +676,10 @@ async function main() {
   addItem(8, "Beras Premium", "kg", 12400, "Beras premium standar kualitas");
 
   // AYAM POTONG - Tambahan untuk supplier 5-8
-  addItem(5, "Ayam Potong", "kg", 36800, "Ayam potong super segar");
-  addItem(6, "Ayam Potong", "kg", 33500, "Ayam potong ekonomis harian");
-  addItem(7, "Ayam Potong", "kg", 37200, "Ayam potong premium pilihan");
-  addItem(8, "Ayam Potong", "kg", 35800, "Ayam potong standar segar");
+  addItem(5, "Daging Ayam", "kg", 36800, "Ayam potong super segar");
+  addItem(6, "Daging Ayam", "kg", 33500, "Ayam potong ekonomis harian");
+  addItem(7, "Daging Ayam", "kg", 37200, "Ayam potong premium pilihan");
+  addItem(8, "Daging Ayam", "kg", 35800, "Ayam potong standar segar");
 
   // TELUR AYAM - Tambahan untuk supplier 5-8
   addItem(5, "Telur Ayam", "kg", 29800, "Telur ayam super pilihan");
@@ -1451,7 +1473,7 @@ async function main() {
           },
           {
             itemId: createdItems[14].id,
-            name: "Ayam Potong 3kg",
+            name: "Daging Ayam 3kg",
             unit: "kg",
             quantity: 3,
             unitPrice: 34000,
