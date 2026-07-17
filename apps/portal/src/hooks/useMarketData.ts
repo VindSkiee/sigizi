@@ -109,7 +109,9 @@ export function useMarketData(): UseMarketDataReturn {
         const data = response.data as any;
         const rawSuppliers = (data.suppliers || []) as any[];
 
-        const uniqueSupplierIds = [...new Set(rawSuppliers.map((s) => s.id))];
+        const uniqueSupplierIds = [
+          ...new Set(rawSuppliers.map((s) => s.supplierId)),
+        ];
         const supplierItemsMap = new Map<string, any[]>();
 
         await Promise.allSettled(
