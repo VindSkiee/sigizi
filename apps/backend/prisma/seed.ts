@@ -801,69 +801,15 @@ async function main() {
   }
 
   const MARKET_CONFIGS: MarketConfig[] = [
-    {
-      name: "Pasar Ciledug",
-      district: "SUMBER",
-      centerLat: -6.702,
-      centerLng: 108.554,
-      supplierCount: 7,
-    },
-    {
-      name: "Pasar Weru",
-      district: "WERU",
-      centerLat: -6.733,
-      centerLng: 108.579,
-      supplierCount: 7,
-    },
-    {
-      name: "Pasar Arjawinangun",
-      district: "ARJAWINANGUN",
-      centerLat: -6.759,
-      centerLng: 108.493,
-      supplierCount: 7,
-    },
-    {
-      name: "Pasar Plumbon",
-      district: "PLUMBON",
-      centerLat: -6.745,
-      centerLng: 108.562,
-      supplierCount: 7,
-    },
-    {
-      name: "Pasar Depok",
-      district: "DEPOK",
-      centerLat: -6.728,
-      centerLng: 108.545,
-      supplierCount: 7,
-    },
-    {
-      name: "Pasar Talun",
-      district: "TALUN",
-      centerLat: -6.768,
-      centerLng: 108.512,
-      supplierCount: 6,
-    },
-    {
-      name: "Pasar Astanajapura",
-      district: "ASTANAJAPURA",
-      centerLat: -6.785,
-      centerLng: 108.528,
-      supplierCount: 6,
-    },
-    {
-      name: "Pasar Plered",
-      district: "PLERED",
-      centerLat: -6.772,
-      centerLng: 108.498,
-      supplierCount: 7,
-    },
-    {
-      name: "Pasar Kapetakan",
-      district: "KAPETAKAN",
-      centerLat: -6.718,
-      centerLng: 108.568,
-      supplierCount: 6,
-    },
+    { name: "Pasar Ciledug", district: "SUMBER", centerLat: -6.702, centerLng: 108.554, supplierCount: 7 },
+    { name: "Pasar Weru", district: "WERU", centerLat: -6.733, centerLng: 108.579, supplierCount: 7 },
+    { name: "Pasar Arjawinangun", district: "ARJAWINANGUN", centerLat: -6.759, centerLng: 108.493, supplierCount: 7 },
+    { name: "Pasar Plumbon", district: "PLUMBON", centerLat: -6.745, centerLng: 108.562, supplierCount: 7 },
+    { name: "Pasar Depok", district: "DEPOK", centerLat: -6.728, centerLng: 108.545, supplierCount: 7 },
+    { name: "Pasar Talun", district: "TALUN", centerLat: -6.768, centerLng: 108.512, supplierCount: 6 },
+    { name: "Pasar Astanajapura", district: "ASTANAJAPURA", centerLat: -6.785, centerLng: 108.528, supplierCount: 6 },
+    { name: "Pasar Plered", district: "PLERED", centerLat: -6.772, centerLng: 108.498, supplierCount: 7 },
+    { name: "Pasar Kapetakan", district: "KAPETAKAN", centerLat: -6.718, centerLng: 108.568, supplierCount: 6 },
   ];
 
   // --- Item Catalog (16 types with base prices) ---
@@ -877,150 +823,24 @@ async function main() {
   }
 
   const ITEM_CATALOG: ItemCatalogEntry[] = [
-    {
-      name: "Beras Premium",
-      unit: "kg",
-      basePrice: 12000,
-      minOrderQty: 5,
-      orderStep: 0.5,
-      frequency: 0.9,
-    },
-    {
-      name: "Daging Ayam",
-      unit: "kg",
-      basePrice: 35000,
-      minOrderQty: 1,
-      orderStep: 0.5,
-      frequency: 0.85,
-    },
-    {
-      name: "Telur Ayam",
-      unit: "kg",
-      basePrice: 28000,
-      minOrderQty: 1,
-      orderStep: 0.5,
-      frequency: 0.8,
-    },
-    {
-      name: "Tahu Putih",
-      unit: "kg",
-      basePrice: 8000,
-      minOrderQty: 1,
-      orderStep: 0.5,
-      frequency: 0.65,
-    },
-    {
-      name: "Tempe",
-      unit: "kg",
-      basePrice: 10000,
-      minOrderQty: 1,
-      orderStep: 0.5,
-      frequency: 0.65,
-    },
-    {
-      name: "Sayur Bayam",
-      unit: "kg",
-      basePrice: 7000,
-      minOrderQty: 1,
-      orderStep: 0.5,
-      frequency: 0.6,
-    },
-    {
-      name: "Wortel",
-      unit: "kg",
-      basePrice: 10000,
-      minOrderQty: 1,
-      orderStep: 0.5,
-      frequency: 0.55,
-    },
-    {
-      name: "Minyak Goreng",
-      unit: "liter",
-      basePrice: 16000,
-      minOrderQty: 1,
-      orderStep: 1,
-      frequency: 0.55,
-    },
-    {
-      name: "Kentang",
-      unit: "kg",
-      basePrice: 12000,
-      minOrderQty: 1,
-      orderStep: 0.5,
-      frequency: 0.5,
-    },
-    {
-      name: "Sayur Kangkung",
-      unit: "kg",
-      basePrice: 5000,
-      minOrderQty: 1,
-      orderStep: 0.5,
-      frequency: 0.35,
-    },
-    {
-      name: "Ikan Tongkol",
-      unit: "kg",
-      basePrice: 30000,
-      minOrderQty: 1,
-      orderStep: 0.5,
-      frequency: 0.3,
-    },
-    {
-      name: "Ikan Lele",
-      unit: "kg",
-      basePrice: 26000,
-      minOrderQty: 1,
-      orderStep: 0.5,
-      frequency: 0.5,
-    },
-    {
-      name: "Tepung Terigu",
-      unit: "kg",
-      basePrice: 10500,
-      minOrderQty: 1,
-      orderStep: 0.5,
-      frequency: 0.5,
-    },
-    {
-      name: "Daging Sapi",
-      unit: "kg",
-      basePrice: 120000,
-      minOrderQty: 1,
-      orderStep: 0.5,
-      frequency: 0.5,
-    },
-    {
-      name: "Bawang Merah",
-      unit: "kg",
-      basePrice: 28000,
-      minOrderQty: 1,
-      orderStep: 0.5,
-      frequency: 0.5,
-    },
-    {
-      name: "Cabai Merah",
-      unit: "kg",
-      basePrice: 38000,
-      minOrderQty: 1,
-      orderStep: 0.5,
-      frequency: 0.5,
-    },
-    {
-      name: "Gula Pasir",
-      unit: "kg",
-      basePrice: 14000,
-      minOrderQty: 1,
-      orderStep: 0.5,
-      frequency: 0.5,
-    },
-    {
-      name: "Garam",
-      unit: "kg",
-      basePrice: 5000,
-      minOrderQty: 1,
-      orderStep: 0.5,
-      frequency: 0.5,
-    },
+    { name: "Beras Premium", unit: "kg", basePrice: 12000, minOrderQty: 5, orderStep: 0.5, frequency: 0.90 },
+    { name: "Daging Ayam", unit: "kg", basePrice: 35000, minOrderQty: 1, orderStep: 0.5, frequency: 0.85 },
+    { name: "Telur Ayam", unit: "kg", basePrice: 28000, minOrderQty: 1, orderStep: 0.5, frequency: 0.80 },
+    { name: "Tahu Putih", unit: "kg", basePrice: 8000, minOrderQty: 1, orderStep: 0.5, frequency: 0.65 },
+    { name: "Tempe", unit: "kg", basePrice: 10000, minOrderQty: 1, orderStep: 0.5, frequency: 0.65 },
+    { name: "Sayur Bayam", unit: "kg", basePrice: 7000, minOrderQty: 1, orderStep: 0.5, frequency: 0.60 },
+    { name: "Wortel", unit: "kg", basePrice: 10000, minOrderQty: 1, orderStep: 0.5, frequency: 0.55 },
+    { name: "Minyak Goreng", unit: "liter", basePrice: 16000, minOrderQty: 1, orderStep: 1, frequency: 0.55 },
+    { name: "Kentang", unit: "kg", basePrice: 12000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
+    { name: "Sayur Kangkung", unit: "kg", basePrice: 5000, minOrderQty: 1, orderStep: 0.5, frequency: 0.35 },
+    { name: "Ikan Tongkol", unit: "kg", basePrice: 30000, minOrderQty: 1, orderStep: 0.5, frequency: 0.30 },
+    { name: "Ikan Lele", unit: "kg", basePrice: 26000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
+    { name: "Tepung Terigu", unit: "kg", basePrice: 10500, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
+    { name: "Daging Sapi", unit: "kg", basePrice: 120000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
+    { name: "Bawang Merah", unit: "kg", basePrice: 28000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
+    { name: "Cabai Merah", unit: "kg", basePrice: 38000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
+    { name: "Gula Pasir", unit: "kg", basePrice: 14000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
+    { name: "Garam", unit: "kg", basePrice: 5000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
   ];
 
   // --- Deterministic pseudo-random (seeded by supplier index) ---
@@ -1031,37 +851,13 @@ async function main() {
 
   // --- Supplier name prefixes & suffixes ---
   const SUPPLIER_PREFIXES = [
-    "Toko",
-    "UD.",
-    "CV.",
-    "Kios",
-    "Warung",
-    "Barokah",
-    "Mitra",
+    "Toko", "UD.", "CV.", "Kios", "Warung", "Barokah", "Mitra",
   ];
   const SUPPLIER_SUFFIXES = [
-    "Berkah Jaya",
-    "Makmur",
-    "Sejahtera",
-    "Pangan Indah",
-    "Segar Makmur",
-    "Tani Subur",
-    "Raya Market",
-    "Pasar Jaya",
-    "Bersama",
-    "Sentosa",
-    "Langgeng",
-    "Abadi",
-    "Prima",
-    "Utama",
-    "Jaya",
-    "Lestari",
-    "Maju",
-    "Pangan Sehat",
-    "BasSegar",
-    "Dua Saudara",
-    "Putra Jaya",
-    "Sumber Rejeki",
+    "Berkah Jaya", "Makmur", "Sejahtera", "Pangan Indah", "Segar Makmur",
+    "Tani Subur", "Raya Market", "Pasar Jaya", "Bersama", "Sentosa",
+    "Langgeng", "Abadi", "Prima", "Utama", "Jaya", "Lestari", "Maju",
+    "Pangan Sehat", "BasSegar", "Dua Saudara", "Putra Jaya", "Sumber Rejeki",
   ];
 
   // --- Street names per district ---
@@ -1089,20 +885,13 @@ async function main() {
     for (let sIdx = 0; sIdx < mkt.supplierCount; sIdx++) {
       const seed = mktIdx * 100 + sIdx;
       const r = seededRandom(seed);
-      const prefix =
-        SUPPLIER_PREFIXES[
-          Math.floor(seededRandom(seed + 1) * SUPPLIER_PREFIXES.length)
-        ];
-      const suffix =
-        SUPPLIER_SUFFIXES[
-          Math.floor(seededRandom(seed + 2) * SUPPLIER_SUFFIXES.length)
-        ];
+      const prefix = SUPPLIER_PREFIXES[Math.floor(seededRandom(seed + 1) * SUPPLIER_PREFIXES.length)];
+      const suffix = SUPPLIER_SUFFIXES[Math.floor(seededRandom(seed + 2) * SUPPLIER_SUFFIXES.length)];
 
       const supplierId = `clx_supplier_${String(globalSupplierIdx).padStart(2, "0")}`;
       const nib = `1000000000${String(globalSupplierIdx).padStart(4, "0")}`;
       const phone = `08123456${String(7000 + globalSupplierIdx).padStart(4, "0")}`;
-      const street =
-        streets[Math.floor(seededRandom(seed + 3) * streets.length)];
+      const street = streets[Math.floor(seededRandom(seed + 3) * streets.length)];
       const streetNum = Math.floor(seededRandom(seed + 4) * 80) + 1;
       const latOffset = (seededRandom(seed + 5) - 0.5) * 0.006; // ~300m radius
       const lngOffset = (seededRandom(seed + 6) - 0.5) * 0.006;
@@ -1155,10 +944,9 @@ async function main() {
           if (isOutlier) {
             priceMultiplier = seededRandom(itemSeed + 11) > 0.5 ? 1.5 : 0.5;
           } else {
-            priceMultiplier = 0.8 + seededRandom(itemSeed + 12) * 0.4; // 0.80 to 1.20
+            priceMultiplier = 0.80 + seededRandom(itemSeed + 12) * 0.40; // 0.80 to 1.20
           }
-          const finalPrice =
-            Math.round((catalog.basePrice * priceMultiplier) / 100) * 100; // round to nearest 100
+          const finalPrice = Math.round(catalog.basePrice * priceMultiplier / 100) * 100; // round to nearest 100
 
           const descWords = [
             `${catalog.name.split(" ")[0].toLowerCase()} segar`,
@@ -1191,9 +979,7 @@ async function main() {
 
   console.log("✅ Additional market suppliers created:", newSuppliers.length);
   console.log("✅ Additional supplier items created:", newItems.length);
-  console.log(
-    `📊 Total suppliers: ${18 + newSuppliers.length} | Total items: ${createdItems.length}`,
-  );
+  console.log(`📊 Total suppliers: ${18 + newSuppliers.length} | Total items: ${createdItems.length}`);
 
   // ============================================================================
   // 5. Create Beneficiaries (6: 2 per SPPG)
@@ -1859,12 +1645,12 @@ async function main() {
       menu: "Nasi Ayam Bakar + Sayur Bayam",
       nutrition: { calories: 450, protein: 25, fat: 15, carbs: 50 },
       allergens: ["Gluten"],
-      beneficiaryCount: 5000,
+      beneficiaryCount: 150,
       beneficiaryNames: ["SDN 1 Sumber", "SDN 2 Sumber"],
       costPerPortion: 0,
       totalCost: 0,
       costPerPortionStandard: 10000,
-      totalBudget: 50000000,
+      totalBudget: 1500000,
       budgetVariance: 0,
       sppgId: sppg1.id,
       createdById: admin1.id,
@@ -1874,27 +1660,27 @@ async function main() {
             itemId: createdItems[0].id,
             name: "Beras Premium 15kg",
             unit: "kg",
-            quantity: 1750,
+            quantity: 15,
             unitPrice: 11500,
-            subtotal: 20125000,
+            subtotal: 172500,
             createdById: admin1.id,
           },
           {
             itemId: createdItems[14].id,
             name: "Daging Ayam 3kg",
             unit: "kg",
-            quantity: 900,
+            quantity: 3,
             unitPrice: 34000,
-            subtotal: 30600000,
+            subtotal: 102000,
             createdById: admin1.id,
           },
           {
             itemId: createdItems[62].id,
             name: "Sayur Bayam 10kg",
             unit: "kg",
-            quantity: 1000,
+            quantity: 10,
             unitPrice: 7000,
-            subtotal: 7000000,
+            subtotal: 70000,
             createdById: admin1.id,
           },
         ],
@@ -1932,12 +1718,12 @@ async function main() {
       menu: "Nasi Ikan Goreng + Wortel",
       nutrition: { calories: 520, protein: 30, fat: 18, carbs: 55 },
       allergens: ["Ikan"],
-      beneficiaryCount: 3000,
+      beneficiaryCount: 120,
       beneficiaryNames: ["SDN 1 Weru", "SMPN 1 Weru"],
       costPerPortion: 0,
       totalCost: 0,
       costPerPortionStandard: 10000,
-      totalBudget: 30000000,
+      totalBudget: 1200000,
       budgetVariance: 0,
       sppgId: sppg2.id,
       createdById: admin2.id,
@@ -1947,27 +1733,27 @@ async function main() {
             itemId: createdItems[9].id,
             name: "Beras Premium 12kg",
             unit: "kg",
-            quantity: 1200,
+            quantity: 12,
             unitPrice: 12000,
-            subtotal: 14400000,
+            subtotal: 144000,
             createdById: admin2.id,
           },
           {
             itemId: createdItems[80].id,
             name: "Wortel 6kg",
             unit: "kg",
-            quantity: 600,
+            quantity: 6,
             unitPrice: 10000,
-            subtotal: 6000000,
+            subtotal: 60000,
             createdById: admin2.id,
           },
           {
             itemId: createdItems[76].id,
             name: "Sayur Kangkung 8kg",
             unit: "kg",
-            quantity: 900,
+            quantity: 8,
             unitPrice: 5000,
-            subtotal: 4500000,
+            subtotal: 40000,
             createdById: admin2.id,
           },
         ],
@@ -2005,12 +1791,12 @@ async function main() {
       menu: "Nasi Tahu Tempe + Telur",
       nutrition: { calories: 480, protein: 22, fat: 16, carbs: 52 },
       allergens: ["Kedelai", "Telur"],
-      beneficiaryCount: 4000,
+      beneficiaryCount: 100,
       beneficiaryNames: ["SDN 1 Arjawinangun", "Panti Asuhan Al-Hikmah"],
       costPerPortion: 0,
       totalCost: 0,
       costPerPortionStandard: 10000,
-      totalBudget: 40000000,
+      totalBudget: 1000000,
       budgetVariance: 0,
       sppgId: sppg3.id,
       createdById: admin3.id,
@@ -2020,27 +1806,27 @@ async function main() {
             itemId: createdItems[2].id,
             name: "Beras Premium 10kg",
             unit: "kg",
-            quantity: 1600,
+            quantity: 10,
             unitPrice: 11800,
-            subtotal: 18880000,
+            subtotal: 118000,
             createdById: admin3.id,
           },
           {
             itemId: createdItems[36].id,
             name: "Telur Ayam 5kg",
             unit: "kg",
-            quantity: 720,
+            quantity: 5,
             unitPrice: 27000,
-            subtotal: 19440000,
+            subtotal: 135000,
             createdById: admin3.id,
           },
           {
             itemId: createdItems[46].id,
             name: "Tahu Putih 3kg",
             unit: "kg",
-            quantity: 800,
+            quantity: 3,
             unitPrice: 7500,
-            subtotal: 6000000,
+            subtotal: 22500,
             createdById: admin3.id,
           },
         ],
@@ -2249,12 +2035,8 @@ async function main() {
   console.log("\n🎉 Seeding completed!");
   console.log("\n📊 Summary:");
   console.log("   - 3 SPPG (Cirebon Utara, Selatan, Barat)");
-  console.log(
-    `   - ${3 + 18 + newSuppliers.length} Users (3 admin + ${18 + newSuppliers.length} supplier)`,
-  );
-  console.log(
-    `   - ${18 + newSuppliers.length} Suppliers (9 original market + 9 non-market + ${newSuppliers.length} new market sellers)`,
-  );
+  console.log(`   - ${3 + 18 + newSuppliers.length} Users (3 admin + ${18 + newSuppliers.length} supplier)`);
+  console.log(`   - ${18 + newSuppliers.length} Suppliers (9 original market + 9 non-market + ${newSuppliers.length} new market sellers)`);
   console.log(`   - ${createdItems.length} Supplier Items`);
   console.log("   - 6 Beneficiaries");
   console.log("   - 2 MoU (ACTIVE)");
@@ -2268,9 +2050,7 @@ async function main() {
   console.log("\n📍 Location: Cirebon, Jawa Barat");
   console.log(`\n🏪 Markets: ${MARKET_CONFIGS.length} pasar`);
   for (const mkt of MARKET_CONFIGS) {
-    console.log(
-      `   - ${mkt.name} (${mkt.district}): ${mkt.supplierCount} suppliers`,
-    );
+    console.log(`   - ${mkt.name} (${mkt.district}): ${mkt.supplierCount} suppliers`);
   }
   console.log("\n🧪 Test Accounts:");
   console.log("   Admin:");

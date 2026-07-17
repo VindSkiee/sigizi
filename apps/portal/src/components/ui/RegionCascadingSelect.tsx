@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { REGIONS, type Region } from "../features/admin/market/regions";
+import { MapPin } from "lucide-react"; // Tambahkan icon dari lucide-react
 
 interface RegionCascadingSelectProps {
   onSelect: (params: {
@@ -36,6 +37,13 @@ export function RegionCascadingSelect({
   const [selectedVillage, setSelectedVillage] = useState<string>(
     value?.village ?? "",
   );
+
+  // State untuk mengecek mode demo
+  const [isDemoMode, setIsDemoMode] = useState(false);
+
+  useEffect(() => {
+    setIsDemoMode(process.env.NEXT_PUBLIC_DEMO_MODE === "true");
+  }, []);
 
   const provinceOptions = useMemo(() => REGIONS.map((r) => r.name), []);
 
@@ -98,13 +106,31 @@ export function RegionCascadingSelect({
   }
 
   const selectClass =
-    "w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 transition-colors";
+    "w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 transition-colors";
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* 
+        Info Card Mode Demo 
+        Hanya dirender jika isDemoMode === true 
+      */}
+      {isDemoMode && (
+        <div className="mb-2 px-5 py-4 bg-blue-50/50 border border-blue-400 rounded-xl flex flex-col items-center text-center">
+          <div className="w-8 h-8 bg-white border border-gray-200 rounded-full flex items-center justify-center mb-2.5 shadow-sm">
+            <MapPin className="w-4 h-4 text-blue-600" />
+          </div>
+          <h3 className="text-sm font-semibold text-blue-600 mb-1">
+            Perhatian Simulasi!
+          </h3>
+          <p className="text-[13px] text-gray-500 leading-relaxed max-w-[480px]">
+            Data saat ini hanya tersedia di <span className="font-medium text-gray-700">Jawa Barat</span> (Kab/Kota Cirebon). Anda tidak perlu mengisi kecamatan & kelurahan, <span className="font-medium text-gray-700"> pencarian GPS dapat digunakan jika anda berada di area Cirebon</span>.
+          </p>
+        </div>
+      )}
+
       {/* Province */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+        <label className="block text-[11px] font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">
           Provinsi
         </label>
         <select
@@ -124,7 +150,7 @@ export function RegionCascadingSelect({
 
       {/* Regency */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+        <label className="block text-[11px] font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">
           Kabupaten / Kota
         </label>
         <select
@@ -144,7 +170,7 @@ export function RegionCascadingSelect({
 
       {/* District */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+        <label className="block text-[11px] font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">
           Kecamatan
         </label>
         <select
@@ -164,7 +190,7 @@ export function RegionCascadingSelect({
 
       {/* Village */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">
+        <label className="block text-[11px] font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">
           Kelurahan / Desa
         </label>
         <input
@@ -175,7 +201,7 @@ export function RegionCascadingSelect({
           disabled={disabled}
           className={selectClass}
         />
-        <p className="text-xs text-gray-400 mt-1">
+        <p className="text-[11px] text-gray-400 mt-1.5">
           Isi untuk pencarian lebih spesifik ke tingkat kelurahan/desa
         </p>
       </div>
