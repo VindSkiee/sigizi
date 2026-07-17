@@ -67,10 +67,7 @@ export default function SupplierDashboardPage() {
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
 
-  // Variabel untuk mengecek environment (hanya Dev dan Prod)
-  const showMouCard =
-    process.env.NODE_ENV === "development" ||
-    process.env.NODE_ENV === "production";
+  const showMouCard = process.env.NEXT_PUBLIC_DEMO_MODE !== "true";
 
   const fetchRecentOrders = useCallback(async () => {
     if (!token) return;
@@ -193,7 +190,7 @@ export default function SupplierDashboardPage() {
           icon={<ClipboardList className="w-6 h-6" />}
           loading={loadingOrders}
         />
-        
+
         {/* Render Card MoU Aktif jika environment valid */}
         {showMouCard && (
           <StatsCard

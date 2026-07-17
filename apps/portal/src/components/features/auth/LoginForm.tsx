@@ -167,14 +167,16 @@ export function LoginForm({ prefillEmail, prefillPassword }: LoginFormProps) {
             required
           />
 
-          <div className="flex justify-end pt-1">
-            <Link
-              href="/forgot-password"
-              className="text-xs md:text-sm text-primary-600 hover:text-primary-700 hover:underline"
-            >
-              Lupa kata sandi?
-            </Link>
-          </div>
+          {process.env.NEXT_PUBLIC_DEMO_MODE !== "true" && (
+            <div className="flex justify-end pt-1">
+              <Link
+                href="/forgot-password"
+                className="text-xs md:text-sm text-primary-600 hover:text-primary-700 hover:underline"
+              >
+                Lupa kata sandi?
+              </Link>
+            </div>
+          )}
 
           <div className="flex w-full gap-[10px] pt-1 md:pt-0">
             <Button
@@ -223,7 +225,7 @@ export function LoginForm({ prefillEmail, prefillPassword }: LoginFormProps) {
           </Link>
         </p>
 
-        {isDev && (
+        {isDev && process.env.NEXT_PUBLIC_DEMO_MODE !== "true" && (
           <div className="mt-3 pt-3 md:mt-4 md:pt-4 border-t border-gray-100">
             <p className="text-center text-[10px] md:text-xs text-gray-400 mb-1.5 md:mb-2">
               Dev Login (untuk testing)

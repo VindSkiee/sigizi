@@ -14,10 +14,7 @@ export function SupplierOrderTable({
   onViewDetail,
   onUpdateStatus,
 }: SupplierOrderTableProps) {
-  // Cek environment (muncul di development dan production)
-  const showEstimasiTiba =
-    process.env.NODE_ENV === "development" ||
-    process.env.NODE_ENV === "production";
+  const showEstimasiTiba = process.env.NEXT_PUBLIC_DEMO_MODE !== "true";
 
   if (orders.length === 0) {
     return (
@@ -54,14 +51,14 @@ export function SupplierOrderTable({
             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
               Detail Barang
             </th>
-            
+
             {/* Header Estimasi Tiba (Hanya muncul di Development dan Production) */}
             {showEstimasiTiba && (
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 Estimasi Tiba
               </th>
             )}
-            
+
             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
               Status
             </th>

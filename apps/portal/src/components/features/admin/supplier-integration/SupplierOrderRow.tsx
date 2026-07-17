@@ -13,10 +13,8 @@ export function SupplierOrderRow({
   onViewDetail,
   onUpdateStatus,
 }: SupplierOrderRowProps) {
-  // Cek environment (muncul di development dan production)
-  const showEstimasiTiba =
-    process.env.NODE_ENV === "development" ||
-    process.env.NODE_ENV === "production";
+  const showEstimasiTiba = process.env.NEXT_PUBLIC_DEMO_MODE !== "true";
+  const showMoUBadge = process.env.NEXT_PUBLIC_DEMO_MODE !== "true";
 
   const statusConfig = ORDER_STATUS_CONFIG[order.status] || {
     label: order.status || "Unknown",
@@ -51,9 +49,7 @@ export function SupplierOrderRow({
           <p className="text-sm font-semibold text-gray-900">
             {formatDate(order.createdAt)}
           </p>
-          <p className="text-xs text-gray-500">
-            {formatTime(order.createdAt)}
-          </p>
+          <p className="text-xs text-gray-500">{formatTime(order.createdAt)}</p>
         </div>
       </td>
 
@@ -63,7 +59,7 @@ export function SupplierOrderRow({
           <p className="text-sm font-medium text-gray-900">
             {order.supplier?.name || "Unknown Supplier"}
           </p>
-          {order.mou && (
+          {showMoUBadge && order.mou && (
             <span className="inline-flex items-center gap-1 text-xs text-green-600 mt-0.5">
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                 <path
@@ -165,7 +161,7 @@ export function SupplierOrderRow({
             </svg>
             Detail
           </button>
-          
+
           {statusConfig?.nextAction &&
             order.status !== "PENDING" &&
             !(order.status === "CONFIRMED" && order.paidAt) && (

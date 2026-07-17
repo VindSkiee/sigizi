@@ -31,14 +31,13 @@ export function SupplierOrderDetailModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       {/* Subtle Backdrop with slight blur */}
-      <div 
-        className="absolute inset-0 bg-gray-900/20 backdrop-blur-sm transition-opacity" 
-        onClick={onClose} 
+      <div
+        className="absolute inset-0 bg-gray-900/20 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
       />
-      
+
       {/* Modal Container */}
       <div className="relative w-full max-w-3xl bg-white rounded-[24px] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        
         {/* HEADER */}
         <div className="flex items-start justify-between px-8 pt-4 pb-3 border-b border-gray-100">
           <div className="space-y-1">
@@ -46,7 +45,9 @@ export function SupplierOrderDetailModal({
               <h2 className="text-xl font-semibold text-gray-900 tracking-tight">
                 Order #PO-{order.id.slice(-4).toUpperCase()}
               </h2>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide uppercase ${statusConfig.color}`}>
+              <span
+                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide uppercase ${statusConfig.color}`}
+              >
                 {statusConfig.label}
               </span>
             </div>
@@ -54,7 +55,7 @@ export function SupplierOrderDetailModal({
               Diterbitkan pada {formatDate(order.createdAt)}
             </p>
           </div>
-          
+
           <button
             onClick={onClose}
             className="p-2 -mr-2 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-full transition-colors focus:outline-none"
@@ -65,7 +66,6 @@ export function SupplierOrderDetailModal({
 
         {/* SCROLLABLE CONTENT */}
         <div className="overflow-y-auto px-8 py-8 space-y-10">
-          
           {/* Supplier Info (Clean layout, no gray box) */}
           <section>
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
@@ -76,7 +76,7 @@ export function SupplierOrderDetailModal({
                 <p className="text-lg font-medium text-gray-900">
                   {order.supplier?.name || "Unknown Supplier"}
                 </p>
-                {order.mou && (
+                {process.env.NEXT_PUBLIC_DEMO_MODE !== "true" && order.mou && (
                   <p className="flex items-center gap-1.5 text-sm text-green-600 mt-1">
                     <ShieldCheck className="w-4 h-4" strokeWidth={2.5} />
                     <span className="font-medium">Mitra Resmi</span>
@@ -97,10 +97,18 @@ export function SupplierOrderDetailModal({
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200">
-                    <th className="pb-3 text-left font-medium text-gray-500">Item</th>
-                    <th className="pb-3 text-right font-medium text-gray-500 w-24">Qty</th>
-                    <th className="pb-3 text-right font-medium text-gray-500 w-36">Harga Satuan</th>
-                    <th className="pb-3 text-right font-medium text-gray-900 w-40">Subtotal</th>
+                    <th className="pb-3 text-left font-medium text-gray-500">
+                      Item
+                    </th>
+                    <th className="pb-3 text-right font-medium text-gray-500 w-24">
+                      Qty
+                    </th>
+                    <th className="pb-3 text-right font-medium text-gray-500 w-36">
+                      Harga Satuan
+                    </th>
+                    <th className="pb-3 text-right font-medium text-gray-900 w-40">
+                      Subtotal
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -110,7 +118,10 @@ export function SupplierOrderDetailModal({
                         <p className="font-medium text-gray-900">{item.name}</p>
                       </td>
                       <td className="py-4 text-right text-gray-600 tabular-nums">
-                        {item.quantity} <span className="text-gray-400 text-xs ml-0.5">{item.unit}</span>
+                        {item.quantity}{" "}
+                        <span className="text-gray-400 text-xs ml-0.5">
+                          {item.unit}
+                        </span>
                       </td>
                       <td className="py-4 text-right text-gray-600 tabular-nums">
                         Rp {item.unitPrice.toLocaleString("id-ID")}
@@ -158,7 +169,7 @@ export function SupplierOrderDetailModal({
           >
             Tutup
           </button>
-          
+
           {statusConfig.nextAction && order.status !== "PENDING" && (
             <button
               onClick={() => {
@@ -172,7 +183,6 @@ export function SupplierOrderDetailModal({
             </button>
           )}
         </div>
-
       </div>
     </div>
   );
