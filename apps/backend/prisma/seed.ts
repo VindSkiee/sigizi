@@ -788,6 +788,200 @@ async function main() {
   console.log("✅ Supplier items created:", createdItems.length);
 
   // ============================================================================
+  // 4B. Generate Additional Market Sellers (60 suppliers across 9 markets)
+  // ============================================================================
+
+  // --- Market Configurations ---
+  interface MarketConfig {
+    name: string;
+    district: string;
+    centerLat: number;
+    centerLng: number;
+    supplierCount: number;
+  }
+
+  const MARKET_CONFIGS: MarketConfig[] = [
+    { name: "Pasar Ciledug", district: "SUMBER", centerLat: -6.702, centerLng: 108.554, supplierCount: 7 },
+    { name: "Pasar Weru", district: "WERU", centerLat: -6.733, centerLng: 108.579, supplierCount: 7 },
+    { name: "Pasar Arjawinangun", district: "ARJAWINANGUN", centerLat: -6.759, centerLng: 108.493, supplierCount: 7 },
+    { name: "Pasar Plumbon", district: "PLUMBON", centerLat: -6.745, centerLng: 108.562, supplierCount: 7 },
+    { name: "Pasar Depok", district: "DEPOK", centerLat: -6.728, centerLng: 108.545, supplierCount: 7 },
+    { name: "Pasar Talun", district: "TALUN", centerLat: -6.768, centerLng: 108.512, supplierCount: 6 },
+    { name: "Pasar Astanajapura", district: "ASTANAJAPURA", centerLat: -6.785, centerLng: 108.528, supplierCount: 6 },
+    { name: "Pasar Plered", district: "PLERED", centerLat: -6.772, centerLng: 108.498, supplierCount: 7 },
+    { name: "Pasar Kapetakan", district: "KAPETAKAN", centerLat: -6.718, centerLng: 108.568, supplierCount: 6 },
+  ];
+
+  // --- Item Catalog (16 types with base prices) ---
+  interface ItemCatalogEntry {
+    name: string;
+    unit: string;
+    basePrice: number;
+    minOrderQty: number;
+    orderStep: number;
+    frequency: number; // 0-1 probability of being included per supplier
+  }
+
+  const ITEM_CATALOG: ItemCatalogEntry[] = [
+    { name: "Beras Premium", unit: "kg", basePrice: 12000, minOrderQty: 5, orderStep: 0.5, frequency: 0.90 },
+    { name: "Daging Ayam", unit: "kg", basePrice: 35000, minOrderQty: 1, orderStep: 0.5, frequency: 0.85 },
+    { name: "Telur Ayam", unit: "kg", basePrice: 28000, minOrderQty: 1, orderStep: 0.5, frequency: 0.80 },
+    { name: "Tahu Putih", unit: "kg", basePrice: 8000, minOrderQty: 1, orderStep: 0.5, frequency: 0.65 },
+    { name: "Tempe", unit: "kg", basePrice: 10000, minOrderQty: 1, orderStep: 0.5, frequency: 0.65 },
+    { name: "Sayur Bayam", unit: "kg", basePrice: 7000, minOrderQty: 1, orderStep: 0.5, frequency: 0.60 },
+    { name: "Wortel", unit: "kg", basePrice: 10000, minOrderQty: 1, orderStep: 0.5, frequency: 0.55 },
+    { name: "Minyak Goreng", unit: "liter", basePrice: 16000, minOrderQty: 1, orderStep: 1, frequency: 0.55 },
+    { name: "Kentang", unit: "kg", basePrice: 12000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
+    { name: "Sayur Kangkung", unit: "kg", basePrice: 5000, minOrderQty: 1, orderStep: 0.5, frequency: 0.35 },
+    { name: "Ikan Tongkol", unit: "kg", basePrice: 30000, minOrderQty: 1, orderStep: 0.5, frequency: 0.30 },
+    { name: "Ikan Lele", unit: "kg", basePrice: 26000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
+    { name: "Tepung Terigu", unit: "kg", basePrice: 10500, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
+    { name: "Daging Sapi", unit: "kg", basePrice: 120000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
+    { name: "Bawang Merah", unit: "kg", basePrice: 28000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
+    { name: "Cabai Merah", unit: "kg", basePrice: 38000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
+    { name: "Gula Pasir", unit: "kg", basePrice: 14000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
+    { name: "Garam", unit: "kg", basePrice: 5000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
+  ];
+
+  // --- Deterministic pseudo-random (seeded by supplier index) ---
+  function seededRandom(seed: number): number {
+    const x = Math.sin(seed * 9301 + 49297) * 233280;
+    return x - Math.floor(x);
+  }
+
+  // --- Supplier name prefixes & suffixes ---
+  const SUPPLIER_PREFIXES = [
+    "Toko", "UD.", "CV.", "Kios", "Warung", "Barokah", "Mitra",
+  ];
+  const SUPPLIER_SUFFIXES = [
+    "Berkah Jaya", "Makmur", "Sejahtera", "Pangan Indah", "Segar Makmur",
+    "Tani Subur", "Raya Market", "Pasar Jaya", "Bersama", "Sentosa",
+    "Langgeng", "Abadi", "Prima", "Utama", "Jaya", "Lestari", "Maju",
+    "Pangan Sehat", "BasSegar", "Dua Saudara", "Putra Jaya", "Sumber Rejeki",
+  ];
+
+  // --- Street names per district ---
+  const STREET_NAMES: Record<string, string[]> = {
+    SUMBER: ["Jl. Raya Sumber", "Jl. Sumber Utama", "Jl. Pahlawan"],
+    WERU: ["Jl. Raya Weru", "Jl. Weru Timur", "Jl. Pasar Weru"],
+    ARJAWINANGUN: ["Jl. Emplak", "Jl. Arjawinangun Raya", "Jl. Kantor"],
+    PLUMBON: ["Jl. Plumbon Raya", "Jl. Pasar Plumbon", "Jl. Cirebon-Plumbon"],
+    DEPOK: ["Jl. Depok Raya", "Jl. Depok Utama", "Jl. Raya Depok"],
+    TALUN: ["Jl. Talun", "Jl. Raya Talun", "Jl. Talun Barat"],
+    ASTANAJAPURA: ["Jl. Astanajapura", "Jl. Raya Astana", "Jl. Pantura"],
+    PLERED: ["Jl. Plered", "Jl. Raya Plered", "Jl. Plered Utara"],
+    KAPETAKAN: ["Jl. Kapetakan", "Jl. Raya Kapetakan", "Jl. Pantura Kapetakan"],
+  };
+
+  // --- Generate new market suppliers and their items ---
+  let globalSupplierIdx = 19; // start after existing 18 suppliers
+  const newSuppliers: any[] = [];
+  const newItems: typeof items = [];
+
+  for (let mktIdx = 0; mktIdx < MARKET_CONFIGS.length; mktIdx++) {
+    const mkt = MARKET_CONFIGS[mktIdx];
+    const streets = STREET_NAMES[mkt.district];
+
+    for (let sIdx = 0; sIdx < mkt.supplierCount; sIdx++) {
+      const seed = mktIdx * 100 + sIdx;
+      const r = seededRandom(seed);
+      const prefix = SUPPLIER_PREFIXES[Math.floor(seededRandom(seed + 1) * SUPPLIER_PREFIXES.length)];
+      const suffix = SUPPLIER_SUFFIXES[Math.floor(seededRandom(seed + 2) * SUPPLIER_SUFFIXES.length)];
+
+      const supplierId = `clx_supplier_${String(globalSupplierIdx).padStart(2, "0")}`;
+      const nib = `1000000000${String(globalSupplierIdx).padStart(4, "0")}`;
+      const phone = `08123456${String(7000 + globalSupplierIdx).padStart(4, "0")}`;
+      const street = streets[Math.floor(seededRandom(seed + 3) * streets.length)];
+      const streetNum = Math.floor(seededRandom(seed + 4) * 80) + 1;
+      const latOffset = (seededRandom(seed + 5) - 0.5) * 0.006; // ~300m radius
+      const lngOffset = (seededRandom(seed + 6) - 0.5) * 0.006;
+      const villageNum = Math.floor(seededRandom(seed + 7) * 30) + 1;
+
+      const supplier = await prisma.supplier.upsert({
+        where: { id: supplierId },
+        update: {},
+        create: {
+          id: supplierId,
+          name: `${prefix} ${suffix}`,
+          nib,
+          phone,
+          address: `${street} No. ${streetNum}`,
+          province: "JAWA_BARAT",
+          regency: "CIREBON",
+          district: mkt.district,
+          village: `${mkt.district} ${villageNum}`,
+          postalCode: `45${String(Math.floor(seededRandom(seed + 8) * 90) + 10)}`,
+          latitude: mkt.centerLat + latOffset,
+          longitude: mkt.centerLng + lngOffset,
+          isMarketSeller: true,
+          marketName: mkt.name,
+        },
+      });
+
+      // Create user for this supplier
+      const userEmail = `supplier-market-${mktIdx + 1}-${sIdx + 1}@sigizi.go.id`;
+      await prisma.user.upsert({
+        where: { email: userEmail },
+        update: { supplierId: supplier.id },
+        create: {
+          email: userEmail,
+          name: supplier.name,
+          role: "SUPPLIER",
+          password: DEFAULT_PASSWORD,
+          supplierId: supplier.id,
+        },
+      });
+
+      // Assign items to this supplier (random subset based on frequency)
+      for (let itemIdx = 0; itemIdx < ITEM_CATALOG.length; itemIdx++) {
+        const itemSeed = seed * 100 + itemIdx + 50;
+        const itemR = seededRandom(itemSeed);
+        if (itemR < ITEM_CATALOG[itemIdx].frequency) {
+          const catalog = ITEM_CATALOG[itemIdx];
+          // Price variation: ±20% from base, with 5% chance of outlier
+          const isOutlier = seededRandom(itemSeed + 10) < 0.05;
+          let priceMultiplier: number;
+          if (isOutlier) {
+            priceMultiplier = seededRandom(itemSeed + 11) > 0.5 ? 1.5 : 0.5;
+          } else {
+            priceMultiplier = 0.80 + seededRandom(itemSeed + 12) * 0.40; // 0.80 to 1.20
+          }
+          const finalPrice = Math.round(catalog.basePrice * priceMultiplier / 100) * 100; // round to nearest 100
+
+          const descWords = [
+            `${catalog.name.split(" ")[0].toLowerCase()} segar`,
+            `Kualitas ${isOutlier ? "premium" : "standar"}`,
+            `Harga ${isOutlier ? "spesial" : "kompetitif"}`,
+          ];
+
+          newItems.push({
+            name: catalog.name,
+            unit: catalog.unit,
+            basePrice: finalPrice,
+            description: `${catalog.name} ${descWords[0]}, ${descWords[2]}`,
+            minOrderQty: catalog.minOrderQty,
+            orderStep: catalog.orderStep,
+            supplierId: supplier.id,
+          });
+        }
+      }
+
+      newSuppliers.push(supplier);
+      globalSupplierIdx++;
+    }
+  }
+
+  // Create all new items
+  for (const item of newItems) {
+    const created = await prisma.supplierItem.create({ data: item });
+    createdItems.push(created);
+  }
+
+  console.log("✅ Additional market suppliers created:", newSuppliers.length);
+  console.log("✅ Additional supplier items created:", newItems.length);
+  console.log(`📊 Total suppliers: ${18 + newSuppliers.length} | Total items: ${createdItems.length}`);
+
+  // ============================================================================
   // 5. Create Beneficiaries (6: 2 per SPPG)
   // ============================================================================
 
@@ -1841,8 +2035,8 @@ async function main() {
   console.log("\n🎉 Seeding completed!");
   console.log("\n📊 Summary:");
   console.log("   - 3 SPPG (Cirebon Utara, Selatan, Barat)");
-  console.log("   - 21 Users (3 admin + 18 supplier)");
-  console.log("   - 18 Suppliers (9 market + 9 non-market)");
+  console.log(`   - ${3 + 18 + newSuppliers.length} Users (3 admin + ${18 + newSuppliers.length} supplier)`);
+  console.log(`   - ${18 + newSuppliers.length} Suppliers (9 original market + 9 non-market + ${newSuppliers.length} new market sellers)`);
   console.log(`   - ${createdItems.length} Supplier Items`);
   console.log("   - 6 Beneficiaries");
   console.log("   - 2 MoU (ACTIVE)");
@@ -1854,12 +2048,16 @@ async function main() {
   console.log("   - 2 Operational Expenses");
   console.log(`   - ${orderHistoryData.length} OrderStatusHistory entries`);
   console.log("\n📍 Location: Cirebon, Jawa Barat");
+  console.log(`\n🏪 Markets: ${MARKET_CONFIGS.length} pasar`);
+  for (const mkt of MARKET_CONFIGS) {
+    console.log(`   - ${mkt.name} (${mkt.district}): ${mkt.supplierCount} suppliers`);
+  }
   console.log("\n🧪 Test Accounts:");
   console.log("   Admin:");
   console.log("     - admin-cirebon-utara@sigizi.go.id / password123");
   console.log("     - admin-cirebon-selatan@sigizi.go.id / password123");
   console.log("     - admin-cirebon-barat@sigizi.go.id / password123");
-  console.log("   Suppliers:");
+  console.log("   Original Suppliers:");
   console.log(
     "     - supplier-01@sigizi.go.id / password123 (Toko Berkah - Market)",
   );
@@ -1867,6 +2065,9 @@ async function main() {
     "     - supplier-10@sigizi.go.id / password123 (UD. Murah Jaya - Non-Market)",
   );
   console.log("     ... (supplier-01 to supplier-18)");
+  console.log("   Market Sellers:");
+  console.log("     - supplier-market-1-1@sigizi.go.id / password123");
+  console.log("     ... (supplier-market-{1-9}-{1-7})");
 }
 
 main()
