@@ -54,6 +54,7 @@ export default function MarketPage() {
     error,
     radiusInfo,
     handleSearch: handleSearchFromHook,
+    handleRefresh,
     dismissRadiusWarning,
   } = useMarketData();
 
@@ -371,6 +372,9 @@ export default function MarketPage() {
                   (item) => item.latitude != null && item.longitude != null,
                 ))
             }
+            onRefresh={handleRefresh}
+            isRefreshing={isRefetching}
+            showRefresh={hasSearched && !isLoading}
           />
 
           <HETReferenceList

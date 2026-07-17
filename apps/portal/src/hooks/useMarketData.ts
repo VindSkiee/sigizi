@@ -28,6 +28,7 @@ interface UseMarketDataReturn {
   error: string | null;
   radiusInfo: RadiusInfo | null;
   handleSearch: (filter: MarketFilter) => Promise<void>;
+  handleRefresh: () => Promise<void>;
   dismissRadiusWarning: () => void;
 }
 
@@ -276,6 +277,35 @@ export function useMarketData(): UseMarketDataReturn {
     init();
   }, [fetchMarketData]);
 
+  const handleRefresh = useCallback(async () => {
+    if (!filter || isRefetching) return;
+
+    setIsRefetching(true);
+    setError(null);
+
+    const result = await fetchMarketData(filter, false);
+
+    if (result) {
+      setItems(result.items);
+      setRawStats(result.rawStats);
+      setCleanStats(result.cleanStats);
+
+      saveMarketState({
+        filter,
+        items: result.items,
+        rawStats: result.rawStats,
+        cleanStats: result.cleanStats,
+        searchedItem,
+        currentPage: 1,
+        showExpanded: true,
+        requestedRadius: null,
+        error: null,
+      });
+    }
+
+    setIsRefetching(false);
+  }, [filter, isRefetching, fetchMarketData, searchedItem]);
+
   return {
     items,
     filter,
@@ -288,6 +318,7 @@ export function useMarketData(): UseMarketDataReturn {
     error,
     radiusInfo,
     handleSearch,
+    handleRefresh,
     dismissRadiusWarning,
   };
 }
