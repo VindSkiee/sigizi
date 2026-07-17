@@ -643,6 +643,119 @@ async function main() {
   addItem(1, "Ikan Tongkol", "kg", 30000, "Ikan tongkol pilihan");
   addItem(2, "Ikan Tongkol", "kg", 35000, "Ikan tongkol premium");
 
+  // ============================================================================
+  // TAMBAHAN ITEMS UNTUK SETIAP PASAR (Realistic Market Simulation)
+  // ============================================================================
+
+  // BERAS PREMIUM - Tambahan untuk supplier 5-8
+  addItem(5, "Beras Premium", "kg", 12700, "Beras premium super grade A");
+  addItem(6, "Beras Premium", "kg", 11600, "Beras premium ekonomis lokal");
+  addItem(7, "Beras Premium", "kg", 13200, "Beras premium organik pilihan");
+  addItem(8, "Beras Premium", "kg", 12400, "Beras premium standar kualitas");
+
+  // AYAM POTONG - Tambahan untuk supplier 5-8
+  addItem(5, "Ayam Potong", "kg", 36800, "Ayam potong super segar");
+  addItem(6, "Ayam Potong", "kg", 33500, "Ayam potong ekonomis harian");
+  addItem(7, "Ayam Potong", "kg", 37200, "Ayam potong premium pilihan");
+  addItem(8, "Ayam Potong", "kg", 35800, "Ayam potong standar segar");
+
+  // TELUR AYAM - Tambahan untuk supplier 5-8
+  addItem(5, "Telur Ayam", "kg", 29800, "Telur ayam super pilihan");
+  addItem(6, "Telur Ayam", "kg", 26500, "Telur ayam ekonomis lokal");
+  addItem(7, "Telur Ayam", "kg", 30200, "Telur ayam premium segar");
+  addItem(8, "Telur Ayam", "kg", 28300, "Telur ayam standar harian");
+
+  // TAHU PUTIH - Tambahan untuk supplier 5-8
+  addItem(5, "Tahu Putih", "kg", 8800, "Tahu putih premium pilihan");
+  addItem(6, "Tahu Putih", "kg", 7600, "Tahu putih ekonomis lokal");
+  addItem(7, "Tahu Putih", "kg", 9200, "Tahu putih organik segar");
+  addItem(8, "Tahu Putih", "kg", 8100, "Tahu putih standar harian");
+
+  // TEMPE - Tambahan untuk supplier 5-8
+  addItem(5, "Tempe", "kg", 10800, "Tempe premium pilihan");
+  addItem(6, "Tempe", "kg", 9600, "Tempe ekonomis lokal");
+  addItem(7, "Tempe", "kg", 11500, "Tempe organik segar");
+  addItem(8, "Tempe", "kg", 10100, "Tempe standar harian");
+
+  // SAYUR BAYAM - Tambahan untuk supplier 5-8
+  addItem(5, "Sayur Bayam", "kg", 7800, "Bayam premium pilihan");
+  addItem(6, "Sayur Bayam", "kg", 6600, "Bayam ekonomis lokal");
+  addItem(7, "Sayur Bayam", "kg", 8500, "Bayam organik segar");
+  addItem(8, "Sayur Bayam", "kg", 7100, "Bayam standar harian");
+
+  // WORTEL - Tambahan untuk supplier 5-8
+  addItem(5, "Wortel", "kg", 10800, "Wortel premium pilihan");
+  addItem(6, "Wortel", "kg", 9600, "Wortel ekonomis lokal");
+  addItem(7, "Wortel", "kg", 11800, "Wortel organik segar");
+  addItem(8, "Wortel", "kg", 10100, "Wortel standar harian");
+
+  // MINYAK GORENG - Tambahan untuk supplier 5-8
+  addItem(5, "Minyak Goreng", "liter", 16800, "Minyak goreng premium pilihan");
+  addItem(6, "Minyak Goreng", "liter", 15600, "Minyak goreng ekonomis lokal");
+  addItem(7, "Minyak Goreng", "liter", 17500, "Minyak goreng organik segar");
+  addItem(8, "Minyak Goreng", "liter", 16100, "Minyak goreng standar harian");
+
+  // KENTANG - Tambahan untuk supplier 5-8
+  addItem(5, "Kentang", "kg", 12800, "Kentang premium pilihan");
+  addItem(6, "Kentang", "kg", 11600, "Kentang ekonomis lokal");
+  addItem(7, "Kentang", "kg", 13800, "Kentang organik segar");
+  addItem(8, "Kentang", "kg", 12200, "Kentang standar harian");
+
+  // DAGING SAPI - Items baru untuk semua supplier (5-8)
+  addItem(0, "Daging Sapi", "kg", 120000, "Daging sapi segar pilihan");
+  addItem(1, "Daging Sapi", "kg", 125000, "Daging sapi premium");
+  addItem(2, "Daging Sapi", "kg", 118000, "Daging sapi lokal segar");
+  addItem(3, "Daging Sapi", "kg", 130000, "Daging sapi grade A");
+  addItem(4, "Daging Sapi", "kg", 122000, "Daging sapi ekonomis");
+  addItem(5, "Daging Sapi", "kg", 128000, "Daging sapi super");
+  addItem(6, "Daging Sapi", "kg", 115000, "Daging sapi bulk");
+  addItem(7, "Daging Sapi", "kg", 135000, "Daging sapi organik");
+  addItem(8, "Daging Sapi", "kg", 123000, "Daging sapi standar");
+
+  // BAWANG MERAH - Items baru untuk semua supplier (5-8)
+  addItem(0, "Bawang Merah", "kg", 28000, "Bawang merah segar pilihan");
+  addItem(1, "Bawang Merah", "kg", 30000, "Bawang merah premium");
+  addItem(2, "Bawang Merah", "kg", 26000, "Bawang merah lokal");
+  addItem(3, "Bawang Merah", "kg", 32000, "Bawang merah grade A");
+  addItem(4, "Bawang Merah", "kg", 27000, "Bawang merah ekonomis");
+  addItem(5, "Bawang Merah", "kg", 31000, "Bawang merah super");
+  addItem(6, "Bawang Merah", "kg", 25000, "Bawang merah bulk");
+  addItem(7, "Bawang Merah", "kg", 35000, "Bawang merah organik");
+  addItem(8, "Bawang Merah", "kg", 29000, "Bawang merah standar");
+
+  // CABAI MERAH - Items baru untuk semua supplier (5-8)
+  addItem(0, "Cabai Merah", "kg", 38000, "Cabai merah segar pilihan");
+  addItem(1, "Cabai Merah", "kg", 40000, "Cabai merah premium");
+  addItem(2, "Cabai Merah", "kg", 36000, "Cabai merah lokal");
+  addItem(3, "Cabai Merah", "kg", 42000, "Cabai merah grade A");
+  addItem(4, "Cabai Merah", "kg", 37000, "Cabai merah ekonomis");
+  addItem(5, "Cabai Merah", "kg", 41000, "Cabai merah super");
+  addItem(6, "Cabai Merah", "kg", 35000, "Cabai merah bulk");
+  addItem(7, "Cabai Merah", "kg", 45000, "Cabai merah organik");
+  addItem(8, "Cabai Merah", "kg", 39000, "Cabai merah standar");
+
+  // GULA PASIR - Items baru untuk semua supplier (5-8)
+  addItem(0, "Gula Pasir", "kg", 14000, "Gula pasir putih pilihan");
+  addItem(1, "Gula Pasir", "kg", 14500, "Gula pasir premium");
+  addItem(2, "Gula Pasir", "kg", 13500, "Gula pasir lokal");
+  addItem(3, "Gula Pasir", "kg", 15000, "Gula pasir grade A");
+  addItem(4, "Gula Pasir", "kg", 13800, "Gula pasir ekonomis");
+  addItem(5, "Gula Pasir", "kg", 14800, "Gula pasir super");
+  addItem(6, "Gula Pasir", "kg", 13200, "Gula pasir bulk");
+  addItem(7, "Gula Pasir", "kg", 15500, "Gula pasir organik");
+  addItem(8, "Gula Pasir", "kg", 14200, "Gula pasir standar");
+
+  // GARAM - Items baru untuk semua supplier (5-8)
+  addItem(0, "Garam", "kg", 5000, "Garam dapur pilihan");
+  addItem(1, "Garam", "kg", 5500, "Garam premium");
+  addItem(2, "Garam", "kg", 4800, "Garam lokal");
+  addItem(3, "Garam", "kg", 6000, "Garam grade A");
+  addItem(4, "Garam", "kg", 5200, "Garam ekonomis");
+  addItem(5, "Garam", "kg", 5800, "Garam super");
+  addItem(6, "Garam", "kg", 4600, "Garam bulk");
+  addItem(7, "Garam", "kg", 6500, "Garam organik");
+  addItem(8, "Garam", "kg", 5100, "Garam standar");
+
   // Create all items
   const createdItems: any[] = [];
   for (const item of items) {

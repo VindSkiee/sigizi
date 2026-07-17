@@ -739,6 +739,8 @@ export class MarketService {
         ? new GpsCoordinate(filter.latitude, filter.longitude)
         : null;
 
+    const isSimulation = process.env.NODE_ENV !== "production";
+
     return items.map((item) => {
       const coordinate = GpsCoordinate.fromPrisma(item.supplier);
       const distanceKm =
@@ -764,6 +766,7 @@ export class MarketService {
         distanceKm,
         isMarketSeller: item.supplier.isMarketSeller,
         marketName: item.supplier.marketName ?? undefined,
+        isSimulation,
       };
     });
   }

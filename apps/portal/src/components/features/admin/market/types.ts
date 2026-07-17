@@ -43,6 +43,7 @@ export interface MarketSupplierItem {
   longitude?: number;
   isMarketSeller?: boolean;
   marketName?: string;
+  isSimulation?: boolean;
 }
 
 export interface MarketPriceResponse {

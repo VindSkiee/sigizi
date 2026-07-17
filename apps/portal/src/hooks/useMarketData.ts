@@ -153,6 +153,7 @@ export function useMarketData(): UseMarketDataReturn {
             longitude: s.longitude ?? undefined,
             isMarketSeller: s.isMarketSeller ?? false,
             marketName: s.marketName ?? undefined,
+            isSimulation: s.isSimulation ?? false,
           };
         });
 
