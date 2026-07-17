@@ -478,8 +478,8 @@ export class ReportsService {
       tx.order.findMany({
         where: {
           sppgId,
-          status: OrderStatus.COMPLETED,
-          paidAt: { gte: range.startDate, lt: range.endDate },
+          paidAt: { not: null, gte: range.startDate, lt: range.endDate },
+          status: { not: OrderStatus.CANCELLED },
         },
         select: {
           id: true,
