@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/features/auth/Logo";
 import { Button } from "@/components/ui/Button";
@@ -14,13 +14,71 @@ interface FormErrors {
   password?: string;
 }
 
-export function LoginForm() {
+interface LoginFormProps {
+  prefillEmail?: string;
+  prefillPassword?: string;
+}
+
+export function LoginForm({ prefillEmail, prefillPassword }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSsoLoading, setIsSsoLoading] = useState(false);
   const [error, setError] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
+  const submittedRef = useRef<string | null>(null);
+
+  async function performLogin(emailVal: string, passwordVal: string) {
+    setIsLoading(true);
+    setError("");
+    setErrors({});
+
+    try {
+      const response = await loginEmail(emailVal, passwordVal);
+      if (response.success) {
+        const data = response.data as { token: string; user: any };
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        window.location.href =
+          data.user.role === "SUPPLIER" ? "/supplier" : "/admin";
+        return;
+      }
+    } catch (err: any) {
+      if (err.details && Array.isArray(err.details)) {
+        const fieldErrors: FormErrors = {};
+        err.details.forEach((d: any) => {
+          if (d.field === "email") fieldErrors.email = d.message;
+          if (d.field === "password") fieldErrors.password = d.message;
+        });
+        if (Object.keys(fieldErrors).length > 0) {
+          setErrors(fieldErrors);
+          setIsLoading(false);
+          return;
+        }
+      }
+      if (err.status === 401) {
+        setError("Email atau password salah. Silakan coba lagi.");
+      } else if (err.status === 422 || err.status === 400) {
+        setError(err.message || "Input tidak valid. Silakan periksa form.");
+      } else {
+        setError("Terjadi kesalahan. Silakan coba lagi.");
+      }
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (
+      prefillEmail &&
+      prefillPassword &&
+      submittedRef.current !== prefillEmail
+    ) {
+      submittedRef.current = prefillEmail;
+      setEmail(prefillEmail);
+      setPassword(prefillPassword);
+      performLogin(prefillEmail, prefillPassword);
+    }
+  }, [prefillEmail, prefillPassword]);
 
   function validateForm(): boolean {
     const newErrors: FormErrors = {};
@@ -50,46 +108,7 @@ export function LoginForm() {
       return;
     }
 
-    setIsLoading(true);
-
-    try {
-      const response = await loginEmail(email, password);
-      if (response.success) {
-        const data = response.data as { token: string; user: any };
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        window.location.href =
-          data.user.role === "SUPPLIER" ? "/supplier" : "/admin";
-        return;
-      }
-    } catch (err: any) {
-      // Parse backend error for field-level details
-      if (err.details && Array.isArray(err.details)) {
-        const fieldErrors: FormErrors = {};
-        err.details.forEach((d: any) => {
-          if (d.field === "email") fieldErrors.email = d.message;
-          if (d.field === "password") fieldErrors.password = d.message;
-        });
-        if (Object.keys(fieldErrors).length > 0) {
-          setErrors(fieldErrors);
-          setIsLoading(false);
-          return;
-        }
-      }
-      // Generic error message
-      if (err.status === 401) {
-        setError("Email atau password salah. Silakan coba lagi.");
-        setIsLoading(false);
-        return;
-      }
-      if (err.status === 422 || err.status === 400) {
-        setError(err.message || "Input tidak valid. Silakan periksa form.");
-        setIsLoading(false);
-        return;
-      }
-      setError("Terjadi kesalahan. Silakan coba lagi.");
-      setIsLoading(false);
-    }
+    await performLogin(email, password);
   }
 
   async function handleSsoLogin() {
