@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -39,7 +39,7 @@ interface Pagination {
 
 const RADIUS_OPTIONS = [5, 10, 25, 50];
 
-export default function SppgSearchPage() {
+function SppgSearchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -403,5 +403,20 @@ export default function SppgSearchPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function SppgSearchPage() {
+  return (
+    // Bungkus komponen Content dengan Suspense
+    <Suspense 
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+        </div>
+      }
+    >
+      <SppgSearchContent />
+    </Suspense>
   );
 }

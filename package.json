@@ -7,6 +7,9 @@
     "dev": "turbo run dev",
     "dev:backend": "turbo run dev --filter=@sigizi/backend",
     "dev:portal": "turbo run dev --filter=@sigizi/portal",
+    "start": "turbo run start",
+    "start:backend": "turbo run start --filter=@sigizi/backend",
+    "start:portal": "turbo run start --filter=@sigizi/portal",
     "build": "turbo run build",
     "build:backend": "turbo run build --filter=@sigizi/backend",
     "build:portal": "turbo run build --filter=@sigizi/portal",
@@ -18,7 +21,9 @@
     "db:generate": "cd apps/backend && pnpm prisma:generate",
     "db:reset": "cd apps/backend && pnpm prisma:reset",
     "db:fresh": "cd apps/backend && pnpm prisma:fresh",
-    "db:reseed": "cd apps/backend && pnpm prisma:reseed"
+    "db:reseed": "cd apps/backend && pnpm prisma:reseed",
+    "env:dev": "copy .env apps\\portal\\.env.local",
+    "env:tunnel": "copy .env.tunnel apps\\portal\\.env.local"
   },
   "devDependencies": {
     "dotenv-cli": "^7.4.0",
