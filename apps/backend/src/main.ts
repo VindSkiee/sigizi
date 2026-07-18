@@ -62,7 +62,7 @@ async function bootstrap() {
 
   // 8. JALANKAN SERVER (Cukup panggil SEKALI di paling akhir)
   const port = process.env.PORT || 3001;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
   logger.log(`SIGIZI API running on http://localhost:${port}`, "Bootstrap");
   logger.log(`Swagger docs: http://localhost:${port}/docs`, "Bootstrap");
