@@ -29,11 +29,7 @@ async function bootstrap() {
 
   // 4. CORS configuration
   app.enableCors({
-    origin: [
-      'https://www.sigizi.biz.id',
-      'https://sigizi.biz.id',
-      'http://localhost:3000'
-    ],
+    origin: true, // Ubah array menjadi boolean 'true'
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders: 'Content-Type, Accept, Authorization',
