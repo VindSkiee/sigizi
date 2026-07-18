@@ -29,9 +29,18 @@ async function bootstrap() {
 
   // CORS
   app.enableCors({
-    origin: process.env.NEXT_PUBLIC_PORTAL_URL,
+    origin: [
+      'https://www.sigizi.biz.id',
+      'https://sigizi.biz.id',
+      'http://localhost:3000' // Tetap masukkan localhost agar kamu bisa development lokal dengan aman
+    ],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    allowedHeaders: 'Content-Type, Accept, Authorization',
   });
+
+  // 2. Pastikan port menggunakan variable environment
+  await app.listen(process.env.PORT || 3001);
 
   // Global prefix
   app.setGlobalPrefix("api");
