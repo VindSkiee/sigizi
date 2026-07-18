@@ -14,38 +14,35 @@ async function bootstrap() {
     bufferLogs: true,
   });
 
-  // Get logger from app
+  // 1. Get logger from app & set as global logger
   const logger = app.get(AppLoggerService);
   app.useLogger(logger);
 
-  // Global filters (order matters: Prisma first, then All)
+  // 2. Global filters (order matters: Prisma first, then All)
   app.useGlobalFilters(
     new PrismaExceptionFilter(logger),
     new AllExceptionsFilter(logger),
   );
 
-  // Global interceptors
+  // 3. Global interceptors
   app.useGlobalInterceptors(new ResponseTransformInterceptor());
 
-  // CORS
+  // 4. CORS configuration
   app.enableCors({
     origin: [
       'https://www.sigizi.biz.id',
       'https://sigizi.biz.id',
-      'http://localhost:3000' // Tetap masukkan localhost agar kamu bisa development lokal dengan aman
+      'http://localhost:3000'
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders: 'Content-Type, Accept, Authorization',
   });
 
-  // 2. Pastikan port menggunakan variable environment
-  await app.listen(process.env.PORT || 3001);
-
-  // Global prefix
+  // 5. Global prefix (Wajib SEBELUM app.listen)
   app.setGlobalPrefix("api");
 
-  // Validation
+  // 6. Validation (Wajib SEBELUM app.listen)
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -54,7 +51,7 @@ async function bootstrap() {
     }),
   );
 
-  // Swagger
+  // 7. Swagger setup (Wajib SEBELUM app.listen)
   const config = new DocumentBuilder()
     .setTitle("SIGIZI API")
     .setDescription(
@@ -67,6 +64,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("docs", app, document);
 
+  // 8. JALANKAN SERVER (Cukup panggil SEKALI di paling akhir)
   const port = process.env.PORT || 3001;
   await app.listen(port);
 
