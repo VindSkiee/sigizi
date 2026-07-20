@@ -35,7 +35,7 @@ function SsoRedirectContent() {
   }
 
   function handleCancel() {
-    router.push("/login");
+    router.push("/auth/login");
   }
 
   return (

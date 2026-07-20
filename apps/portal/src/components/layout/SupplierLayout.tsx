@@ -1,49 +1,26 @@
 "use client";
 
 import { ReactNode, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { DashboardShell } from "./DashboardShell";
 import {
-  LayoutDashboard,
-  Package,
-  ShoppingCart,
-  FileText,
-  Building2,
-  LogOut,
-} from "lucide-react";
+  supplierNavigation,
+  supplierTheme,
+  getInitials,
+} from "./navigation";
 
 interface SupplierLayoutProps {
   children: ReactNode;
 }
 
-const allNavItems = [
-  { name: "Dashboard", href: "/supplier", icon: LayoutDashboard },
-  { name: "Katalog Produk", href: "/supplier/katalog", icon: Package },
-  { name: "Pesanan Masuk", href: "/supplier/pesanan", icon: ShoppingCart },
-  {
-    name: "MoU & Kontrak",
-    href: "/supplier/mou",
-    icon: FileText,
-    devOnly: false,
-  },
-  { name: "Profil", href: "/supplier/profil", icon: Building2 },
-];
-
-const navItems =
-  process.env.NODE_ENV === "development"
-    ? allNavItems.filter((item) => item.devOnly !== false)
-    : allNavItems;
-
 export default function SupplierLayout({ children }: SupplierLayoutProps) {
-  const pathname = usePathname();
   const router = useRouter();
-  const { user, logout, isAuthenticated, isSupplier, isLoading } = useAuth();
+  const { user, isAuthenticated, isSupplier, isLoading } = useAuth();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push("/login");
+      router.push("/auth/login");
     } else if (!isLoading && !isSupplier) {
       router.push("/unauthorized");
     }
@@ -52,65 +29,15 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
   if (isLoading) return null;
   if (!isAuthenticated || !isSupplier) return null;
 
+  const name = user?.name || "PT Sumber Makmur";
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed h-full z-10">
-        <div className="p-6 border-b border-gray-100 items-center flex justify-center">
-          <Image
-            src="/logo.png"
-            alt="SIGIZI"
-            width={180}
-            height={40}
-            priority
-          />
-        </div>
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-green-50 text-green-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
-              >
-                <item.icon size={20} />
-                {item.name}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Supplier Info Card */}
-        <div className="p-3 border-t border-gray-200">
-          <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <span className="font-semibold">SM</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">
-                  {user?.name || "PT Sumber Makmur"}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={logout}
-              className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium transition-colors"
-            >
-              <LogOut size={14} />
-              Keluar
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 ml-64 p-8">{children}</main>
-    </div>
+    <DashboardShell
+      navigation={supplierNavigation}
+      theme={supplierTheme}
+      userCard={{ name, initials: getInitials(name) }}
+    >
+      {children}
+    </DashboardShell>
   );
 }

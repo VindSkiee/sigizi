@@ -305,7 +305,7 @@ export function RegisterForm() {
           "Registrasi berhasil! Anda akan dialihkan ke halaman login...",
         );
         setTimeout(() => {
-          window.location.href = "/login";
+          window.location.href = "/auth/login";
         }, 2000);
       }
     } catch (err: any) {
@@ -941,7 +941,7 @@ export function RegisterForm() {
         <p className="mt-6 text-center text-sm text-gray-600">
           Sudah punya akun?{" "}
           <Link
-            href="/login"
+            href="/auth/login"
             className="text-primary-600 font-semibold hover:underline"
           >
             Masuk

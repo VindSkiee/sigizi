@@ -218,7 +218,7 @@ export function LoginForm({ prefillEmail, prefillPassword }: LoginFormProps) {
         <p className="mt-4 md:mt-6 text-center text-xs md:text-sm text-gray-600">
           Daftar sebagai supplier!{" "}
           <Link
-            href="/register"
+            href="/auth/register"
             className="text-primary-600 font-semibold hover:underline"
           >
             Klik disini

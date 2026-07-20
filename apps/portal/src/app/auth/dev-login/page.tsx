@@ -76,7 +76,7 @@ function DevLoginContent() {
         <div className="text-center">
           <p className="text-red-600 text-sm mb-4">{error}</p>
           <button
-            onClick={() => router.push("/login")}
+            onClick={() => router.push("/auth/login")}
             className="text-sm text-primary-600 hover:underline"
           >
             Kembali ke Login
@@ -98,7 +98,7 @@ function DevLoginContent() {
             Jalankan seed terlebih dahulu
           </p>
           <button
-            onClick={() => router.push("/login")}
+            onClick={() => router.push("/auth/login")}
             className="text-sm text-primary-600 hover:underline"
           >
             Kembali ke Login
@@ -161,7 +161,7 @@ function DevLoginContent() {
 
         <div className="mt-6 text-center">
           <button
-            onClick={() => router.push("/login")}
+            onClick={() => router.push("/auth/login")}
             className="text-sm text-gray-500 hover:text-gray-700"
           >
             &larr; Kembali ke Login

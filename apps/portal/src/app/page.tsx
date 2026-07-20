@@ -68,13 +68,13 @@ export default function Home() {
       <nav className="absolute top-0 left-0 right-0 px-4 py-4">
         <div className="max-w-5xl mx-auto flex justify-end items-center gap-3">
             <button
-              onClick={() => router.push("/login")}
+              onClick={() => router.push("/auth/login")}
               className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
             >
               Masuk
             </button>
             <button
-              onClick={() => router.push("/register")}
+              onClick={() => router.push("/auth/register")}
               className="relative px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors shadow-sm"
             >
               Daftar Supplier

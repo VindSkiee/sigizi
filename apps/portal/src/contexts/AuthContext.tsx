@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("user");
     setToken(null);
     setUser(null);
-    router.push("/login");
+    router.push("/auth/login");
   };
 
   const updateSppgLocation = useCallback(

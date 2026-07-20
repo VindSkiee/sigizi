@@ -3,7 +3,12 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { AdminSidebar } from "@/components/layout/AdminSidebar";
+import { DashboardShell } from "@/components/layout/DashboardShell";
+import {
+  adminNavigation,
+  adminTheme,
+  getInitials,
+} from "@/components/layout/navigation";
 import { PageErrorBoundary } from "@/components/features/common/PageErrorBoundary";
 import { DemoNoticeModal } from "@/components/ui/DemoNoticeModal";
 
@@ -14,7 +19,7 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, isAdmin, isLoading, hasLocation } = useAuth();
+  const { user, isAuthenticated, isAdmin, isLoading, hasLocation } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -22,7 +27,7 @@ export default function AdminLayout({
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push("/login");
+      router.push("/auth/login");
     } else if (!isLoading && !isAdmin) {
       router.push("/unauthorized");
     } else if (!isLoading && isAdmin && !hasLocation && !isPublicRoute) {
@@ -47,14 +52,21 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <>
       <DemoNoticeModal />
-      <AdminSidebar />
-      <main className="flex-1 ml-64 p-8 overflow-x-hidden">
+      <DashboardShell
+        navigation={adminNavigation}
+        theme={adminTheme}
+        userCard={{
+          name: user?.name || "User",
+          subtitle: user?.sppg?.name || "SPPG",
+          initials: getInitials(user?.name || "User"),
+        }}
+      >
         <PageErrorBoundary pageName="Dashboard Admin">
           {children}
         </PageErrorBoundary>
-      </main>
-    </div>
+      </DashboardShell>
+    </>
   );
 }
