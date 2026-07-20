@@ -348,7 +348,7 @@ function SppgSearchContent() {
                         </span>
                         <span className="flex items-center gap-1">
                           <Users className="w-3 h-3" />
-                          {sppg.totalBeneficiary} penerima
+                          {sppg.totalBeneficiary} instansi penerima
                         </span>
                       </div>
                     </div>
