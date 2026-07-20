@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
-import { PageErrorBoundary } from "@/components/features/PageErrorBoundary";
+import { PageErrorBoundary } from "@/components/features/common/PageErrorBoundary";
 import { DemoNoticeModal } from "@/components/ui/DemoNoticeModal";
 
 const PUBLIC_ADMIN_ROUTES = ["/admin/setup-location"];

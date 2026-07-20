@@ -22,7 +22,7 @@ import {
 } from "@/components/features/complaint";
 import { getBatchByNumber } from "@/lib/api";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { PageErrorBoundary } from "@/components/features/PageErrorBoundary";
+import { PageErrorBoundary } from "@/components/features/common/PageErrorBoundary";
 
 interface BatchItem {
   name: string | null;

@@ -13,7 +13,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { getPublicSppgById } from "@/lib/api";
-import { PageErrorBoundary } from "@/components/features/PageErrorBoundary";
+import { PageErrorBoundary } from "@/components/features/common/PageErrorBoundary";
 
 interface SppgProfile {
   id: string;

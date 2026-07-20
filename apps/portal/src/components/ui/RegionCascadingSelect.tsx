@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { REGIONS, type Region } from "../features/admin/market/regions";
+import { REGIONS, type Region } from "@/lib/regions";
 import { MapPin } from "lucide-react"; // Tambahkan icon dari lucide-react
 
 interface RegionCascadingSelectProps {

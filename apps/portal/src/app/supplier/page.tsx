@@ -15,7 +15,7 @@ import {
   FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { StatsCard } from "@/components/features/supplier/StatsCard";
+import { StatsCard } from "@/components/features/supplier/dashboard/StatsCard";
 
 interface RecentOrder {
   id: string;

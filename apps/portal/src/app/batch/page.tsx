@@ -3,7 +3,7 @@
 import { useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { PageErrorBoundary } from "@/components/features/PageErrorBoundary";
+import { PageErrorBoundary } from "@/components/features/common/PageErrorBoundary";
 
 // 1. Pisahkan logika ke komponen Content
 function BatchContent() {
