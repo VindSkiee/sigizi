@@ -65,50 +65,49 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       <DemoNoticeModal />
       {/* Top Navigation */}
-      <nav className="absolute top-0 left-0 right-0 px-4 py-4">
-        <div className="max-w-5xl mx-auto flex justify-end items-center gap-3">
-            <button
-              onClick={() => router.push("/auth/login")}
-              className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
-            >
-              Masuk
-            </button>
-            <button
-              onClick={() => router.push("/auth/register")}
-              className="relative px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors shadow-sm"
-            >
-              Daftar Supplier
-              <span className="absolute -top-2 -right-2 px-1.5 py-0.5 text-[10px] font-bold text-white bg-orange-500 rounded-full">
-                Gratis!
-              </span>
-            </button>
-          
+      <nav className="absolute top-0 left-0 right-0 px-4 py-3 md:py-4">
+        <div className="max-w-5xl mx-auto flex justify-end items-center gap-2 md:gap-3">
+          <button
+            onClick={() => router.push("/auth/login")}
+            className="px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-medium text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
+          >
+            Masuk
+          </button>
+          <button
+            onClick={() => router.push("/auth/register")}
+            className="relative px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+          >
+            Daftar Supplier
+            <span className="absolute -top-2 -right-2 px-1.5 py-0.5 text-[9px] md:text-[10px] font-bold text-white bg-orange-500 rounded-full">
+              Gratis!
+            </span>
+          </button>
         </div>
       </nav>
 
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-16 md:py-20">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 md:mb-16 mt-4 md:mt-0">
           <img
             src="/logo.png"
             alt="SIGIZI"
-            className="h-16 md:h-24 mx-auto mb-4"
+            className="h-12 md:h-20 mx-auto mb-3 md:mb-4"
           />
-          <p className="text-xl md:text-2xl text-gray-600 mb-2">
+          <p className="text-lg md:text-2xl font-medium text-gray-700 mb-1 md:mb-2">
             Platform Traceability Makanan MBG
           </p>
-          <p className="text-gray-500">
+          <p className="text-xs md:text-sm text-gray-500 max-w-sm md:max-w-none mx-auto">
             Pelacakan transparansi gizi dan alergen program Makan Bergizi Gratis
           </p>
         </div>
 
         {/* Tab Switcher + Content */}
-        <div className="max-w-xl mx-auto mb-16">
+        <div className="max-w-xl mx-auto mb-12 md:mb-16">
           {/* Tab Buttons */}
-          <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
+          <div className="flex bg-gray-100 rounded-xl p-1 mb-5 md:mb-6">
             <button
               onClick={() => setActiveTab("batch")}
-              className={`flex-1 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${
+              className={`flex-1 px-3 md:px-4 py-2 md:py-3 rounded-lg text-xs md:text-sm font-semibold transition-all ${
                 activeTab === "batch"
                   ? "bg-white text-green-700 shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
@@ -118,7 +117,7 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveTab("sppg")}
-              className={`flex-1 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${
+              className={`flex-1 px-3 md:px-4 py-2 md:py-3 rounded-lg text-xs md:text-sm font-semibold transition-all ${
                 activeTab === "sppg"
                   ? "bg-white text-green-700 shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
@@ -129,29 +128,33 @@ export default function Home() {
           </div>
 
           {/* Tab Content */}
-          <div className="bg-white rounded-2xl shadow-lg p-8">
+          <div className="bg-white rounded-2xl shadow-lg p-5 md:p-8">
             {activeTab === "batch" ? (
               /* Batch Search */
               <div>
-                <h2 className="text-2xl font-semibold text-gray-800 mb-2 text-center">
+                <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-1 md:mb-2 text-center">
                   Cek Resi Batch MBG
                 </h2>
-                <p className="text-gray-600 mb-6 text-center md:text-sm">
+                <p className="text-xs md:text-sm text-gray-600 mb-5 md:mb-6 text-center">
                   Masukkan nomor batch untuk melihat informasi gizi, alergen,
                   dan biaya
                 </p>
-                <form onSubmit={handleBatchSearch} className="flex gap-2">
+                {/* Form layout: Stack di mobile, sebaris di sm (tablet/desktop) */}
+                <form
+                  onSubmit={handleBatchSearch}
+                  className="flex flex-col sm:flex-row gap-3"
+                >
                   <input
                     type="text"
                     value={batchNumber}
                     onChange={(e) => setBatchNumber(e.target.value)}
                     placeholder="Contoh: BATCH-20260709-001"
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full sm:flex-1 px-4 py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     required
                   />
                   <button
                     type="submit"
-                    className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors"
+                    className="w-full sm:w-auto px-6 py-3 bg-green-600 text-white text-sm md:text-base font-semibold rounded-lg hover:bg-green-700 transition-colors"
                   >
                     Lacak
                   </button>
@@ -160,10 +163,10 @@ export default function Home() {
             ) : (
               /* SPPG Quick Search */
               <div>
-                <h2 className="text-2xl font-semibold text-gray-800 mb-2 text-center">
+                <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-1 md:mb-2 text-center">
                   Cari SPPG
                 </h2>
-                <p className="text-gray-600 mb-6 text-center md:text-sm">
+                <p className="text-xs md:text-sm text-gray-600 mb-5 md:mb-6 text-center">
                   Temukan SPPG terdekat di wilayah Anda
                 </p>
 
@@ -172,7 +175,7 @@ export default function Home() {
                   onModeChange={setLocationMode}
                 />
 
-                <div className="mt-4">
+                <div className="mt-4 md:mt-5">
                   {locationMode === "region" ? (
                     <>
                       <RegionCascadingSelect
@@ -182,16 +185,16 @@ export default function Home() {
                       <button
                         onClick={handleRegionSearch}
                         disabled={!regionFilter.province}
-                        className="w-full mt-4 px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                        className="w-full mt-4 px-6 py-3 bg-green-600 text-white text-sm md:text-base font-semibold rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                       >
                         Cari Berdasarkan Region
                       </button>
                     </>
                   ) : (
-                    <div className="text-center py-8">
-                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="text-center py-6 md:py-8">
+                      <div className="w-14 h-14 md:w-16 md:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
                         <svg
-                          className="w-8 h-8 text-green-600"
+                          className="w-6 h-6 md:w-8 md:h-8 text-green-600"
                           fill="none"
                           viewBox="0 0 24 24"
                           strokeWidth={1.5}
@@ -209,13 +212,13 @@ export default function Home() {
                           />
                         </svg>
                       </div>
-                      <p className="text-gray-600 mb-4">
+                      <p className="text-xs md:text-sm text-gray-600 mb-4 px-4">
                         Gunakan lokasi GPS Anda untuk menemukan SPPG terdekat
                       </p>
                       <button
                         onClick={handleGpsSearch}
                         disabled={gpsLoading}
-                        className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300"
+                        className="w-full sm:w-auto px-6 py-3 bg-green-600 text-white text-sm md:text-base font-semibold rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300"
                       >
                         {gpsLoading
                           ? "Mencari lokasi..."
@@ -230,10 +233,10 @@ export default function Home() {
         </div>
 
         {/* Features */}
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          <div className="group relative bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg hover:border-green-200 transition-all duration-200">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-5xl mx-auto">
+          <div className="group relative bg-white rounded-xl border border-gray-200 p-5 md:p-6 hover:shadow-lg hover:border-green-200 transition-all duration-200">
             <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-11 h-11 bg-green-50 rounded-lg flex items-center justify-center group-hover:bg-green-100 transition-colors">
+              <div className="flex-shrink-0 w-10 h-10 md:w-11 md:h-11 bg-green-50 rounded-lg flex items-center justify-center group-hover:bg-green-100 transition-colors">
                 <svg
                   className="w-5 h-5 text-green-600"
                   fill="none"
@@ -249,10 +252,10 @@ export default function Home() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-800 mb-1">
+                <h3 className="text-sm md:text-base font-semibold text-gray-800 mb-1">
                   Informasi Gizi
                 </h3>
-                <p className="text-gray-500 text-sm leading-relaxed">
+                <p className="text-gray-500 text-xs md:text-sm leading-relaxed">
                   Detail kalori, protein, lemak, dan karbohidrat setiap makanan
                   secara transparan
                 </p>
@@ -260,9 +263,9 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="group relative bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg hover:border-orange-200 transition-all duration-200">
+          <div className="group relative bg-white rounded-xl border border-gray-200 p-5 md:p-6 hover:shadow-lg hover:border-orange-200 transition-all duration-200">
             <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-11 h-11 bg-orange-50 rounded-lg flex items-center justify-center group-hover:bg-orange-100 transition-colors">
+              <div className="flex-shrink-0 w-10 h-10 md:w-11 md:h-11 bg-orange-50 rounded-lg flex items-center justify-center group-hover:bg-orange-100 transition-colors">
                 <svg
                   className="w-5 h-5 text-orange-600"
                   fill="none"
@@ -278,10 +281,10 @@ export default function Home() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-800 mb-1">
+                <h3 className="text-sm md:text-base font-semibold text-gray-800 mb-1">
                   Deteksi Alergen
                 </h3>
-                <p className="text-gray-500 text-sm leading-relaxed">
+                <p className="text-gray-500 text-xs md:text-sm leading-relaxed">
                   Kenali bahan pemicu alergi sebelum mengonsumsi untuk keamanan
                   pangan
                 </p>
@@ -289,9 +292,9 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="group relative bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg hover:border-blue-200 transition-all duration-200">
+          <div className="group relative bg-white rounded-xl border border-gray-200 p-5 md:p-6 hover:shadow-lg hover:border-blue-200 transition-all duration-200 sm:col-span-2 md:col-span-1">
             <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-11 h-11 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+              <div className="flex-shrink-0 w-10 h-10 md:w-11 md:h-11 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors">
                 <svg
                   className="w-5 h-5 text-blue-600"
                   fill="none"
@@ -307,10 +310,10 @@ export default function Home() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-800 mb-1">
+                <h3 className="text-sm md:text-base font-semibold text-gray-800 mb-1">
                   Lapor Komplain
                 </h3>
-                <p className="text-gray-500 text-sm leading-relaxed">
+                <p className="text-gray-500 text-xs md:text-sm leading-relaxed">
                   Sampaikan keluhan dengan valid menggunakan kode Report Key
                 </p>
               </div>
@@ -319,7 +322,7 @@ export default function Home() {
         </div>
 
         {/* Footer */}
-        <div className="mt-16 text-center text-gray-500 text-sm">
+        <div className="mt-12 md:mt-16 text-center text-gray-500 text-xs md:text-sm">
           <p>SIGIZI - Platform GovTech untuk Program Makan Bergizi Gratis</p>
           <p className="mt-1">Dikembangkan oleh TraceBite</p>
         </div>

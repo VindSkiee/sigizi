@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "dev": "next dev --port 3000",
+    "dev": "node scripts/dev.js",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
@@ -37,6 +37,7 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "autoprefixer": "^10.4.17",
+    "dotenv": "^17.4.2",
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.4.0"

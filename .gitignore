@@ -44,3 +44,7 @@ coverage/
 # Misc
 *.tsbuildinfo
 .env.tunnel
+.trae/documents/analisis-jawaban-hackathon-question.md
+docs/HACKATHON_QUESTION.md
+docs/PROPOSAL_3_SIGIZI.pdf
+docs/PROPOSAL_3_SIGIZI.md
