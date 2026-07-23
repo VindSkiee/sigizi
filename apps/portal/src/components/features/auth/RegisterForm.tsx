@@ -15,8 +15,9 @@ import {
 import { Logo } from "@/components/features/auth/Logo";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Card } from "@/components/ui/Card";
 import { registerSupplier } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import ErrorTooltip from "@/components/ui/ErrorTooltip";
 
 // ─── Geocoding helpers ────────────────────────────────────────
 
@@ -382,7 +383,7 @@ export function RegisterForm() {
               </div>
               {i < STEPS.length - 1 && (
                 <div
-                  className={`w-16 sm:w-24 h-0.5 mx-2 mb-5 rounded ${
+                  className={`w-12 sm:w-28 h-0.5 mx-2 mb-5 p-0.5 rounded ${
                     i < step ? "bg-green-500" : "bg-gray-200"
                   }`}
                 />
@@ -399,15 +400,17 @@ export function RegisterForm() {
   const provinceLabel = (p: string) => p.replace(/_/g, " ");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center p-4 py-8">
-      <Card className="w-full max-w-2xl p-6 md:p-10">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center p-4 md:py-8">
+      <div className="relative w-full max-w-2xl flex flex-col md:p-10 md:rounded-[2.5rem] md:bg-white/95 md:backdrop-blur-2xl md:border md:border-white md:shadow-[0_24px_60px_-15px_rgba(0,0,0,0.05),_0_12px_24px_-8px_rgba(34,197,94,0.08)] md:ring-1 md:ring-gray-900/5">
+        {/* Aksen Highlight Cahaya (Muncul di layar md ke atas) */}
+        <div className="hidden md:block absolute top-0 inset-x-12 h-px bg-gradient-to-r from-transparent via-green-500/20 to-transparent" />
         <Logo className="mb-6" />
 
         <div className="text-center mb-2">
           <h1 className="text-xl md:text-2xl font-bold text-gray-800">
             Pusat Pendaftaran Supplier
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 mt-1 sm:mb-8">
             Lengkapi data untuk mulai menyuplai makanan bergizi
           </p>
         </div>
@@ -517,33 +520,22 @@ export function RegisterForm() {
               </div>
 
               <div className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="nib"
-                    className="block text-sm font-medium text-gray-700 mb-1.5"
-                  >
-                    NIB (Nomor Induk Berusaha){" "}
-                    <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="nib"
-                    type="text"
-                    placeholder="Masukkan NIB"
-                    value={nib}
-                    onChange={(e) => {
-                      setNib(e.target.value);
-                      clearError("nib");
-                    }}
-                    className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200"
-                    required
-                  />
-                  {errors.nib && (
-                    <p className="mt-1 text-xs text-red-500">{errors.nib}</p>
-                  )}
-                  <p className="mt-1 text-xs text-gray-400">
-                    Nomor Induk Berusaha dari OSS
-                  </p>
-                </div>
+                <Input
+                  id="nib"
+                  type="text"
+                  label="NIB (Nomor Induk Berusaha) *"
+                  placeholder="Masukkan NIB"
+                  value={nib}
+                  onChange={(e) => {
+                    setNib(e.target.value);
+                    clearError("nib");
+                  }}
+                  error={errors.nib}
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-400">
+                  Nomor Induk Berusaha dari OSS
+                </p>
               </div>
             </div>
           </div>
@@ -606,65 +598,77 @@ export function RegisterForm() {
             </label>
 
             {isMarketSeller && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <div className="group">
+                <label
+                  className={cn(
+                    "block text-sm font-medium mb-1.5 transition-colors duration-200",
+                    errors.marketName
+                      ? "text-gray-700 group-focus-within:text-red-500"
+                      : "text-gray-700 group-focus-within:text-primary-500",
+                  )}
+                >
                   Nama Pasar <span className="text-red-500">*</span>
                 </label>
-                <div className="flex">
-                  <span className="inline-flex items-center px-3 py-2.5 text-sm bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-500 font-medium">
-                    Pasar
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="contoh: Cibeunying"
-                    value={marketName}
-                    onChange={(e) => {
-                      setMarketName(e.target.value);
-                      clearError("marketName");
-                    }}
-                    className={`w-full px-4 py-2.5 text-sm border rounded-r-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 transition-colors duration-200 ${
-                      errors.marketName
-                        ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                        : "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
-                    }`}
-                  />
-                </div>
-                {errors.marketName && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.marketName}
-                  </p>
-                )}
+                <ErrorTooltip error={errors.marketName}>
+                  <div className="flex">
+                    <span className="inline-flex items-center px-3 py-2.5 text-sm bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-500 font-medium">
+                      Pasar
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="contoh: Cibeunying"
+                      value={marketName}
+                      onChange={(e) => {
+                        setMarketName(e.target.value);
+                        clearError("marketName");
+                      }}
+                      className={cn(
+                        "w-full px-4 py-2.5 text-sm border rounded-r-lg placeholder:text-gray-400 focus:outline-none transition-colors duration-200",
+                        errors.marketName
+                          ? "border-red-500 group-focus-within:ring-1 group-focus-within:ring-red-500 group-focus-within:border-red-500"
+                          : "border-gray-300 group-focus-within:ring-1 group-focus-within:ring-primary-500 group-focus-within:border-primary-500",
+                      )}
+                    />
+                  </div>
+                </ErrorTooltip>
               </div>
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <div className="group">
+                <label
+                  className={cn(
+                    "block text-sm font-medium mb-1.5 transition-colors duration-200",
+                    errors.province
+                      ? "text-gray-700 group-focus-within:text-red-500"
+                      : "text-gray-700 group-focus-within:text-primary-500",
+                  )}
+                >
                   Provinsi <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={province}
-                  onChange={(e) => {
-                    handleAddressChange("province", e.target.value);
-                    clearError("province");
-                  }}
-                  className={`w-full px-4 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors duration-200 bg-white ${
-                    errors.province
-                      ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
-                  }`}
-                  required
-                >
-                  <option value="">Pilih Provinsi</option>
-                  {provinces.map((p) => (
-                    <option key={p} value={p}>
-                      {provinceLabel(p)}
-                    </option>
-                  ))}
-                </select>
-                {errors.province && (
-                  <p className="mt-1 text-xs text-red-500">{errors.province}</p>
-                )}
+                <ErrorTooltip error={errors.province}>
+                  <select
+                    value={province}
+                    onChange={(e) => {
+                      handleAddressChange("province", e.target.value);
+                      clearError("province");
+                    }}
+                    className={cn(
+                      "w-full px-4 py-2.5 text-sm border rounded-lg focus:outline-none transition-colors duration-200 bg-white",
+                      errors.province
+                        ? "border-red-500 group-focus-within:ring-1 group-focus-within:ring-red-500 group-focus-within:border-red-500"
+                        : "border-gray-300 group-focus-within:ring-1 group-focus-within:ring-primary-500 group-focus-within:border-primary-500",
+                    )}
+                    required
+                  >
+                    <option value="">Pilih Provinsi</option>
+                    {provinces.map((p) => (
+                      <option key={p} value={p}>
+                        {provinceLabel(p)}
+                      </option>
+                    ))}
+                  </select>
+                </ErrorTooltip>
               </div>
 
               <Input
@@ -724,8 +728,8 @@ export function RegisterForm() {
 
             {!isMarketSeller && (
               <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <div className="group">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5 transition-colors duration-200 group-focus-within:text-primary-500">
                     Alamat Lengkap (Opsional)
                   </label>
                   <textarea
@@ -733,7 +737,7 @@ export function RegisterForm() {
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="Jalan, nomor, RT/RW, dll."
                     rows={2}
-                    className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 resize-none"
+                    className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg placeholder:text-gray-400 focus:outline-none transition-colors duration-200 resize-none group-focus-within:ring-1 group-focus-within:ring-primary-500 group-focus-within:border-primary-500"
                   />
                 </div>
 
@@ -947,7 +951,7 @@ export function RegisterForm() {
             Masuk
           </Link>
         </p>
-      </Card>
+      </div>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { RegionCascadingSelect } from "@/components/ui/RegionCascadingSelect";
 import { LocationToggle } from "@/components/ui/LocationToggle";
 import { DemoNoticeModal } from "@/components/ui/DemoNoticeModal";
+import ErrorTooltip from "@/components/ui/ErrorTooltip";
 
 type Tab = "batch" | "sppg";
 
@@ -13,6 +14,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("batch");
   const [locationMode, setLocationMode] = useState<"region" | "gps">("region");
   const [batchNumber, setBatchNumber] = useState("");
+  const [batchError, setBatchError] = useState("");
   const [gpsLoading, setGpsLoading] = useState(false);
   const [regionFilter, setRegionFilter] = useState<{
     province?: string;
@@ -23,9 +25,12 @@ export default function Home() {
 
   function handleBatchSearch(e: React.FormEvent) {
     e.preventDefault();
-    if (batchNumber.trim()) {
-      router.push(`/batch/verify/${encodeURIComponent(batchNumber.trim())}`);
+    if (!batchNumber.trim()) {
+      setBatchError("Nomor batch wajib diisi");
+      return;
     }
+    setBatchError("");
+    router.push(`/batch/verify/${encodeURIComponent(batchNumber.trim())}`);
   }
 
   function handleRegionSearch() {
@@ -142,16 +147,21 @@ export default function Home() {
                 {/* Form layout: Stack di mobile, sebaris di sm (tablet/desktop) */}
                 <form
                   onSubmit={handleBatchSearch}
+                  noValidate
                   className="flex flex-col sm:flex-row gap-3"
                 >
-                  <input
-                    type="text"
-                    value={batchNumber}
-                    onChange={(e) => setBatchNumber(e.target.value)}
-                    placeholder="Contoh: BATCH-20260709-001"
-                    className="w-full sm:flex-1 px-4 py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    required
-                  />
+                  <ErrorTooltip error={batchError}>
+                    <input
+                      type="text"
+                      value={batchNumber}
+                      onChange={(e) => {
+                        setBatchNumber(e.target.value);
+                        if (batchError) setBatchError("");
+                      }}
+                      placeholder="Contoh: BATCH-20260709-001"
+                      className="w-full sm:flex-1 px-4 py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                  </ErrorTooltip>
                   <button
                     type="submit"
                     className="w-full sm:w-auto px-6 py-3 bg-green-600 text-white text-sm md:text-base font-semibold rounded-lg hover:bg-green-700 transition-colors"

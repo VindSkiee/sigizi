@@ -128,10 +128,16 @@ export function LoginForm({ prefillEmail, prefillPassword }: LoginFormProps) {
 
   return (
     <div className="h-[100dvh] overflow-hidden bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center p-4 md:min-h-screen md:overflow-auto">
-      <div className="w-full max-w-md flex flex-col justify-center h-full max-h-[600px] md:h-auto md:max-h-none md:bg-white md:p-10 md:shadow-lg md:border md:border-gray-100">
+      <div className="relative w-full max-w-md flex flex-col justify-center h-full max-h-[600px] md:h-auto md:max-h-none md:p-10 md:rounded-[2.5rem] md:bg-white/95 md:backdrop-blur-2xl md:border md:border-white md:shadow-[0_24px_60px_-15px_rgba(0,0,0,0.05),_0_12px_24px_-8px_rgba(34,197,94,0.08)] md:ring-1 md:ring-gray-900/5">
+        {/* Aksen Highlight Cahaya (Muncul di layar md ke atas) */}
+        <div className="hidden md:block absolute top-0 inset-x-8 h-px bg-gradient-to-r from-transparent via-green-500/20 to-transparent" />
         <Logo className="mb-4 md:mb-8 scale-90 md:scale-100 origin-center" />
 
-        <form onSubmit={handleSubmit} className="space-y-3 md:space-y-5">
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          className="space-y-3 md:space-y-5"
+        >
           {error && (
             <div className="p-2 md:p-3 bg-red-50 border border-red-200 rounded-lg text-xs md:text-sm text-red-600">
               {error}
@@ -184,7 +190,7 @@ export function LoginForm({ prefillEmail, prefillPassword }: LoginFormProps) {
               variant="primary"
               size="lg"
               isLoading={isLoading}
-              className="flex-1 py-2 md:py-3 text-sm md:text-base"
+              className="flex-1 py-2 md:py-2.5 text-sm md:text-base"
             >
               Login
             </Button>
@@ -195,7 +201,7 @@ export function LoginForm({ prefillEmail, prefillPassword }: LoginFormProps) {
               size="lg"
               onClick={handleSsoLogin}
               isLoading={isSsoLoading}
-              className="flex-1 py-2 md:py-3 text-sm md:text-base gap-1.5"
+              className="flex-1 py-2 md:py-2.5 text-sm md:text-base gap-1.5"
             >
               <svg
                 className="w-4 h-4 md:w-4 md:h-4 text-green-600 shrink-0"
