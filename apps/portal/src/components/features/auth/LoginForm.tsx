@@ -225,7 +225,10 @@ export function LoginForm({ prefillEmail, prefillPassword }: LoginFormProps) {
           Daftar sebagai supplier!{" "}
           <Link
             href="/auth/register"
-            onClick={() => sessionStorage.setItem("auth-slide", "left")}
+            onClick={() => {
+              document.body.classList.add("hide-toploader");
+              sessionStorage.setItem("auth-slide", "left");
+            }}
             className="text-primary-600 font-semibold hover:underline cursor-pointer"
           >
             Klik disini

@@ -26,6 +26,10 @@ body {
   }
 }
 
+body.hide-toploader #toploader-wrapper {
+  visibility: hidden !important;
+}
+
 @keyframes slide-from-right {
   from {
     transform: translateX(30px);

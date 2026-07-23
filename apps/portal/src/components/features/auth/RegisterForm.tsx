@@ -946,7 +946,10 @@ export function RegisterForm() {
           Sudah punya akun?{" "}
           <Link
             href="/auth/login"
-            onClick={() => sessionStorage.setItem("auth-slide", "right")}
+            onClick={() => {
+              document.body.classList.add("hide-toploader");
+              sessionStorage.setItem("auth-slide", "right");
+            }}
             className="text-primary-600 font-semibold hover:underline cursor-pointer"
           >
             Masuk

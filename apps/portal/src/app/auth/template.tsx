@@ -15,24 +15,19 @@ export default function AuthTemplate({
 
     if (!dir) return;
 
-    const wrapper = document.getElementById("toploader-wrapper");
-
     if (dir === "left") {
       ref.current?.classList.add("animate-slide-from-right");
     } else if (dir === "right") {
       ref.current?.classList.add("animate-slide-from-left");
     }
 
-    if (!wrapper) return;
-
-    wrapper.style.visibility = "hidden";
     const timer = setTimeout(() => {
-      wrapper.style.visibility = "";
+      document.body.classList.remove("hide-toploader");
     }, 350);
 
     return () => {
       clearTimeout(timer);
-      wrapper.style.visibility = "";
+      document.body.classList.remove("hide-toploader");
     };
   }, []);
 
