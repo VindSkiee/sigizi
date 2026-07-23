@@ -946,7 +946,8 @@ export function RegisterForm() {
           Sudah punya akun?{" "}
           <Link
             href="/auth/login"
-            className="text-primary-600 font-semibold hover:underline"
+            onClick={() => sessionStorage.setItem("auth-slide", "right")}
+            className="text-primary-600 font-semibold hover:underline cursor-pointer"
           >
             Masuk
           </Link>
