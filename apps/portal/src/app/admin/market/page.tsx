@@ -53,6 +53,7 @@ export default function MarketPage() {
     hasSearched,
     error,
     radiusInfo,
+    apiFilter,
     handleSearch: handleSearchFromHook,
     handleRefresh,
     dismissRadiusWarning,
@@ -486,6 +487,7 @@ export default function MarketPage() {
         isOpen={showDraftModal}
         onClose={() => setShowDraftModal(false)}
         items={draftItems}
+        marketFilter={apiFilter}
         onUpdateQuantity={handleUpdateQuantity}
         onRemove={handleRemove}
         onOrderSuccess={handleOrderSuccess}

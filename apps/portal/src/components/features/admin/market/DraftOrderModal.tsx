@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { createOrder } from "@/lib/api";
 import { clearDraft } from "@/lib/draft";
 import { DraftItem } from "@/components/features/admin/create-order/types";
 import { formatCurrency } from "@/lib/utils";
-import { Package, Trash2 } from "lucide-react";
+import { AlertTriangle, Package, Trash2 } from "lucide-react";
+import type { MarketLocationParams } from "@/lib/api";
 
 interface DraftOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
   items: DraftItem[];
+  marketFilter?: MarketLocationParams | null;
   onUpdateQuantity: (draftId: string, qty: number) => void;
   onRemove: (draftId: string) => void;
   onOrderSuccess: () => void;
@@ -21,19 +23,43 @@ export function DraftOrderModal({
   isOpen,
   onClose,
   items,
+  marketFilter,
   onUpdateQuantity,
   onRemove,
   onOrderSuccess,
 }: DraftOrderModalProps) {
   const { token, user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [priceJustification, setPriceJustification] = useState("");
+  const [warningInfo, setWarningInfo] = useState<{
+    supplierName: string;
+    items: Array<{
+      itemId: string;
+      itemName: string;
+      unitPrice: number;
+      status: string;
+      reason: string;
+      recommendation: string;
+      marketMedianSnapshot: number;
+    }>;
+  } | null>(null);
+  // supplierId yang sudah berhasil diproses (cegah order duplikat saat retry)
+  const processedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (isOpen) {
+      processedRef.current.clear();
+      setWarningInfo(null);
+      setPriceJustification("");
+    }
+  }, [isOpen]);
 
   const total = items.reduce(
     (sum, item) => sum + item.unitPrice * item.quantity,
     0,
   );
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (justification?: string) => {
     if (!token || !user || items.length === 0) return;
 
     setIsSubmitting(true);
@@ -47,28 +73,60 @@ export function DraftOrderModal({
         {},
       );
 
-      for (const [, supplierItems] of Object.entries(groupedBySupplier)) {
-        await createOrder(
-          token,
-          {
-            supplierId: supplierItems[0].supplierId,
-            items: supplierItems.map((item) => ({
-              itemId: item.itemId,
-              quantity: item.quantity,
-            })),
-          },
-          user.sppgId || "",
-          user.id,
-        );
+      for (const [supplierId, supplierItems] of Object.entries(
+        groupedBySupplier,
+      )) {
+        // Lewati supplier yang sudah berhasil diproses (cegah order duplikat saat retry)
+        if (processedRef.current.has(supplierId)) continue;
+
+        const body: {
+          supplierId: string;
+          items: { itemId: string; quantity: number }[];
+          priceJustification?: string;
+          marketFilter?: MarketLocationParams;
+        } = {
+          supplierId: supplierItems[0].supplierId,
+          items: supplierItems.map((item) => ({
+            itemId: item.itemId,
+            quantity: item.quantity,
+          })),
+        };
+        if (justification) body.priceJustification = justification;
+        // Sertakan scope pasar yg dilihat admin agar validasi harga konsisten
+        // dgn persentase yg ditampilkan di MarketCard
+        if (marketFilter) body.marketFilter = marketFilter;
+
+        try {
+          await createOrder(token, body, user.sppgId || "", user.id);
+          processedRef.current.add(supplierId);
+        } catch (err: any) {
+          const msg = err?.message || err?.error?.message || "";
+          const isJustificationError =
+            err?.code === "BAD_REQUEST" && /priceJustification/i.test(msg);
+          if (isJustificationError) {
+            setWarningInfo({
+              supplierName: supplierItems[0].supplierName,
+              items: err?.details || [],
+            });
+            setIsSubmitting(false);
+            return; // pause, tunggu user isi justifikasi lalu retry
+          }
+          throw err; // error lain (mis. status INVALID) -> lempar ke outer catch
+        }
       }
 
       clearDraft();
+      processedRef.current.clear();
       onClose();
       onOrderSuccess();
     } catch (err: any) {
       const message =
         err?.message || err?.error?.message || "Gagal membuat pesanan. Silakan coba lagi.";
-      alert(message);
+      // Jika ada detail item bermasalah (mis. status INVALID), tampilkan namanya
+      const detailNames = Array.isArray(err?.details)
+        ? err.details.map((d: any) => d?.itemName).filter(Boolean).join(", ")
+        : "";
+      alert(detailNames ? `${message}\n\nItem: ${detailNames}` : message);
     } finally {
       setIsSubmitting(false);
     }
@@ -244,6 +302,78 @@ export function DraftOrderModal({
         {/* Footer */}
         {items.length > 0 && (
           <div className="border-t border-gray-200 px-6 py-4">
+            {/* Panel Peringatan Harga WARNING */}
+            {warningInfo && (
+              <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
+                <div className="flex items-start gap-2 mb-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-amber-800">
+                      Perhatian: Beberapa item memiliki harga di atas normal
+                    </p>
+                    <p className="text-xs text-amber-700 mt-0.5">
+                      Supplier: {warningInfo.supplierName}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 mb-3">
+                  {warningInfo.items.map((w) => (
+                    <div
+                      key={w.itemId}
+                      className="rounded-lg bg-white border border-amber-200 p-3"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {w.itemName}
+                        </p>
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                          {w.status}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-gray-600 mb-1">
+                        <span>
+                          Harga diajukan:{" "}
+                          <span className="font-semibold text-gray-900">
+                            {formatCurrency(w.unitPrice)}
+                          </span>
+                        </span>
+                        {w.marketMedianSnapshot ? (
+                          <span>
+                            Median pasar:{" "}
+                            <span className="font-semibold text-gray-900">
+                              {formatCurrency(w.marketMedianSnapshot)}
+                            </span>
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="text-xs text-gray-600">{w.reason}</p>
+                      {w.recommendation && (
+                        <p className="text-xs text-amber-700 mt-1">
+                          Rekomendasi: {w.recommendation}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <label className="block text-xs font-semibold text-amber-800 mb-1">
+                  Alasan Justifikasi Pembelian{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={priceJustification}
+                  onChange={(e) => setPriceJustification(e.target.value)}
+                  rows={3}
+                  placeholder="Contoh: Stok lokal langka, supplier terdekat hanya ini yang tersedia"
+                  className="w-full border border-amber-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 resize-none"
+                />
+                <p className="text-xs text-amber-700 mt-1">
+                  Alasan ini akan dicatat sebagai justifikasi pembelian pada tiap item.
+                </p>
+              </div>
+            )}
+
             {/* Total */}
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm font-medium text-gray-500">Total Pesanan</p>
@@ -261,8 +391,15 @@ export function DraftOrderModal({
                 Batal
               </button>
               <button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
+                onClick={() =>
+                  warningInfo
+                    ? handleSubmit(priceJustification)
+                    : handleSubmit()
+                }
+                disabled={
+                  isSubmitting ||
+                  (warningInfo ? priceJustification.trim() === "" : false)
+                }
                 className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:bg-primary-300 disabled:cursor-not-allowed transition-colors"
               >
                 {isSubmitting ? (
@@ -287,6 +424,11 @@ export function DraftOrderModal({
                       />
                     </svg>
                     Memproses...
+                  </>
+                ) : warningInfo ? (
+                  <>
+                    <AlertTriangle className="w-4 h-4" />
+                    Lanjutkan dengan Justifikasi
                   </>
                 ) : (
                   <>

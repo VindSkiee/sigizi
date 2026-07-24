@@ -198,13 +198,34 @@ export class OrderService {
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    // 3. BANGUN FILTER dari data SPPG
+    // 3. BANGUN FILTER untuk validasi harga
+    //    Prioritaskan marketFilter dari request (scope pasar yg dilihat admin),
+    //    fallback ke lokasi SPPG bila tidak disertakan.
     // ═══════════════════════════════════════════════════════════════════
-    const marketFilter = {
-      province: sppg?.province ?? undefined,
-      regency: sppg?.regency ?? undefined,
-      district: sppg?.district ?? undefined,
-    };
+    const mf = dto.marketFilter;
+    const hasClientFilter =
+      !!mf &&
+      (mf.province !== undefined ||
+        mf.regency !== undefined ||
+        mf.district !== undefined ||
+        mf.marketName !== undefined ||
+        mf.latitude !== undefined ||
+        mf.longitude !== undefined);
+    const marketFilter = hasClientFilter
+      ? (mf as {
+          province?: string;
+          regency?: string;
+          district?: string;
+          marketName?: string;
+          latitude?: number;
+          longitude?: number;
+          radiusKm?: number;
+        })
+      : {
+          province: sppg?.province ?? undefined,
+          regency: sppg?.regency ?? undefined,
+          district: sppg?.district ?? undefined,
+        };
 
     // ═══════════════════════════════════════════════════════════════════
     // 4. VALIDASI HARGA — Parallel execution via Promise.all

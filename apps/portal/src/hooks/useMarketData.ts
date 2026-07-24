@@ -8,7 +8,11 @@ import {
   MarketPriceStatistics,
 } from "@/components/features/admin/market/types";
 import { getMarketState, saveMarketState } from "@/lib/market-persist";
-import { getMarketPrices, getSupplierItems } from "@/lib/api";
+import {
+  getMarketPrices,
+  getSupplierItems,
+  MarketLocationParams,
+} from "@/lib/api";
 
 export interface RadiusInfo {
   requested: number;
@@ -27,6 +31,7 @@ interface UseMarketDataReturn {
   hasSearched: boolean;
   error: string | null;
   radiusInfo: RadiusInfo | null;
+  apiFilter: MarketLocationParams | null;
   handleSearch: (filter: MarketFilter) => Promise<void>;
   handleRefresh: () => Promise<void>;
   dismissRadiusWarning: () => void;
@@ -49,6 +54,9 @@ export function useMarketData(): UseMarketDataReturn {
   const [error, setError] = useState<string | null>(null);
   const [rawRadiusInfo, setRawRadiusInfo] = useState<RadiusInfo | null>(null);
   const [radiusWarningDismissed, setRadiusWarningDismissed] = useState(false);
+  const [apiFilter, setApiFilter] = useState<MarketLocationParams | null>(
+    null,
+  );
 
   const backgroundFetchRef = useRef<string | null>(null);
 
@@ -66,8 +74,10 @@ export function useMarketData(): UseMarketDataReturn {
       if (!token) return null;
 
       try {
-        const response = await getMarketPrices(token, {
-          item: filter.item,
+        // Bagian filter lokasi (tanpa item) - dipakai untuk request & diekspos
+        // sebagai apiFilter agar scope validasi harga saat order konsisten dgn
+        // persentase yg ditampilkan di MarketCard.
+        const locationFilter: MarketLocationParams = {
           province:
             filter.locationMode === "region" && filter.province
               ? filter.province
@@ -96,6 +106,11 @@ export function useMarketData(): UseMarketDataReturn {
             filter.locationMode === "gps" && filter.radiusKm
               ? parseFloat(filter.radiusKm)
               : undefined,
+        };
+
+        const response = await getMarketPrices(token, {
+          item: filter.item,
+          ...locationFilter,
         });
 
         if (!response.success) {
@@ -105,6 +120,9 @@ export function useMarketData(): UseMarketDataReturn {
           }
           return null;
         }
+
+        // Simpan scope filter lokasi yg dipakai untuk fetch ini
+        setApiFilter(locationFilter);
 
         const data = response.data as any;
         const rawSuppliers = (data.suppliers || []) as any[];
@@ -320,6 +338,7 @@ export function useMarketData(): UseMarketDataReturn {
     hasSearched,
     error,
     radiusInfo,
+    apiFilter,
     handleSearch,
     handleRefresh,
     dismissRadiusWarning,

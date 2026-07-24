@@ -152,7 +152,7 @@
 │  └── [x] Fix batch complaint form                           │
 │                                                              │
 │  Day 5: Polish & Ready for Testing                           │
-│  ├── [ ] End-to-end testing                                 │
+│  ├── [x] End-to-end testing                                 │
 │  ├── [ ] UI/UX polish                                       │
 │  ├── [ ] Bug fixes                                          │
 │  └── [x] Ready for user testing                             │

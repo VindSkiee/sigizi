@@ -12,6 +12,7 @@ import {
 import { Type } from "class-transformer";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { OrderStatus } from "@sigizi/shared";
+import { MarketLocationFilterDto } from "../../market/dto/market-location-filter.dto";
 
 export class OrderItemRequestDto {
   @ApiProperty()
@@ -54,6 +55,15 @@ export class CreateOrderDto {
   @IsOptional()
   @IsString()
   priceJustification?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Market scope used for price validation. Jika tidak diisi, default ke lokasi SPPG. Gunakan scope yg sama dgn yg dilihat admin di halaman pasar agar validasi konsisten dgn persentase yg ditampilkan.",
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MarketLocationFilterDto)
+  marketFilter?: MarketLocationFilterDto;
 
   @ApiProperty({ type: [OrderItemRequestDto] })
   @IsArray()

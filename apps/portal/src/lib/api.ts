@@ -30,12 +30,16 @@ async function fetchApi<T>(
   clearTimeout(timeoutId);
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({
+    const body = await response.json().catch(() => ({
       message: "Terjadi kesalahan",
     }));
-    const err = new Error(error.message || "Request failed") as any;
-    err.code = error.code || "UNKNOWN_ERROR";
-    err.details = error.details || undefined;
+    // Backend membungkus error di { success, error: { code, message, details }, meta }
+    const errInfo = body?.error ?? body;
+    const err = new Error(
+      errInfo?.message || body?.message || "Request failed",
+    ) as any;
+    err.code = errInfo?.code || "UNKNOWN_ERROR";
+    err.details = errInfo?.details || undefined;
     err.status = response.status;
     throw err;
   }
@@ -293,9 +297,21 @@ export async function getOrderById(token: string, id: string) {
   });
 }
 
+export interface CreateOrderItemRequest {
+  itemId: string;
+  quantity: number;
+}
+
+export interface CreateOrderPayload {
+  supplierId: string;
+  items: CreateOrderItemRequest[];
+  priceJustification?: string;
+  marketFilter?: MarketLocationParams;
+}
+
 export async function createOrder(
   token: string,
-  data: any,
+  data: CreateOrderPayload,
   sppgId: string,
   userId: string,
 ) {
