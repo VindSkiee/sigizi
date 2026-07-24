@@ -443,10 +443,15 @@ export default function MarketPage() {
         }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 px-5 py-3 bg-primary-600 text-white text-sm font-medium rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+        // Perubahan pada className:
+        // 1. Tambah w-14 h-14 untuk mobile (membuatnya bulat sempurna)
+        // 2. sm:w-auto sm:h-auto sm:px-5 sm:py-2.5 untuk kembali menjadi pil di desktop
+        // 3. gap-0 sm:gap-2 untuk menghilangkan jarak di mobile
+        className="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 sm:w-auto sm:h-auto sm:px-5 sm:py-3 gap-0 sm:gap-2 mb-10 sm:mb-0 bg-primary-600 text-white text-sm font-medium rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
       >
         <svg
-          className="w-5 h-5"
+          // Ikon sedikit diperbesar di mobile (w-6 h-6) agar proporsional dengan w-14, lalu normal di desktop (sm:w-5 sm:h-5)
+          className="w-6 h-6 sm:w-5 sm:h-5"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -458,7 +463,10 @@ export default function MarketPage() {
             d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"
           />
         </svg>
-        Keranjang
+
+        {/* Sembunyikan teks di mobile, tampilkan mulai ukuran sm */}
+        <span className="hidden sm:inline">Keranjang</span>
+
         <AnimatePresence mode="wait">
           {draftItems.length > 0 && (
             <motion.span
@@ -475,7 +483,9 @@ export default function MarketPage() {
                 },
               }}
               exit={{ scale: 0, opacity: 0 }}
-              className="inline-flex items-center justify-center w-6 h-6 text-xs font-bold bg-white text-primary-600 rounded-full"
+              // Badge dibuat melayang (absolute) di pojok kanan atas pada mobile
+              // Di desktop (sm), dikembalikan posisinya sejajar (static)
+              className="absolute -top-1.5 -right-1.5 sm:static flex items-center justify-center w-6 h-6 text-xs font-bold bg-white text-primary-600 rounded-full shadow-sm sm:shadow-none"
             >
               {draftItems.length}
             </motion.span>
