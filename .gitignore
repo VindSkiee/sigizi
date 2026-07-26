@@ -51,3 +51,13 @@ docs/PROPOSAL_3_SIGIZI.md
 .trae/documents/fix-price-justifikasi-order-flow.md
 .trae/documents/verifikasi-persentase-marketcard.md
 .trae/documents/analisis-harga-dibawah-15-persen-butuh-reason.md
+.trae/documents/bukti-pendukung-hackathon-testing-docs.md
+# docs/testing/ berisi bukti pendukung hackathon yang WAJIB di-commit
+# (akan di-override oleh exception di bawah)
+docs/testing/*
+!docs/testing/README.md
+!docs/testing/*.md
+docs/testing/BUKTI_IMPLEMENTASI_NON_DIGITAL.md
+docs/testing/HASIL_SIMULASI_PILOT_CIREBON.md
+docs/testing/MODEL_EVALUATION_IQR_ANOMALY.md
+docs/testing/README.md
