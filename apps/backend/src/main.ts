@@ -27,12 +27,19 @@ async function bootstrap() {
   // 3. Global interceptors
   app.useGlobalInterceptors(new ResponseTransformInterceptor());
 
-  // 4. CORS configuration
+  // 4. CORS configuration (whitelist dari env, bukan semua origin)
+  const corsOrigins = (
+    process.env.CORS_ORIGIN ||
+    "http://localhost:3002,http://localhost:3000"
+  )
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
   app.enableCors({
-    origin: true, // Ubah array menjadi boolean 'true'
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    origin: corsOrigins,
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     credentials: true,
-    allowedHeaders: 'Content-Type, Accept, Authorization',
+    allowedHeaders: "Content-Type, Accept, Authorization",
   });
 
   // 5. Global prefix (Wajib SEBELUM app.listen)
@@ -47,25 +54,29 @@ async function bootstrap() {
     }),
   );
 
-  // 7. Swagger setup (Wajib SEBELUM app.listen)
-  const config = new DocumentBuilder()
-    .setTitle("SIGIZI API")
-    .setDescription(
-      "Platform GovTech untuk digitalisasi perizinan dan pengawasan vendor MBG",
-    )
-    .setVersion("0.1.0")
-    .addBearerAuth()
-    .build();
+  // 7. Swagger setup (hanya di non-production)
+  if (process.env.NODE_ENV !== "production") {
+    const config = new DocumentBuilder()
+      .setTitle("SIGIZI API")
+      .setDescription(
+        "Platform GovTech untuk digitalisasi perizinan dan pengawasan vendor MBG",
+      )
+      .setVersion("0.1.0")
+      .addBearerAuth()
+      .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("docs", app, document);
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup("docs", app, document);
+  }
 
   // 8. JALANKAN SERVER (Cukup panggil SEKALI di paling akhir)
   logger.log(`PORT ENV = ${process.env.PORT}`);
   const port = process.env.PORT || 3001;
-  await app.listen(port, '0.0.0.0');
+  await app.listen(port, "0.0.0.0");
 
   logger.log(`SIGIZI API running on http://localhost:${port}`, "Bootstrap");
-  logger.log(`Swagger docs: http://localhost:${port}/docs`, "Bootstrap");
+  if (process.env.NODE_ENV !== "production") {
+    logger.log(`Swagger docs: http://localhost:${port}/docs`, "Bootstrap");
+  }
 }
 bootstrap();

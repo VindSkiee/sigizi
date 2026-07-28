@@ -2,6 +2,8 @@ import { Module, MiddlewareConsumer, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { EventEmitterModule } from "@nestjs/event-emitter";
 import { ScheduleModule } from "@nestjs/schedule";
+import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
+import { APP_GUARD } from "@nestjs/core";
 import { AuthModule } from "./modules/auth/auth.module";
 import { SppgModule } from "./modules/sppg/sppg.module";
 import { SupplierModule } from "./modules/supplier/supplier.module";
@@ -29,6 +31,10 @@ import { HealthModule } from "./health/health.module";
     }),
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
+    // Rate limiting global: 100 req/menit (longgar, tidak menghalangi verifikasi publik)
+    ThrottlerModule.forRoot([
+      { ttl: 60000, limit: 100 },
+    ]),
     LoggerModule,
     PrismaModule,
     AuthModule,
@@ -44,6 +50,7 @@ import { HealthModule } from "./health/health.module";
     InventoryModule,
     HealthModule,
   ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

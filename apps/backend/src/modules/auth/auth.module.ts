@@ -11,10 +11,20 @@ import { JwtStrategy } from "./jwt.strategy";
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get("JWT_SECRET", "sigizi-secret-key"),
-        signOptions: { expiresIn: configService.get("JWT_EXPIRES_IN", "7d") },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const secret = configService.get<string>("JWT_SECRET");
+        if (!secret) {
+          throw new Error(
+            "JWT_SECRET env variable is required. Set it in Railway/.env.",
+          );
+        }
+        return {
+          secret,
+          signOptions: {
+            expiresIn: configService.get("JWT_EXPIRES_IN", "8h"),
+          },
+        };
+      },
       inject: [ConfigService],
     }),
   ],

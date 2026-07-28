@@ -7,7 +7,6 @@ import {
   Body,
   Param,
   Query,
-  Request,
   UseGuards,
 } from "@nestjs/common";
 import {
@@ -17,6 +16,8 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../../../auth/jwt-auth.guard";
+import { RolesGuard, Roles, CurrentUser } from "../../../../common";
+import { Role } from "@sigizi/shared";
 import { BeneficiaryService } from "../../application/services/beneficiary.service";
 import { CreateBeneficiaryDto } from "../../application/dto/create-beneficiary.dto";
 import { UpdateBeneficiaryDto } from "../../application/dto/update-beneficiary.dto";
@@ -28,6 +29,8 @@ export class BeneficiaryController {
   constructor(private readonly beneficiaryService: BeneficiaryService) {}
 
   @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: "List beneficiaries" })
   @ApiQuery({ name: "search", required: false })
   @ApiQuery({ name: "sppgId", required: false })
@@ -40,21 +43,25 @@ export class BeneficiaryController {
   }
 
   @Get(":id")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: "Get beneficiary by ID" })
   findOne(@Param("id") id: string) {
     return this.beneficiaryService.findOne(id);
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SPPG_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Create beneficiary" })
-  create(@Body() dto: CreateBeneficiaryDto, @Request() req: any) {
-    return this.beneficiaryService.create(dto, req.user.sppgId);
+  create(@Body() dto: CreateBeneficiaryDto, @CurrentUser() user: any) {
+    return this.beneficiaryService.create(dto, user.sppgId);
   }
 
   @Put(":id")
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SPPG_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Update beneficiary" })
   update(@Param("id") id: string, @Body() dto: UpdateBeneficiaryDto) {
@@ -62,7 +69,8 @@ export class BeneficiaryController {
   }
 
   @Delete(":id")
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SPPG_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Delete beneficiary" })
   remove(@Param("id") id: string) {

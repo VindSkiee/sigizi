@@ -18,6 +18,8 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../../../auth/jwt-auth.guard";
+import { RolesGuard, Roles } from "../../../../common";
+import { Role } from "@sigizi/shared";
 import { SupplierService } from "../../application/services/supplier.service";
 import { CreateSupplierDto } from "../../application/dto/create-supplier.dto";
 import { UpdateSupplierDto } from "../../application/dto/update-supplier.dto";
@@ -32,6 +34,8 @@ export class SupplierController {
   constructor(private readonly supplierService: SupplierService) {}
 
   @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: "List all suppliers" })
   @ApiQuery({ name: "search", required: false })
   findAll(
@@ -42,7 +46,8 @@ export class SupplierController {
   }
 
   @Get("me")
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPPLIER)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get current supplier profile" })
   getProfile(@Request() req: any) {
@@ -50,19 +55,25 @@ export class SupplierController {
   }
 
   @Get(":id")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: "Get supplier by ID" })
   findOne(@Param("id") id: string) {
     return this.supplierService.findOne(id);
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SPPG_ADMIN)
+  @ApiBearerAuth()
   @ApiOperation({ summary: "Register supplier" })
   create(@Body() dto: CreateSupplierDto) {
     return this.supplierService.create(dto);
   }
 
   @Put("me/profile")
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPPLIER)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Update own profile" })
   updateProfile(@Request() req: any, @Body() dto: UpdateSupplierProfileDto) {
@@ -70,7 +81,8 @@ export class SupplierController {
   }
 
   @Put(":id")
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SPPG_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Update supplier" })
   update(@Param("id") id: string, @Body() dto: UpdateSupplierDto) {
@@ -78,7 +90,8 @@ export class SupplierController {
   }
 
   @Delete(":id")
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SPPG_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Delete supplier" })
   remove(@Param("id") id: string) {
@@ -86,13 +99,16 @@ export class SupplierController {
   }
 
   @Get(":id/items")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: "List supplier items" })
   findItems(@Param("id") id: string) {
     return this.supplierService.findItems(id);
   }
 
   @Post(":id/items")
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPPLIER)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Add supplier item" })
   addItem(@Param("id") id: string, @Body() dto: CreateSupplierItemDto) {
@@ -100,7 +116,8 @@ export class SupplierController {
   }
 
   @Patch(":id/items/:itemId")
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPPLIER)
   @ApiBearerAuth()
   @ApiOperation({
     summary: "Update supplier item (name, price, availability, etc.)",
@@ -114,7 +131,8 @@ export class SupplierController {
   }
 
   @Delete("items/:itemId")
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPPLIER)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Remove supplier item" })
   removeItem(@Param("itemId") itemId: string) {

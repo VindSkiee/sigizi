@@ -70,8 +70,11 @@ export class AuthService {
   }
 
   async getDevUsers(role: string): Promise<any[]> {
-    if (process.env.NODE_ENV !== "development") {
-      throw new ForbiddenException("Dev login hanya tersedia di development");
+    if (
+      process.env.NODE_ENV !== "development" ||
+      this.configService.get("NEXT_PUBLIC_DEMO_MODE") === "true"
+    ) {
+      throw new ForbiddenException("Dev login dinonaktifkan di lingkungan ini");
     }
 
     const validRole =
@@ -92,8 +95,11 @@ export class AuthService {
   }
 
   async devLogin(role: string, userId?: string): Promise<AuthResponse> {
-    if (process.env.NODE_ENV !== "development") {
-      throw new ForbiddenException("Dev login hanya tersedia di development");
+    if (
+      process.env.NODE_ENV !== "development" ||
+      this.configService.get("NEXT_PUBLIC_DEMO_MODE") === "true"
+    ) {
+      throw new ForbiddenException("Dev login dinonaktifkan di lingkungan ini");
     }
 
     const validRole =

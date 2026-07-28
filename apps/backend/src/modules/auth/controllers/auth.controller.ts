@@ -8,6 +8,7 @@ import {
   Request,
 } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
+import { Throttle } from "@nestjs/throttler";
 import { AuthService } from "../services/auth.service";
 import { SsoLoginDto } from "../dto/sso-login.dto";
 import { SsoCallbackDto } from "../dto/sso-callback.dto";
@@ -39,6 +40,7 @@ export class AuthController {
   }
 
   @Post("login")
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: "Login with email & password" })
   async login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
