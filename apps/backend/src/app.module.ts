@@ -20,6 +20,7 @@ import {
   LoggerModule,
   RequestIdMiddleware,
   RequestLoggerMiddleware,
+  CloudflareOnlyMiddleware,
 } from "./common";
 import { HealthModule } from "./health/health.module";
 
@@ -32,9 +33,7 @@ import { HealthModule } from "./health/health.module";
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
     // Rate limiting global: 100 req/menit (longgar, tidak menghalangi verifikasi publik)
-    ThrottlerModule.forRoot([
-      { ttl: 60000, limit: 100 },
-    ]),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     LoggerModule,
     PrismaModule,
     AuthModule,
@@ -54,10 +53,14 @@ import { HealthModule } from "./health/health.module";
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // Apply RequestIdMiddleware to all routes
-    consumer.apply(RequestIdMiddleware).forRoutes("*");
-
-    // Apply RequestLoggerMiddleware to all routes
-    consumer.apply(RequestLoggerMiddleware).forRoutes("*");
+    // Apply CloudflareOnlyMiddleware → RequestIdMiddleware → RequestLoggerMiddleware
+    // Order: Cloudflare check first (block early) → assign requestId → log
+    consumer
+      .apply(
+        CloudflareOnlyMiddleware,
+        RequestIdMiddleware,
+        RequestLoggerMiddleware,
+      )
+      .forRoutes("*");
   }
 }

@@ -18,6 +18,11 @@ async function bootstrap() {
   const logger = app.get(AppLoggerService);
   app.useLogger(logger);
 
+  // 1b. Trust proxy — Railway duduk di belakang proxy sendiri
+  // Nilai 1 = percaya hop pertama (Railway proxy)
+  // WAJIB sebelum CloudflareOnlyMiddleware bisa baca IP asli client
+  app.getHttpAdapter().getInstance().set("trust proxy", 1);
+
   // 2. Global filters (order matters: Prisma first, then All)
   app.useGlobalFilters(
     new PrismaExceptionFilter(logger),
@@ -29,8 +34,7 @@ async function bootstrap() {
 
   // 4. CORS configuration (whitelist dari env, bukan semua origin)
   const corsOrigins = (
-    process.env.CORS_ORIGIN ||
-    "http://localhost:3002,http://localhost:3000"
+    process.env.CORS_ORIGIN || "http://localhost:3002,http://localhost:3000"
   )
     .split(",")
     .map((o) => o.trim())

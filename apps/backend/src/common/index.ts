@@ -5,6 +5,7 @@ export { AppLoggerService } from "./logger/pino-logger.service";
 // Middleware
 export { RequestIdMiddleware } from "./middleware/request-id.middleware";
 export { RequestLoggerMiddleware } from "./middleware/request-logger.middleware";
+export { CloudflareOnlyMiddleware } from "./middleware/cloudflare-only.middleware";
 
 // Filters
 export { AllExceptionsFilter } from "./filters/all-exceptions.filter";
