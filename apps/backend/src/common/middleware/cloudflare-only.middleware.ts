@@ -92,10 +92,8 @@ export class CloudflareOnlyMiddleware implements NestMiddleware {
     }
 
     // BLOKIR — akses langsung tanpa Cloudflare
-    console.warn(
-      `[CLOUDFLARE BLOCK] Direct access detected from IP: ${req.ip || "unknown"} | Path: ${req.path}`,
-    );
-
+    // No console.warn here — ForbiddenException will be caught by AllExceptionsFilter
+    // and logged as error automatically, preventing log spam on Railway
     throw new ForbiddenException(
       "Direct access not allowed. Please use Cloudflare proxy.",
     );

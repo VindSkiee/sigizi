@@ -7,6 +7,11 @@ export class RequestLoggerMiddleware implements NestMiddleware {
   constructor(private readonly logger: AppLoggerService) {}
 
   use(req: Request, _res: Response, next: NextFunction) {
+    // Skip health check — polling monitoring generates high traffic
+    if (req.url === "/api/health") {
+      return next();
+    }
+
     const { method, url } = req;
     const requestId = req.requestId;
     const startTime = Date.now();

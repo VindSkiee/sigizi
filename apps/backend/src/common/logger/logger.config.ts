@@ -17,6 +17,11 @@ export const loggerConfig = LoggerModule.forRoot({
           },
         }
       : undefined,
+    // Disable auto-logging — RequestLoggerMiddleware handles explicit logging
+    // This prevents double logging (pino-http auto + manual middleware = 4 lines/req)
+    autoLogging: {
+      ignore: (req) => req.url === "/api/health",
+    },
     formatters: {
       level: (label) => ({ level: label }),
     },
