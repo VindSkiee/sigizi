@@ -135,7 +135,7 @@ cp .env.example .env
 ```
 
 The backend loads `.env` from root via `envFilePath: "../../.env"` in `ConfigModule`.
-Frontend uses `NEXT_PUBLIC_*` variables from the same root `.env`.
+Frontend uses `NEXT_PUBLIC_*` variables from the same root `.env`..
 
 ## Contributing
 
