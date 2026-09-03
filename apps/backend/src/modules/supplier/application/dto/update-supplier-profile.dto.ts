@@ -86,4 +86,14 @@ export class UpdateSupplierProfileDto {
       "Nama pasar hanya boleh mengandung huruf, angka, spasi, titik, strip, dan apostrof",
   })
   marketName?: string;
+
+  @ApiPropertyOptional({ description: "URL foto profil supplier" })
+  @IsOptional()
+  @IsString()
+  profileImage?: string;
+
+  @ApiPropertyOptional({ default: true, description: "Status buka/tutup toko" })
+  @IsOptional()
+  @IsBoolean()
+  openStatus?: boolean;
 }

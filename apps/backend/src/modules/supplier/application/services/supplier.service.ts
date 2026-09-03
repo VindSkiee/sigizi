@@ -16,6 +16,7 @@ import {
   PaginationDto,
   PaginatedResult,
 } from "../../../../core/dto/pagination.dto";
+import type { UpdateSupplierItemData } from "../../domain";
 
 @Injectable()
 export class SupplierService {
@@ -97,7 +98,13 @@ export class SupplierService {
 
   async addItem(supplierId: string, dto: CreateSupplierItemDto) {
     await this.findOne(supplierId);
-    return this.repository.addItem(supplierId, dto);
+    const now = new Date();
+    return this.repository.addItem(supplierId, {
+      ...dto,
+      priceUpdatedAt: now,
+      stockUpdatedAt: now,
+      updatedAt: now,
+    });
   }
 
   async updateItem(itemId: string, dto: UpdateSupplierItemDto) {
@@ -105,19 +112,28 @@ export class SupplierService {
     if (!existing) {
       throw new NotFoundException(`Supplier item with ID ${itemId} not found`);
     }
-    return this.repository.updateItem(itemId, dto);
+
+    const now = new Date();
+    const patch: UpdateSupplierItemData = { ...dto, updatedAt: now };
+
+    if ("basePrice" in dto) {
+      patch.priceUpdatedAt = now;
+    }
+    if ("stock" in dto) {
+      patch.stockUpdatedAt = now;
+    }
+
+    return this.repository.updateItem(itemId, patch);
   }
 
   async removeItem(itemId: string) {
     const refCheck = await this.repository.hasItemReferences(itemId);
     if (refCheck.hasReferences) {
-      // Soft delete: tandai deletedAt + nonaktifkan
       return this.repository.updateItem(itemId, {
         isAvailable: false,
         deletedAt: new Date(),
       });
     }
-    // Hard delete: hapus dari DB
     await this.repository.removeItem(itemId);
   }
 }

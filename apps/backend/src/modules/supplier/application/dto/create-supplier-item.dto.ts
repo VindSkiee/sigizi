@@ -48,4 +48,15 @@ export class CreateSupplierItemDto {
   @IsOptional()
   @IsBoolean()
   isAvailable?: boolean;
+
+  @ApiPropertyOptional({ description: "URL gambar produk" })
+  @IsOptional()
+  @IsString()
+  image?: string;
+
+  @ApiPropertyOptional({ example: 100, description: "Stok saat ini" })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  stock?: number;
 }

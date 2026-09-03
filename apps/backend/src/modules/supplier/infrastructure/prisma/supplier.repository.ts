@@ -84,6 +84,8 @@ export class PrismaSupplierRepository implements SupplierRepository {
         longitude: data.longitude,
         isMarketSeller: data.isMarketSeller ?? false,
         marketName: data.marketName,
+        profileImage: data.profileImage ?? null,
+        openStatus: data.openStatus ?? true,
       },
       include: { items: true },
     });
@@ -118,9 +120,14 @@ export class PrismaSupplierRepository implements SupplierRepository {
       minOrderQty: item.minOrderQty,
       orderStep: item.orderStep,
       isAvailable: item.isAvailable,
+      image: item.image,
+      stock: item.stock,
+      priceUpdatedAt: item.priceUpdatedAt,
+      stockUpdatedAt: item.stockUpdatedAt,
       deletedAt: item.deletedAt,
       supplierId: item.supplierId,
       createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
     }));
   }
 
@@ -138,9 +145,14 @@ export class PrismaSupplierRepository implements SupplierRepository {
       minOrderQty: item.minOrderQty,
       orderStep: item.orderStep,
       isAvailable: item.isAvailable,
+      image: item.image,
+      stock: item.stock,
+      priceUpdatedAt: item.priceUpdatedAt,
+      stockUpdatedAt: item.stockUpdatedAt,
       deletedAt: item.deletedAt,
       supplierId: item.supplierId,
       createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
     };
   }
 
@@ -157,6 +169,10 @@ export class PrismaSupplierRepository implements SupplierRepository {
         minOrderQty: data.minOrderQty,
         orderStep: data.orderStep,
         isAvailable: data.isAvailable ?? true,
+        image: data.image ?? null,
+        stock: data.stock ?? 0,
+        priceUpdatedAt: data.priceUpdatedAt ?? null,
+        stockUpdatedAt: data.stockUpdatedAt ?? null,
         supplierId,
       },
     });
@@ -169,9 +185,14 @@ export class PrismaSupplierRepository implements SupplierRepository {
       minOrderQty: item.minOrderQty,
       orderStep: item.orderStep,
       isAvailable: item.isAvailable,
+      image: item.image,
+      stock: item.stock,
+      priceUpdatedAt: item.priceUpdatedAt,
+      stockUpdatedAt: item.stockUpdatedAt,
       deletedAt: item.deletedAt,
       supplierId: item.supplierId,
       createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
     };
   }
 
@@ -192,9 +213,14 @@ export class PrismaSupplierRepository implements SupplierRepository {
       minOrderQty: item.minOrderQty,
       orderStep: item.orderStep,
       isAvailable: item.isAvailable,
+      image: item.image,
+      stock: item.stock,
+      priceUpdatedAt: item.priceUpdatedAt,
+      stockUpdatedAt: item.stockUpdatedAt,
       deletedAt: item.deletedAt,
       supplierId: item.supplierId,
       createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
     };
   }
 
@@ -237,6 +263,8 @@ export class PrismaSupplierRepository implements SupplierRepository {
       prismaItem.longitude,
       prismaItem.isMarketSeller ?? false,
       prismaItem.marketName ?? null,
+      prismaItem.profileImage ?? null,
+      prismaItem.openStatus ?? true,
       prismaItem.createdAt,
       prismaItem.updatedAt,
     );

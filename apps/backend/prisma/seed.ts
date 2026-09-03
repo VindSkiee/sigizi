@@ -801,15 +801,69 @@ async function main() {
   }
 
   const MARKET_CONFIGS: MarketConfig[] = [
-    { name: "Pasar Ciledug", district: "SUMBER", centerLat: -6.702, centerLng: 108.554, supplierCount: 7 },
-    { name: "Pasar Weru", district: "WERU", centerLat: -6.733, centerLng: 108.579, supplierCount: 7 },
-    { name: "Pasar Arjawinangun", district: "ARJAWINANGUN", centerLat: -6.759, centerLng: 108.493, supplierCount: 7 },
-    { name: "Pasar Plumbon", district: "PLUMBON", centerLat: -6.745, centerLng: 108.562, supplierCount: 7 },
-    { name: "Pasar Depok", district: "DEPOK", centerLat: -6.728, centerLng: 108.545, supplierCount: 7 },
-    { name: "Pasar Talun", district: "TALUN", centerLat: -6.768, centerLng: 108.512, supplierCount: 6 },
-    { name: "Pasar Astanajapura", district: "ASTANAJAPURA", centerLat: -6.785, centerLng: 108.528, supplierCount: 6 },
-    { name: "Pasar Plered", district: "PLERED", centerLat: -6.772, centerLng: 108.498, supplierCount: 7 },
-    { name: "Pasar Kapetakan", district: "KAPETAKAN", centerLat: -6.718, centerLng: 108.568, supplierCount: 6 },
+    {
+      name: "Pasar Ciledug",
+      district: "SUMBER",
+      centerLat: -6.702,
+      centerLng: 108.554,
+      supplierCount: 7,
+    },
+    {
+      name: "Pasar Weru",
+      district: "WERU",
+      centerLat: -6.733,
+      centerLng: 108.579,
+      supplierCount: 7,
+    },
+    {
+      name: "Pasar Arjawinangun",
+      district: "ARJAWINANGUN",
+      centerLat: -6.759,
+      centerLng: 108.493,
+      supplierCount: 7,
+    },
+    {
+      name: "Pasar Plumbon",
+      district: "PLUMBON",
+      centerLat: -6.745,
+      centerLng: 108.562,
+      supplierCount: 7,
+    },
+    {
+      name: "Pasar Depok",
+      district: "DEPOK",
+      centerLat: -6.728,
+      centerLng: 108.545,
+      supplierCount: 7,
+    },
+    {
+      name: "Pasar Talun",
+      district: "TALUN",
+      centerLat: -6.768,
+      centerLng: 108.512,
+      supplierCount: 6,
+    },
+    {
+      name: "Pasar Astanajapura",
+      district: "ASTANAJAPURA",
+      centerLat: -6.785,
+      centerLng: 108.528,
+      supplierCount: 6,
+    },
+    {
+      name: "Pasar Plered",
+      district: "PLERED",
+      centerLat: -6.772,
+      centerLng: 108.498,
+      supplierCount: 7,
+    },
+    {
+      name: "Pasar Kapetakan",
+      district: "KAPETAKAN",
+      centerLat: -6.718,
+      centerLng: 108.568,
+      supplierCount: 6,
+    },
   ];
 
   // --- Item Catalog (16 types with base prices) ---
@@ -823,24 +877,150 @@ async function main() {
   }
 
   const ITEM_CATALOG: ItemCatalogEntry[] = [
-    { name: "Beras Premium", unit: "kg", basePrice: 12000, minOrderQty: 5, orderStep: 0.5, frequency: 0.90 },
-    { name: "Daging Ayam", unit: "kg", basePrice: 35000, minOrderQty: 1, orderStep: 0.5, frequency: 0.85 },
-    { name: "Telur Ayam", unit: "kg", basePrice: 28000, minOrderQty: 1, orderStep: 0.5, frequency: 0.80 },
-    { name: "Tahu Putih", unit: "kg", basePrice: 8000, minOrderQty: 1, orderStep: 0.5, frequency: 0.65 },
-    { name: "Tempe", unit: "kg", basePrice: 10000, minOrderQty: 1, orderStep: 0.5, frequency: 0.65 },
-    { name: "Sayur Bayam", unit: "kg", basePrice: 7000, minOrderQty: 1, orderStep: 0.5, frequency: 0.60 },
-    { name: "Wortel", unit: "kg", basePrice: 10000, minOrderQty: 1, orderStep: 0.5, frequency: 0.55 },
-    { name: "Minyak Goreng", unit: "liter", basePrice: 16000, minOrderQty: 1, orderStep: 1, frequency: 0.55 },
-    { name: "Kentang", unit: "kg", basePrice: 12000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
-    { name: "Sayur Kangkung", unit: "kg", basePrice: 5000, minOrderQty: 1, orderStep: 0.5, frequency: 0.35 },
-    { name: "Ikan Tongkol", unit: "kg", basePrice: 30000, minOrderQty: 1, orderStep: 0.5, frequency: 0.30 },
-    { name: "Ikan Lele", unit: "kg", basePrice: 26000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
-    { name: "Tepung Terigu", unit: "kg", basePrice: 10500, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
-    { name: "Daging Sapi", unit: "kg", basePrice: 120000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
-    { name: "Bawang Merah", unit: "kg", basePrice: 28000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
-    { name: "Cabai Merah", unit: "kg", basePrice: 38000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
-    { name: "Gula Pasir", unit: "kg", basePrice: 14000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
-    { name: "Garam", unit: "kg", basePrice: 5000, minOrderQty: 1, orderStep: 0.5, frequency: 0.50 },
+    {
+      name: "Beras Premium",
+      unit: "kg",
+      basePrice: 12000,
+      minOrderQty: 5,
+      orderStep: 0.5,
+      frequency: 0.9,
+    },
+    {
+      name: "Daging Ayam",
+      unit: "kg",
+      basePrice: 35000,
+      minOrderQty: 1,
+      orderStep: 0.5,
+      frequency: 0.85,
+    },
+    {
+      name: "Telur Ayam",
+      unit: "kg",
+      basePrice: 28000,
+      minOrderQty: 1,
+      orderStep: 0.5,
+      frequency: 0.8,
+    },
+    {
+      name: "Tahu Putih",
+      unit: "kg",
+      basePrice: 8000,
+      minOrderQty: 1,
+      orderStep: 0.5,
+      frequency: 0.65,
+    },
+    {
+      name: "Tempe",
+      unit: "kg",
+      basePrice: 10000,
+      minOrderQty: 1,
+      orderStep: 0.5,
+      frequency: 0.65,
+    },
+    {
+      name: "Sayur Bayam",
+      unit: "kg",
+      basePrice: 7000,
+      minOrderQty: 1,
+      orderStep: 0.5,
+      frequency: 0.6,
+    },
+    {
+      name: "Wortel",
+      unit: "kg",
+      basePrice: 10000,
+      minOrderQty: 1,
+      orderStep: 0.5,
+      frequency: 0.55,
+    },
+    {
+      name: "Minyak Goreng",
+      unit: "liter",
+      basePrice: 16000,
+      minOrderQty: 1,
+      orderStep: 1,
+      frequency: 0.55,
+    },
+    {
+      name: "Kentang",
+      unit: "kg",
+      basePrice: 12000,
+      minOrderQty: 1,
+      orderStep: 0.5,
+      frequency: 0.5,
+    },
+    {
+      name: "Sayur Kangkung",
+      unit: "kg",
+      basePrice: 5000,
+      minOrderQty: 1,
+      orderStep: 0.5,
+      frequency: 0.35,
+    },
+    {
+      name: "Ikan Tongkol",
+      unit: "kg",
+      basePrice: 30000,
+      minOrderQty: 1,
+      orderStep: 0.5,
+      frequency: 0.3,
+    },
+    {
+      name: "Ikan Lele",
+      unit: "kg",
+      basePrice: 26000,
+      minOrderQty: 1,
+      orderStep: 0.5,
+      frequency: 0.5,
+    },
+    {
+      name: "Tepung Terigu",
+      unit: "kg",
+      basePrice: 10500,
+      minOrderQty: 1,
+      orderStep: 0.5,
+      frequency: 0.5,
+    },
+    {
+      name: "Daging Sapi",
+      unit: "kg",
+      basePrice: 120000,
+      minOrderQty: 1,
+      orderStep: 0.5,
+      frequency: 0.5,
+    },
+    {
+      name: "Bawang Merah",
+      unit: "kg",
+      basePrice: 28000,
+      minOrderQty: 1,
+      orderStep: 0.5,
+      frequency: 0.5,
+    },
+    {
+      name: "Cabai Merah",
+      unit: "kg",
+      basePrice: 38000,
+      minOrderQty: 1,
+      orderStep: 0.5,
+      frequency: 0.5,
+    },
+    {
+      name: "Gula Pasir",
+      unit: "kg",
+      basePrice: 14000,
+      minOrderQty: 1,
+      orderStep: 0.5,
+      frequency: 0.5,
+    },
+    {
+      name: "Garam",
+      unit: "kg",
+      basePrice: 5000,
+      minOrderQty: 1,
+      orderStep: 0.5,
+      frequency: 0.5,
+    },
   ];
 
   // --- Deterministic pseudo-random (seeded by supplier index) ---
@@ -851,13 +1031,37 @@ async function main() {
 
   // --- Supplier name prefixes & suffixes ---
   const SUPPLIER_PREFIXES = [
-    "Toko", "UD.", "CV.", "Kios", "Warung", "Barokah", "Mitra",
+    "Toko",
+    "UD.",
+    "CV.",
+    "Kios",
+    "Warung",
+    "Barokah",
+    "Mitra",
   ];
   const SUPPLIER_SUFFIXES = [
-    "Berkah Jaya", "Makmur", "Sejahtera", "Pangan Indah", "Segar Makmur",
-    "Tani Subur", "Raya Market", "Pasar Jaya", "Bersama", "Sentosa",
-    "Langgeng", "Abadi", "Prima", "Utama", "Jaya", "Lestari", "Maju",
-    "Pangan Sehat", "BasSegar", "Dua Saudara", "Putra Jaya", "Sumber Rejeki",
+    "Berkah Jaya",
+    "Makmur",
+    "Sejahtera",
+    "Pangan Indah",
+    "Segar Makmur",
+    "Tani Subur",
+    "Raya Market",
+    "Pasar Jaya",
+    "Bersama",
+    "Sentosa",
+    "Langgeng",
+    "Abadi",
+    "Prima",
+    "Utama",
+    "Jaya",
+    "Lestari",
+    "Maju",
+    "Pangan Sehat",
+    "BasSegar",
+    "Dua Saudara",
+    "Putra Jaya",
+    "Sumber Rejeki",
   ];
 
   // --- Street names per district ---
@@ -885,13 +1089,20 @@ async function main() {
     for (let sIdx = 0; sIdx < mkt.supplierCount; sIdx++) {
       const seed = mktIdx * 100 + sIdx;
       const r = seededRandom(seed);
-      const prefix = SUPPLIER_PREFIXES[Math.floor(seededRandom(seed + 1) * SUPPLIER_PREFIXES.length)];
-      const suffix = SUPPLIER_SUFFIXES[Math.floor(seededRandom(seed + 2) * SUPPLIER_SUFFIXES.length)];
+      const prefix =
+        SUPPLIER_PREFIXES[
+          Math.floor(seededRandom(seed + 1) * SUPPLIER_PREFIXES.length)
+        ];
+      const suffix =
+        SUPPLIER_SUFFIXES[
+          Math.floor(seededRandom(seed + 2) * SUPPLIER_SUFFIXES.length)
+        ];
 
       const supplierId = `clx_supplier_${String(globalSupplierIdx).padStart(2, "0")}`;
       const nib = `1000000000${String(globalSupplierIdx).padStart(4, "0")}`;
       const phone = `08123456${String(7000 + globalSupplierIdx).padStart(4, "0")}`;
-      const street = streets[Math.floor(seededRandom(seed + 3) * streets.length)];
+      const street =
+        streets[Math.floor(seededRandom(seed + 3) * streets.length)];
       const streetNum = Math.floor(seededRandom(seed + 4) * 80) + 1;
       const latOffset = (seededRandom(seed + 5) - 0.5) * 0.006; // ~300m radius
       const lngOffset = (seededRandom(seed + 6) - 0.5) * 0.006;
@@ -944,9 +1155,10 @@ async function main() {
           if (isOutlier) {
             priceMultiplier = seededRandom(itemSeed + 11) > 0.5 ? 1.5 : 0.5;
           } else {
-            priceMultiplier = 0.80 + seededRandom(itemSeed + 12) * 0.40; // 0.80 to 1.20
+            priceMultiplier = 0.8 + seededRandom(itemSeed + 12) * 0.4; // 0.80 to 1.20
           }
-          const finalPrice = Math.round(catalog.basePrice * priceMultiplier / 100) * 100; // round to nearest 100
+          const finalPrice =
+            Math.round((catalog.basePrice * priceMultiplier) / 100) * 100; // round to nearest 100
 
           const descWords = [
             `${catalog.name.split(" ")[0].toLowerCase()} segar`,
@@ -979,1054 +1191,9 @@ async function main() {
 
   console.log("✅ Additional market suppliers created:", newSuppliers.length);
   console.log("✅ Additional supplier items created:", newItems.length);
-  console.log(`📊 Total suppliers: ${18 + newSuppliers.length} | Total items: ${createdItems.length}`);
-
-  // ============================================================================
-  // 5. Create Beneficiaries (6: 2 per SPPG)
-  // ============================================================================
-
-  await prisma.beneficiary.upsert({
-    where: { id: "clx_beneficiary_01" },
-    update: {},
-    create: {
-      id: "clx_beneficiary_01",
-      name: "SDN 1 Sumber",
-      institution: "SDN 1 Sumber",
-      institutionType: "SEKOLAH",
-      totalBeneficiary: 150,
-      address: "Jl. Raya Sumber No. 1",
-      contactPhone: "081234567101",
-      sppgId: sppg1.id,
-    },
-  });
-
-  await prisma.beneficiary.upsert({
-    where: { id: "clx_beneficiary_02" },
-    update: {},
-    create: {
-      id: "clx_beneficiary_02",
-      name: "SDN 2 Sumber",
-      institution: "SDN 2 Sumber",
-      institutionType: "SEKOLAH",
-      totalBeneficiary: 120,
-      address: "Jl. Raya Sumber No. 45",
-      contactPhone: "081234567102",
-      sppgId: sppg1.id,
-    },
-  });
-
-  await prisma.beneficiary.upsert({
-    where: { id: "clx_beneficiary_03" },
-    update: {},
-    create: {
-      id: "clx_beneficiary_03",
-      name: "SDN 1 Weru",
-      institution: "SDN 1 Weru",
-      institutionType: "SEKOLAH",
-      totalBeneficiary: 180,
-      address: "Jl. Raya Weru No. 10",
-      contactPhone: "081234567103",
-      sppgId: sppg2.id,
-    },
-  });
-
-  await prisma.beneficiary.upsert({
-    where: { id: "clx_beneficiary_04" },
-    update: {},
-    create: {
-      id: "clx_beneficiary_04",
-      name: "SMPN 1 Weru",
-      institution: "SMPN 1 Weru",
-      institutionType: "SEKOLAH",
-      totalBeneficiary: 200,
-      address: "Jl. Raya Weru No. 25",
-      contactPhone: "081234567104",
-      sppgId: sppg2.id,
-    },
-  });
-
-  await prisma.beneficiary.upsert({
-    where: { id: "clx_beneficiary_05" },
-    update: {},
-    create: {
-      id: "clx_beneficiary_05",
-      name: "SDN 1 Arjawinangun",
-      institution: "SDN 1 Arjawinangun",
-      institutionType: "SEKOLAH",
-      totalBeneficiary: 160,
-      address: "Jl. Emplak No. 5",
-      contactPhone: "081234567105",
-      sppgId: sppg3.id,
-    },
-  });
-
-  await prisma.beneficiary.upsert({
-    where: { id: "clx_beneficiary_06" },
-    update: {},
-    create: {
-      id: "clx_beneficiary_06",
-      name: "Panti Asuhan Al-Hikmah",
-      institution: "Panti Asuhan Al-Hikmah",
-      institutionType: "PANTI_ASUHAN",
-      totalBeneficiary: 45,
-      address: "Jl. Arjawinangun No. 88",
-      contactPhone: "081234567106",
-      sppgId: sppg3.id,
-    },
-  });
-
-  console.log("✅ Beneficiaries upserted:", 6);
-
-  // ============================================================================
-  // 6. Create MoU (2 MoU)
-  // ============================================================================
-
-  const mou1 = await prisma.mou.upsert({
-    where: { id: "clx_mou_01" },
-    update: {},
-    create: {
-      id: "clx_mou_01",
-      mouNumber: "MOU-20260710-001",
-      sppgId: sppg1.id,
-      supplierId: suppliers[0].id,
-      startDate: new Date("2026-07-01"),
-      endDate: new Date("2026-12-31"),
-      status: "ACTIVE",
-      title: "Kerjasama Penyediaan Bahan Baku Q3-Q4 2026",
-      nibSnapshot: suppliers[0].nib,
-      terms: {
-        paymentTerms: "NET-30",
-        deliverySchedule: "Setiap Senin & Kamis",
-        penaltyLateDelivery: "5% per hari keterlambatan",
-        penaltyDefect: "Penggantian 2x lipat",
-        minOrderAmount: 500000,
-        maxOrderAmount: 50000000,
-        customTerms: "Denda maksimal 10% dari total order",
-      },
-      documentUrl: "/uploads/mou/mou-toko-berkah-2026.pdf",
-      createdById: admin1.id,
-      items: {
-        create: [
-          {
-            itemId: createdItems[0].id,
-            agreedPrice: 11500,
-            minOrderQty: 10,
-            maxOrderQty: 500,
-          },
-          {
-            itemId: createdItems[14].id,
-            agreedPrice: 34000,
-            minOrderQty: 5,
-            maxOrderQty: 200,
-          },
-        ],
-      },
-    },
-  });
-
-  const mou2 = await prisma.mou.upsert({
-    where: { id: "clx_mou_02" },
-    update: {},
-    create: {
-      id: "clx_mou_02",
-      mouNumber: "MOU-20260710-002",
-      sppgId: sppg2.id,
-      supplierId: suppliers[9].id,
-      startDate: new Date("2026-07-01"),
-      endDate: new Date("2026-12-31"),
-      status: "ACTIVE",
-      title: "Kerjasama Penyediaan Bahan Baku 2026",
-      nibSnapshot: suppliers[9].nib,
-      terms: {
-        paymentTerms: "NET-15",
-        deliverySchedule: "Setiap Selasa & Jumat",
-        penaltyLateDelivery: "3% per hari keterlambatan",
-        penaltyDefect: "Penggantian 1.5x lipat",
-        minOrderAmount: 300000,
-        maxOrderAmount: 30000000,
-        customTerms: null,
-      },
-      documentUrl: "/uploads/mou/mou-murah-jaya-2026.pdf",
-      createdById: admin2.id,
-      items: {
-        create: [
-          {
-            itemId: createdItems[9].id,
-            agreedPrice: 12000,
-            minOrderQty: 10,
-            maxOrderQty: 300,
-          },
-        ],
-      },
-    },
-  });
-
-  console.log("✅ MoU upserted:", 2);
-
-  // ============================================================================
-  // 7. Create Orders (7 orders with varied statuses)
-  // ============================================================================
-
-  const orders: any[] = [];
-
-  // Order 1: COMPLETED - sppg1 + supplier1 via MoU
-  orders[0] = await prisma.order.upsert({
-    where: { id: "clx_order_01" },
-    update: {
-      status: "COMPLETED",
-      paidAt: new Date("2026-07-14T10:00:00Z"),
-      actualDeliveryDate: new Date("2026-07-14T08:00:00Z"),
-    },
-    create: {
-      id: "clx_order_01",
-      status: "COMPLETED",
-      total: 455000,
-      sppgId: sppg1.id,
-      supplierId: suppliers[0].id,
-      createdById: admin1.id,
-      mouId: mou1.id,
-      paidAt: new Date("2026-07-14T10:00:00Z"),
-      actualDeliveryDate: new Date("2026-07-14T08:00:00Z"),
-      notes: "Pesanan bahan baku mingguan via MoU",
-      items: {
-        create: [
-          {
-            itemId: createdItems[0].id,
-            quantity: 20,
-            unitPrice: 11500,
-            subtotal: 230000,
-            marketMedianAtPurchase: 12000,
-            isWarningBypass: false,
-            justificationNote: "Semua harga valid sesuai data pasar",
-          },
-          {
-            itemId: createdItems[14].id,
-            quantity: 5,
-            unitPrice: 34000,
-            subtotal: 170000,
-            marketMedianAtPurchase: 35000,
-            isWarningBypass: false,
-            justificationNote: "Semua harga valid sesuai data pasar",
-          },
-        ],
-      },
-    },
-    include: { items: true },
-  });
-
-  // Order 2: COMPLETED - sppg2 + supplier9 (WARNING bypass)
-  orders[1] = await prisma.order.upsert({
-    where: { id: "clx_order_02" },
-    update: {
-      status: "COMPLETED",
-      paidAt: new Date("2026-07-14T14:00:00Z"),
-      actualDeliveryDate: new Date("2026-07-14T11:00:00Z"),
-    },
-    create: {
-      id: "clx_order_02",
-      status: "COMPLETED",
-      total: 200000,
-      sppgId: sppg2.id,
-      supplierId: suppliers[9].id,
-      createdById: admin2.id,
-      paidAt: new Date("2026-07-14T14:00:00Z"),
-      actualDeliveryDate: new Date("2026-07-14T11:00:00Z"),
-      notes: "Ayam dari supplier terdekat",
-      items: {
-        create: [
-          {
-            itemId: createdItems[26].id,
-            quantity: 5,
-            unitPrice: 40000,
-            subtotal: 200000,
-            marketMedianAtPurchase: 35000,
-            isWarningBypass: true,
-            justificationNote:
-              "[Price Validation Justification] Stok lokal langka",
-          },
-        ],
-      },
-    },
-    include: { items: true },
-  });
-
-  // Order 3: COMPLETED - sppg1 + supplier1
-  orders[2] = await prisma.order.upsert({
-    where: { id: "clx_order_03" },
-    update: {
-      status: "COMPLETED",
-      paidAt: new Date("2026-07-14T16:00:00Z"),
-      actualDeliveryDate: new Date("2026-07-14T14:00:00Z"),
-    },
-    create: {
-      id: "clx_order_03",
-      status: "COMPLETED",
-      total: 380000,
-      sppgId: sppg1.id,
-      supplierId: suppliers[0].id,
-      createdById: admin1.id,
-      paidAt: new Date("2026-07-14T16:00:00Z"),
-      actualDeliveryDate: new Date("2026-07-14T14:00:00Z"),
-      notes: "Beras + Telur untuk batch",
-      items: {
-        create: [
-          {
-            itemId: createdItems[0].id,
-            quantity: 20,
-            unitPrice: 12000,
-            subtotal: 240000,
-            marketMedianAtPurchase: 12000,
-            isWarningBypass: false,
-            justificationNote: "Semua harga valid",
-          },
-          {
-            itemId: createdItems[36].id,
-            quantity: 5,
-            unitPrice: 28000,
-            subtotal: 140000,
-            marketMedianAtPurchase: 28000,
-            isWarningBypass: false,
-            justificationNote: "Semua harga valid",
-          },
-        ],
-      },
-    },
-    include: { items: true },
-  });
-
-  // Order 4: PENDING
-  orders[3] = await prisma.order.upsert({
-    where: { id: "clx_order_04" },
-    update: {},
-    create: {
-      id: "clx_order_04",
-      status: "PENDING",
-      total: 240000,
-      sppgId: sppg1.id,
-      supplierId: suppliers[0].id,
-      createdById: admin1.id,
-      mouId: mou1.id,
-      expectedDeliveryDate: new Date("2026-07-16T08:00:00Z"),
-      notes: "Order beras untuk minggu depan",
-      items: {
-        create: [
-          {
-            itemId: createdItems[0].id,
-            quantity: 20,
-            unitPrice: 12000,
-            subtotal: 240000,
-            marketMedianAtPurchase: 12000,
-            isWarningBypass: false,
-            justificationNote: "Harga sesuai pasar",
-          },
-        ],
-      },
-    },
-    include: { items: true },
-  });
-
-  // Order 5: CONFIRMED
-  orders[4] = await prisma.order.upsert({
-    where: { id: "clx_order_05" },
-    update: {},
-    create: {
-      id: "clx_order_05",
-      status: "CONFIRMED",
-      total: 350000,
-      sppgId: sppg1.id,
-      supplierId: suppliers[0].id,
-      createdById: admin1.id,
-      expectedDeliveryDate: new Date("2026-07-16T10:00:00Z"),
-      notes: "Ayam untuk persediaan",
-      items: {
-        create: [
-          {
-            itemId: createdItems[14].id,
-            quantity: 10,
-            unitPrice: 35000,
-            subtotal: 350000,
-            marketMedianAtPurchase: 35000,
-            isWarningBypass: false,
-            justificationNote: "Harga sesuai pasar",
-          },
-        ],
-      },
-    },
-    include: { items: true },
-  });
-
-  // Order 6: DELIVERED
-  orders[5] = await prisma.order.upsert({
-    where: { id: "clx_order_06" },
-    update: {},
-    create: {
-      id: "clx_order_06",
-      status: "DELIVERED",
-      total: 247500,
-      sppgId: sppg1.id,
-      supplierId: suppliers[0].id,
-      createdById: admin1.id,
-      mouId: mou1.id,
-      expectedDeliveryDate: new Date("2026-07-15T08:00:00Z"),
-      actualDeliveryDate: new Date("2026-07-15T07:30:00Z"),
-      deliveryEvidence: "/uploads/evidence/delivery-o6.jpg",
-      notes: "Beras + Bayam untuk batch",
-      items: {
-        create: [
-          {
-            itemId: createdItems[0].id,
-            quantity: 15,
-            unitPrice: 11500,
-            subtotal: 172500,
-            marketMedianAtPurchase: 12000,
-            isWarningBypass: false,
-            justificationNote: "Harga sesuai MoU",
-          },
-          {
-            itemId: createdItems[62].id,
-            quantity: 10,
-            unitPrice: 7500,
-            subtotal: 75000,
-            marketMedianAtPurchase: 7000,
-            isWarningBypass: false,
-            justificationNote: "Harga sesuai pasar",
-          },
-        ],
-      },
-    },
-    include: { items: true },
-  });
-
-  // Order 7: CANCELLED
-  orders[6] = await prisma.order.upsert({
-    where: { id: "clx_order_07" },
-    update: {},
-    create: {
-      id: "clx_order_07",
-      status: "CANCELLED",
-      total: 300000,
-      sppgId: sppg1.id,
-      supplierId: suppliers[0].id,
-      createdById: admin1.id,
-      expectedDeliveryDate: new Date("2026-07-14T08:00:00Z"),
-      cancelledAt: new Date("2026-07-13T16:00:00Z"),
-      cancelledReason: "Stok tidak mencukupi",
-      cancelledById: supplierUsers[0].id,
-      notes: "Order beras cadangan",
-      items: {
-        create: [
-          {
-            itemId: createdItems[0].id,
-            quantity: 25,
-            unitPrice: 12000,
-            subtotal: 300000,
-            marketMedianAtPurchase: 12000,
-            isWarningBypass: false,
-            justificationNote: "Harga sesuai pasar",
-          },
-        ],
-      },
-    },
-    include: { items: true },
-  });
-
-  console.log("✅ Orders upserted:", 7);
-
-  // ============================================================================
-  // 8. Create OrderStatusHistory
-  // ============================================================================
-
-  const orderHistoryData: any[] = [];
-
-  // Order 1 history
-  orderHistoryData.push(
-    {
-      orderId: orders[0].id,
-      fromStatus: null,
-      toStatus: "PENDING",
-      changedById: admin1.id,
-      notes: "Order dibuat",
-      createdAt: new Date("2026-07-14T06:00:00Z"),
-    },
-    {
-      orderId: orders[0].id,
-      fromStatus: "PENDING",
-      toStatus: "CONFIRMED",
-      changedById: supplierUsers[0].id,
-      notes: "Konfirmasi supplier",
-      createdAt: new Date("2026-07-14T06:30:00Z"),
-    },
-    {
-      orderId: orders[0].id,
-      fromStatus: "CONFIRMED",
-      toStatus: "DELIVERED",
-      changedById: supplierUsers[0].id,
-      notes: "Pengiriman selesai",
-      createdAt: new Date("2026-07-14T08:00:00Z"),
-    },
-    {
-      orderId: orders[0].id,
-      fromStatus: "DELIVERED",
-      toStatus: "COMPLETED",
-      changedById: admin1.id,
-      notes: "Pembayaran dikonfirmasi",
-      createdAt: new Date("2026-07-14T10:00:00Z"),
-    },
+  console.log(
+    `📊 Total suppliers: ${18 + newSuppliers.length} | Total items: ${createdItems.length}`,
   );
-
-  // Order 2 history
-  orderHistoryData.push(
-    {
-      orderId: orders[1].id,
-      fromStatus: null,
-      toStatus: "PENDING",
-      changedById: admin2.id,
-      notes: "Order ayam",
-      createdAt: new Date("2026-07-14T09:00:00Z"),
-    },
-    {
-      orderId: orders[1].id,
-      fromStatus: "PENDING",
-      toStatus: "CONFIRMED",
-      changedById: supplierUsers[9].id,
-      notes: "Konfirmasi",
-      createdAt: new Date("2026-07-14T09:30:00Z"),
-    },
-    {
-      orderId: orders[1].id,
-      fromStatus: "CONFIRMED",
-      toStatus: "DELIVERED",
-      changedById: supplierUsers[9].id,
-      notes: "Pengiriman",
-      createdAt: new Date("2026-07-14T11:00:00Z"),
-    },
-    {
-      orderId: orders[1].id,
-      fromStatus: "DELIVERED",
-      toStatus: "COMPLETED",
-      changedById: admin2.id,
-      notes: "Pembayaran dikonfirmasi",
-      createdAt: new Date("2026-07-14T14:00:00Z"),
-    },
-  );
-
-  // Order 3 history
-  orderHistoryData.push(
-    {
-      orderId: orders[2].id,
-      fromStatus: null,
-      toStatus: "PENDING",
-      changedById: admin1.id,
-      notes: "Order beras + telur",
-      createdAt: new Date("2026-07-14T12:00:00Z"),
-    },
-    {
-      orderId: orders[2].id,
-      fromStatus: "PENDING",
-      toStatus: "CONFIRMED",
-      changedById: supplierUsers[0].id,
-      notes: "Konfirmasi",
-      createdAt: new Date("2026-07-14T12:30:00Z"),
-    },
-    {
-      orderId: orders[2].id,
-      fromStatus: "CONFIRMED",
-      toStatus: "DELIVERED",
-      changedById: supplierUsers[0].id,
-      notes: "Pengiriman",
-      createdAt: new Date("2026-07-14T14:00:00Z"),
-    },
-    {
-      orderId: orders[2].id,
-      fromStatus: "DELIVERED",
-      toStatus: "COMPLETED",
-      changedById: admin1.id,
-      notes: "Pembayaran dikonfirmasi",
-      createdAt: new Date("2026-07-14T16:00:00Z"),
-    },
-  );
-
-  // Order 4 history
-  orderHistoryData.push({
-    orderId: orders[3].id,
-    fromStatus: null,
-    toStatus: "PENDING",
-    changedById: admin1.id,
-    notes: "Order beras",
-    createdAt: new Date("2026-07-15T06:00:00Z"),
-  });
-
-  // Order 5 history
-  orderHistoryData.push(
-    {
-      orderId: orders[4].id,
-      fromStatus: null,
-      toStatus: "PENDING",
-      changedById: admin1.id,
-      notes: "Order ayam",
-      createdAt: new Date("2026-07-15T07:00:00Z"),
-    },
-    {
-      orderId: orders[4].id,
-      fromStatus: "PENDING",
-      toStatus: "CONFIRMED",
-      changedById: supplierUsers[0].id,
-      notes: "Konfirmasi",
-      createdAt: new Date("2026-07-15T08:00:00Z"),
-    },
-  );
-
-  // Order 6 history
-  orderHistoryData.push(
-    {
-      orderId: orders[5].id,
-      fromStatus: null,
-      toStatus: "PENDING",
-      changedById: admin1.id,
-      notes: "Order beras + bayam",
-      createdAt: new Date("2026-07-14T14:00:00Z"),
-    },
-    {
-      orderId: orders[5].id,
-      fromStatus: "PENDING",
-      toStatus: "CONFIRMED",
-      changedById: supplierUsers[0].id,
-      notes: "Konfirmasi",
-      createdAt: new Date("2026-07-14T14:30:00Z"),
-    },
-    {
-      orderId: orders[5].id,
-      fromStatus: "CONFIRMED",
-      toStatus: "DELIVERED",
-      changedById: supplierUsers[0].id,
-      notes: "Pengiriman selesai",
-      createdAt: new Date("2026-07-15T07:30:00Z"),
-    },
-  );
-
-  // Order 7 history
-  orderHistoryData.push(
-    {
-      orderId: orders[6].id,
-      fromStatus: null,
-      toStatus: "PENDING",
-      changedById: admin1.id,
-      notes: "Order beras cadangan",
-      createdAt: new Date("2026-07-13T10:00:00Z"),
-    },
-    {
-      orderId: orders[6].id,
-      fromStatus: "PENDING",
-      toStatus: "CANCELLED",
-      changedById: supplierUsers[0].id,
-      notes: "Stok tidak mencukupi",
-      createdAt: new Date("2026-07-13T16:00:00Z"),
-    },
-  );
-
-  for (const h of orderHistoryData) {
-    await prisma.orderStatusHistory.create({ data: h });
-  }
-
-  console.log("✅ OrderStatusHistory created:", orderHistoryData.length);
-
-  // ============================================================================
-  // 9. Create Batches (3 batches)
-  // ============================================================================
-
-  const batch1 = await prisma.batch.upsert({
-    where: { id: "clx_batch_01" },
-    update: {},
-    create: {
-      id: "clx_batch_01",
-      batchNumber: "BATCH-20260714-001",
-      reportKey: "A7X9K2M4",
-      date: new Date("2026-07-14T06:00:00Z"),
-      menu: "Nasi Ayam Bakar + Sayur Bayam",
-      nutrition: { calories: 450, protein: 25, fat: 15, carbs: 50 },
-      allergens: ["Gluten"],
-      beneficiaryCount: 150,
-      beneficiaryNames: ["SDN 1 Sumber", "SDN 2 Sumber"],
-      costPerPortion: 0,
-      totalCost: 0,
-      costPerPortionStandard: 10000,
-      totalBudget: 1500000,
-      budgetVariance: 0,
-      sppgId: sppg1.id,
-      createdById: admin1.id,
-      batchItems: {
-        create: [
-          {
-            itemId: createdItems[0].id,
-            name: "Beras Premium 15kg",
-            unit: "kg",
-            quantity: 15,
-            unitPrice: 11500,
-            subtotal: 172500,
-            createdById: admin1.id,
-          },
-          {
-            itemId: createdItems[14].id,
-            name: "Daging Ayam 3kg",
-            unit: "kg",
-            quantity: 3,
-            unitPrice: 34000,
-            subtotal: 102000,
-            createdById: admin1.id,
-          },
-          {
-            itemId: createdItems[62].id,
-            name: "Sayur Bayam 10kg",
-            unit: "kg",
-            quantity: 10,
-            unitPrice: 7000,
-            subtotal: 70000,
-            createdById: admin1.id,
-          },
-        ],
-      },
-    },
-  });
-
-  const batch1WithItems = await prisma.batch.findUnique({
-    where: { id: batch1.id },
-    include: { batchItems: true },
-  });
-  if (batch1WithItems) {
-    const totalCost1 = batch1WithItems.batchItems.reduce(
-      (sum, item) => sum + item.subtotal,
-      0,
-    );
-    await prisma.batch.update({
-      where: { id: batch1.id },
-      data: {
-        totalCost: totalCost1,
-        costPerPortion: totalCost1 / 150,
-        budgetVariance: totalCost1 - 1500000,
-      },
-    });
-  }
-
-  const batch2 = await prisma.batch.upsert({
-    where: { id: "clx_batch_02" },
-    update: {},
-    create: {
-      id: "clx_batch_02",
-      batchNumber: "BATCH-20260714-002",
-      reportKey: "B8Y3L5N1",
-      date: new Date("2026-07-14T07:00:00Z"),
-      menu: "Nasi Ikan Goreng + Wortel",
-      nutrition: { calories: 520, protein: 30, fat: 18, carbs: 55 },
-      allergens: ["Ikan"],
-      beneficiaryCount: 120,
-      beneficiaryNames: ["SDN 1 Weru", "SMPN 1 Weru"],
-      costPerPortion: 0,
-      totalCost: 0,
-      costPerPortionStandard: 10000,
-      totalBudget: 1200000,
-      budgetVariance: 0,
-      sppgId: sppg2.id,
-      createdById: admin2.id,
-      batchItems: {
-        create: [
-          {
-            itemId: createdItems[9].id,
-            name: "Beras Premium 12kg",
-            unit: "kg",
-            quantity: 12,
-            unitPrice: 12000,
-            subtotal: 144000,
-            createdById: admin2.id,
-          },
-          {
-            itemId: createdItems[80].id,
-            name: "Wortel 6kg",
-            unit: "kg",
-            quantity: 6,
-            unitPrice: 10000,
-            subtotal: 60000,
-            createdById: admin2.id,
-          },
-          {
-            itemId: createdItems[76].id,
-            name: "Sayur Kangkung 8kg",
-            unit: "kg",
-            quantity: 8,
-            unitPrice: 5000,
-            subtotal: 40000,
-            createdById: admin2.id,
-          },
-        ],
-      },
-    },
-  });
-
-  const batch2WithItems = await prisma.batch.findUnique({
-    where: { id: batch2.id },
-    include: { batchItems: true },
-  });
-  if (batch2WithItems) {
-    const totalCost2 = batch2WithItems.batchItems.reduce(
-      (sum, item) => sum + item.subtotal,
-      0,
-    );
-    await prisma.batch.update({
-      where: { id: batch2.id },
-      data: {
-        totalCost: totalCost2,
-        costPerPortion: totalCost2 / 120,
-        budgetVariance: totalCost2 - 1200000,
-      },
-    });
-  }
-
-  const batch3 = await prisma.batch.upsert({
-    where: { id: "clx_batch_03" },
-    update: {},
-    create: {
-      id: "clx_batch_03",
-      batchNumber: "BATCH-20260714-003",
-      reportKey: "C9Z4M6P2",
-      date: new Date("2026-07-14T08:00:00Z"),
-      menu: "Nasi Tahu Tempe + Telur",
-      nutrition: { calories: 480, protein: 22, fat: 16, carbs: 52 },
-      allergens: ["Kedelai", "Telur"],
-      beneficiaryCount: 100,
-      beneficiaryNames: ["SDN 1 Arjawinangun", "Panti Asuhan Al-Hikmah"],
-      costPerPortion: 0,
-      totalCost: 0,
-      costPerPortionStandard: 10000,
-      totalBudget: 1000000,
-      budgetVariance: 0,
-      sppgId: sppg3.id,
-      createdById: admin3.id,
-      batchItems: {
-        create: [
-          {
-            itemId: createdItems[2].id,
-            name: "Beras Premium 10kg",
-            unit: "kg",
-            quantity: 10,
-            unitPrice: 11800,
-            subtotal: 118000,
-            createdById: admin3.id,
-          },
-          {
-            itemId: createdItems[36].id,
-            name: "Telur Ayam 5kg",
-            unit: "kg",
-            quantity: 5,
-            unitPrice: 27000,
-            subtotal: 135000,
-            createdById: admin3.id,
-          },
-          {
-            itemId: createdItems[46].id,
-            name: "Tahu Putih 3kg",
-            unit: "kg",
-            quantity: 3,
-            unitPrice: 7500,
-            subtotal: 22500,
-            createdById: admin3.id,
-          },
-        ],
-      },
-    },
-  });
-
-  const batch3WithItems = await prisma.batch.findUnique({
-    where: { id: batch3.id },
-    include: { batchItems: true },
-  });
-  if (batch3WithItems) {
-    const totalCost3 = batch3WithItems.batchItems.reduce(
-      (sum, item) => sum + item.subtotal,
-      0,
-    );
-    await prisma.batch.update({
-      where: { id: batch3.id },
-      data: {
-        totalCost: totalCost3,
-        costPerPortion: totalCost3 / 100,
-        budgetVariance: totalCost3 - 1000000,
-      },
-    });
-  }
-
-  console.log("✅ Batches upserted:", 3);
-
-  // ============================================================================
-  // 10. Create Complaints (2)
-  // ============================================================================
-
-  await prisma.complaint.upsert({
-    where: { id: "clx_complaint_01" },
-    update: {},
-    create: {
-      id: "clx_complaint_01",
-      reportKey: "A7X9K2M4",
-      description: "Nasi terasa agak basi saat diterima",
-      batchId: batch1.id,
-    },
-  });
-
-  await prisma.complaint.upsert({
-    where: { id: "clx_complaint_02" },
-    update: {},
-    create: {
-      id: "clx_complaint_02",
-      reportKey: "B8Y3L5N1",
-      description: "Ikan goreng kurang garing",
-      batchId: batch2.id,
-    },
-  });
-
-  console.log("✅ Complaints upserted:", 2);
-
-  // ============================================================================
-  // 11. Create Inventory Stocks (5 lots)
-  // ============================================================================
-
-  await prisma.inventoryStock.upsert({
-    where: { id: "clx_inventory_01" },
-    update: {},
-    create: {
-      id: "clx_inventory_01",
-      sppgId: sppg1.id,
-      itemId: createdItems[0].id,
-      orderItemId: orders[0].items[0].id,
-      source: "SYSTEM_ORDER",
-      purchasePrice: 11500,
-      initialQty: 20,
-      remainingQty: 15,
-      createdById: admin1.id,
-      notes: "Stok dari Order 1 (Toko Berkah) - via MoU",
-    },
-  });
-
-  await prisma.inventoryStock.upsert({
-    where: { id: "clx_inventory_02" },
-    update: {},
-    create: {
-      id: "clx_inventory_02",
-      sppgId: sppg1.id,
-      itemId: createdItems[14].id,
-      orderItemId: orders[0].items[1].id,
-      source: "SYSTEM_ORDER",
-      purchasePrice: 34000,
-      initialQty: 5,
-      remainingQty: 2,
-      createdById: admin1.id,
-      notes: "Stok dari Order 1 (Toko Berkah) - via MoU",
-    },
-  });
-
-  await prisma.inventoryStock.upsert({
-    where: { id: "clx_inventory_03" },
-    update: {},
-    create: {
-      id: "clx_inventory_03",
-      sppgId: sppg1.id,
-      itemId: createdItems[62].id,
-      orderItemId: orders[0].items[1].id,
-      source: "SYSTEM_ORDER",
-      purchasePrice: 7000,
-      initialQty: 10,
-      remainingQty: 0,
-      createdById: admin1.id,
-      notes: "Stok dari Order 1 - habis dipakai Batch 1",
-    },
-  });
-
-  await prisma.inventoryStock.upsert({
-    where: { id: "clx_inventory_04" },
-    update: {},
-    create: {
-      id: "clx_inventory_04",
-      sppgId: sppg1.id,
-      itemId: createdItems[0].id,
-      orderItemId: orders[2].items[0].id,
-      source: "SYSTEM_ORDER",
-      purchasePrice: 12000,
-      initialQty: 20,
-      remainingQty: 20,
-      createdById: admin1.id,
-      notes: "Stok dari Order 3 (Toko Berkah)",
-    },
-  });
-
-  await prisma.inventoryStock.upsert({
-    where: { id: "clx_inventory_05" },
-    update: {},
-    create: {
-      id: "clx_inventory_05",
-      sppgId: sppg1.id,
-      itemId: createdItems[36].id,
-      orderItemId: orders[2].items[1].id,
-      source: "SYSTEM_ORDER",
-      purchasePrice: 28000,
-      initialQty: 5,
-      remainingQty: 0,
-      createdById: admin1.id,
-      notes: "Stok dari Order 3 - habis dipakai Batch 3",
-    },
-  });
-
-  console.log("✅ Inventory stocks upserted:", 5);
-
-  // ============================================================================
-  // 12. Create Inventory Adjustment Log (1)
-  // ============================================================================
-
-  await prisma.inventoryAdjustmentLog.upsert({
-    where: { id: "clx_adjustment_01" },
-    update: {},
-    create: {
-      id: "clx_adjustment_01",
-      inventoryStockId: "clx_inventory_02",
-      adjustmentQty: -1,
-      reason: "SPOILAGE",
-      description: "Ayam rusak akibat cold chain terganggu",
-      changedById: admin1.id,
-      createdAt: new Date("2026-07-14T12:00:00Z"),
-    },
-  });
-
-  console.log("✅ Inventory adjustment log upserted:", 1);
-
-  // ============================================================================
-  // 13. Create Operational Expenses (2)
-  // ============================================================================
-
-  await prisma.operationalExpense.upsert({
-    where: { id: "clx_opex_01" },
-    update: {},
-    create: {
-      id: "clx_opex_01",
-      sppgId: sppg1.id,
-      category: "TRANSPORTATION",
-      amount: 150000,
-      expenseDate: new Date("2026-07-14T00:00:00Z"),
-      description: "Pengantaran bahan baku mingguan",
-      createdById: admin1.id,
-    },
-  });
-
-  await prisma.operationalExpense.upsert({
-    where: { id: "clx_opex_02" },
-    update: {},
-    create: {
-      id: "clx_opex_02",
-      sppgId: sppg1.id,
-      category: "FUEL",
-      amount: 75000,
-      expenseDate: new Date("2026-07-14T00:00:00Z"),
-      description: "BBM pengantaran harian",
-      createdById: admin1.id,
-    },
-  });
-
-  console.log("✅ Operational expenses upserted:", 2);
 
   // ============================================================================
   // Summary
@@ -2035,22 +1202,19 @@ async function main() {
   console.log("\n🎉 Seeding completed!");
   console.log("\n📊 Summary:");
   console.log("   - 3 SPPG (Cirebon Utara, Selatan, Barat)");
-  console.log(`   - ${3 + 18 + newSuppliers.length} Users (3 admin + ${18 + newSuppliers.length} supplier)`);
-  console.log(`   - ${18 + newSuppliers.length} Suppliers (9 original market + 9 non-market + ${newSuppliers.length} new market sellers)`);
+  console.log(
+    `   - ${3 + 18 + newSuppliers.length} Users (3 admin + ${18 + newSuppliers.length} supplier)`,
+  );
+  console.log(
+    `   - ${18 + newSuppliers.length} Suppliers (9 original market + 9 non-market + ${newSuppliers.length} new market sellers)`,
+  );
   console.log(`   - ${createdItems.length} Supplier Items`);
-  console.log("   - 6 Beneficiaries");
-  console.log("   - 2 MoU (ACTIVE)");
-  console.log("   - 7 Orders (varied statuses)");
-  console.log("   - 3 Batches");
-  console.log("   - 2 Complaints");
-  console.log("   - 5 Inventory Lots");
-  console.log("   - 1 Adjustment Log");
-  console.log("   - 2 Operational Expenses");
-  console.log(`   - ${orderHistoryData.length} OrderStatusHistory entries`);
   console.log("\n📍 Location: Cirebon, Jawa Barat");
   console.log(`\n🏪 Markets: ${MARKET_CONFIGS.length} pasar`);
   for (const mkt of MARKET_CONFIGS) {
-    console.log(`   - ${mkt.name} (${mkt.district}): ${mkt.supplierCount} suppliers`);
+    console.log(
+      `   - ${mkt.name} (${mkt.district}): ${mkt.supplierCount} suppliers`,
+    );
   }
   console.log("\n🧪 Test Accounts:");
   console.log("   Admin:");

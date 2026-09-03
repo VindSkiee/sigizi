@@ -178,6 +178,10 @@ model Supplier {
   isMarketSeller  Boolean  @default(false) // Apakah supplier penjual di pasar
   marketName      String?  // Nama pasar (contoh: "Pasar Cibeunying")
 
+  // --- Profile ---
+  profileImage    String?  // URL foto profil supplier
+  openStatus      Boolean  @default(true) // Status buka/tutup toko
+
   users     User[]
   items     SupplierItem[]
   orders    Order[]
@@ -200,10 +204,15 @@ model SupplierItem {
   orderStep    Float?
   minThreshold Float?   // Batas ambang stok rendah per item (null = gunakan default sistem)
   isAvailable  Boolean   @default(true) // Status ketersediaan stok katalog
+  image        String?   // URL gambar produk
+  stock        Float     @default(0) // Stok saat ini
+  priceUpdatedAt DateTime? // Kapan harga terakhir diupdate
+  stockUpdatedAt DateTime? // Kapan stok terakhir diupdate
   deletedAt    DateTime? // Soft delete: null = aktif, ada = dihapus (karena ada referensi pesanan)
   supplier     Supplier  @relation(fields: [supplierId], references: [id], onDelete: Restrict)
   supplierId   String
   createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   orderItems    OrderItem[]
   batchItems    BatchItem[]
   mouItems      MouItem[]

@@ -20,6 +20,8 @@ export interface CreateSupplierData {
   longitude?: number;
   isMarketSeller?: boolean;
   marketName?: string;
+  profileImage?: string;
+  openStatus?: boolean;
 }
 
 export interface UpdateSupplierData {
@@ -35,6 +37,8 @@ export interface UpdateSupplierData {
   longitude?: number;
   isMarketSeller?: boolean;
   marketName?: string;
+  profileImage?: string;
+  openStatus?: boolean;
 }
 
 export interface SupplierItemData {
@@ -46,9 +50,14 @@ export interface SupplierItemData {
   minOrderQty: number | null;
   orderStep: number | null;
   isAvailable: boolean;
+  image: string | null;
+  stock: number;
+  priceUpdatedAt: Date | null;
+  stockUpdatedAt: Date | null;
   deletedAt: Date | null;
   supplierId: string;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface CreateSupplierItemData {
@@ -59,6 +68,11 @@ export interface CreateSupplierItemData {
   minOrderQty?: number;
   orderStep?: number;
   isAvailable?: boolean;
+  image?: string;
+  stock?: number;
+  priceUpdatedAt?: Date;
+  stockUpdatedAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface UpdateSupplierItemData {
@@ -69,6 +83,11 @@ export interface UpdateSupplierItemData {
   minOrderQty?: number;
   orderStep?: number;
   isAvailable?: boolean;
+  image?: string;
+  stock?: number;
+  priceUpdatedAt?: Date;
+  stockUpdatedAt?: Date;
+  updatedAt?: Date;
   deletedAt?: Date | null;
 }
 

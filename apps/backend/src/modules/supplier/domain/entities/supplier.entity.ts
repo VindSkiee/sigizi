@@ -14,6 +14,8 @@ export class Supplier {
     public longitude: number | null,
     public isMarketSeller: boolean = false,
     public marketName: string | null = null,
+    public profileImage: string | null = null,
+    public openStatus: boolean = true,
     public readonly createdAt: Date = new Date(),
     public updatedAt: Date = new Date(),
   ) {}
@@ -31,6 +33,8 @@ export class Supplier {
     longitude?: number;
     isMarketSeller?: boolean;
     marketName?: string;
+    profileImage?: string;
+    openStatus?: boolean;
   }): void {
     if (data.name !== undefined) this.name = data.name;
     if (data.phone !== undefined) this.phone = data.phone;
@@ -45,6 +49,8 @@ export class Supplier {
     if (data.isMarketSeller !== undefined)
       this.isMarketSeller = data.isMarketSeller;
     if (data.marketName !== undefined) this.marketName = data.marketName;
+    if (data.profileImage !== undefined) this.profileImage = data.profileImage;
+    if (data.openStatus !== undefined) this.openStatus = data.openStatus;
     this.updatedAt = new Date();
   }
 }
