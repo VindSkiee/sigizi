@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException } from "@nestjs/common";
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../../../database/prisma.service";
 import {
@@ -7,6 +11,10 @@ import {
 } from "../../../core/utils/geolocation";
 import { GpsCoordinate } from "../../../core/domain/value-objects/gps-coordinate.vo";
 import { MarketLocationFilterDto } from "../dto/market-location-filter.dto";
+import {
+  MarketPaginatedResponse,
+  buildMarketPaginatedResponse,
+} from "../dto/market-paginated-response.dto";
 import { normalizeRegion, matchesRegion } from "@sigizi/shared";
 
 const MIN_MATURE_SAMPLE = 5;
@@ -45,6 +53,9 @@ interface SupplierItemWithSupplier {
   id: string;
   name: string;
   basePrice: number;
+  stock: number;
+  priceUpdatedAt: Date | null;
+  stockUpdatedAt: Date | null;
   supplier: {
     id: string;
     name: string;
@@ -56,6 +67,7 @@ interface SupplierItemWithSupplier {
     longitude: number | null;
     isMarketSeller: boolean;
     marketName: string | null;
+    openStatus: boolean;
   };
 }
 
@@ -115,6 +127,65 @@ export class MarketService {
 
     const allItems = await this.fetchSupplierItems(item, filter);
     const resolved = this.resolveScope(allItems, filter);
+    return this.buildMarketPricesResult(item, filter, resolved);
+  }
+
+  async getMarketPricesRaw(item: string, filter: MarketLocationFilterDto = {}) {
+    this.validateLocationFilter(filter);
+
+    const allItems = await this.fetchSupplierItems(item, filter);
+    const resolved = this.resolveScope(allItems, filter);
+    return this.buildMarketPricesResult(item, filter, resolved);
+  }
+
+  async getItemDetail(id: string) {
+    const raw = await this.prisma.supplierItem.findUnique({
+      where: { id },
+      include: { supplier: true },
+    });
+
+    if (!raw || raw.deletedAt) {
+      throw new NotFoundException(`Item with ID ${id} not found`);
+    }
+
+    return {
+      item: {
+        id: raw.id,
+        name: raw.name,
+        unit: raw.unit,
+        basePrice: raw.basePrice,
+        description: raw.description,
+        minOrderQty: raw.minOrderQty,
+        orderStep: raw.orderStep,
+        isAvailable: raw.isAvailable,
+        image: raw.image,
+        stock: raw.stock,
+        priceUpdatedAt: raw.priceUpdatedAt?.toISOString() ?? null,
+        stockUpdatedAt: raw.stockUpdatedAt?.toISOString() ?? null,
+        createdAt: raw.createdAt.toISOString(),
+      },
+      supplier: {
+        id: raw.supplier.id,
+        name: raw.supplier.name,
+        phone: raw.supplier.phone ?? null,
+        address: raw.supplier.address ?? null,
+        province: raw.supplier.province,
+        regency: raw.supplier.regency,
+        district: raw.supplier.district ?? null,
+        latitude: raw.supplier.latitude ?? null,
+        longitude: raw.supplier.longitude ?? null,
+        openStatus: raw.supplier.openStatus,
+        isMarketSeller: raw.supplier.isMarketSeller,
+        marketName: raw.supplier.marketName ?? null,
+      },
+    };
+  }
+
+  private buildMarketPricesResult(
+    item: string,
+    filter: MarketLocationFilterDto,
+    resolved: ResolvedScope,
+  ) {
     const prices = resolved.items.map((si) => si.basePrice);
     const statistics = this.buildDualStatistics(prices);
     const bounds =
@@ -122,7 +193,10 @@ export class MarketService {
         ? this.calculateIQRBounds([...prices].sort((a, b) => a - b))
         : null;
 
-    const suppliers = this.mapSuppliers(resolved.items, filter, bounds);
+    const hasGps =
+      filter.latitude !== undefined && filter.longitude !== undefined;
+    const sorted = this.sortSupplierItems(resolved.items, hasGps, filter);
+    const suppliers = this.mapSuppliers(sorted, filter, bounds);
 
     return {
       item,
@@ -136,7 +210,13 @@ export class MarketService {
     };
   }
 
-  async getDistinctMarkets(province: string, regency: string, item?: string) {
+  async getDistinctMarkets(
+    province: string,
+    regency: string,
+    item?: string,
+    page: number = 1,
+    limit: number = 20,
+  ) {
     const where: any = {
       isMarketSeller: true,
       province: { equals: normalizeRegion(province), mode: "insensitive" },
@@ -144,7 +224,6 @@ export class MarketService {
       marketName: { not: null },
     };
 
-    // Query suppliers dengan items yang match
     const suppliers = await this.prisma.supplier.findMany({
       where,
       select: {
@@ -160,7 +239,6 @@ export class MarketService {
       orderBy: { marketName: "asc" },
     });
 
-    // Group by marketName dan count
     const marketData = new Map<
       string,
       { suppliers: Set<string>; items: Set<string> }
@@ -180,18 +258,22 @@ export class MarketService {
       }
     }
 
-    return {
-      markets: Array.from(marketData.entries())
-        .map(([name, data]) => ({
-          name,
-          supplierCount: data.suppliers.size,
-          itemCount: data.items.size,
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name)),
-    };
+    const allMarkets = Array.from(marketData.entries())
+      .map(([name, data]) => ({
+        name,
+        supplierCount: data.suppliers.size,
+        itemCount: data.items.size,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    const total = allMarkets.length;
+    const start = (page - 1) * limit;
+    const pagedMarkets = allMarkets.slice(start, start + limit);
+
+    return buildMarketPaginatedResponse(pagedMarkets, total, page, limit);
   }
 
-  async getSupplierRegions() {
+  async getSupplierRegions(page: number = 1, limit: number = 20) {
     const suppliers = await this.prisma.supplier.findMany({
       select: { province: true, regency: true },
       distinct: ["province", "regency"],
@@ -206,14 +288,18 @@ export class MarketService {
       provinceMap.get(s.province)!.add(s.regency);
     }
 
-    const provinces = Array.from(provinceMap.entries()).map(
+    const allProvinces = Array.from(provinceMap.entries()).map(
       ([province, regencies]) => ({
         province,
         regencies: Array.from(regencies).sort(),
       }),
     );
 
-    return { provinces };
+    const total = allProvinces.length;
+    const start = (page - 1) * limit;
+    const pagedProvinces = allProvinces.slice(start, start + limit);
+
+    return buildMarketPaginatedResponse(pagedProvinces, total, page, limit);
   }
 
   async getAnomalies(filter: MarketLocationFilterDto = {}) {
@@ -229,7 +315,7 @@ export class MarketService {
       itemGroups.set(supplierItem.name, prices);
     }
 
-    const anomalies: Array<{
+    const allAnomalies: Array<{
       item: string;
       outlierCount: number;
       prices: number[];
@@ -247,7 +333,7 @@ export class MarketService {
       );
 
       if (outlierPrices.length > 0) {
-        anomalies.push({
+        allAnomalies.push({
           item: itemName,
           outlierCount: outlierPrices.length,
           prices: outlierPrices,
@@ -255,14 +341,25 @@ export class MarketService {
       }
     }
 
-    return {
-      filter: this.serializeFilter(filter),
-      anomalies,
-    };
+    const page = filter.page ?? 1;
+    const limit = filter.limit ?? 20;
+    const total = allAnomalies.length;
+    const start = (page - 1) * limit;
+    const pagedAnomalies = allAnomalies.slice(start, start + limit);
+
+    return buildMarketPaginatedResponse(
+      {
+        filter: this.serializeFilter(filter),
+        anomalies: pagedAnomalies,
+      },
+      total,
+      page,
+      limit,
+    );
   }
 
   async getHETSuggestion(item: string, filter: MarketLocationFilterDto = {}) {
-    const result = await this.getMarketPrices(item, filter);
+    const result = await this.getMarketPricesRaw(item, filter);
     const masterPrice = this.getMasterReferencePrice(item);
     const { statistics, sampleCount, scopeUsed } = result;
 
@@ -320,7 +417,7 @@ export class MarketService {
     filter: MarketLocationFilterDto = {},
   ): Promise<MarketValidationContext> {
     const masterPrice = this.getMasterReferencePrice(itemName);
-    const marketPrices = await this.getMarketPrices(itemName, filter);
+    const marketPrices = await this.getMarketPricesRaw(itemName, filter);
 
     let basedOn: HETBasedOn;
     if (marketPrices.sampleCount === 0 || marketPrices.scopeUsed === "master") {
@@ -493,8 +590,30 @@ export class MarketService {
 
     return this.prisma.supplierItem.findMany({
       where,
-      include: { supplier: true },
-    });
+      select: {
+        id: true,
+        name: true,
+        basePrice: true,
+        stock: true,
+        priceUpdatedAt: true,
+        stockUpdatedAt: true,
+        supplier: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            province: true,
+            regency: true,
+            district: true,
+            latitude: true,
+            longitude: true,
+            isMarketSeller: true,
+            marketName: true,
+            openStatus: true,
+          },
+        },
+      },
+    }) as unknown as Promise<SupplierItemWithSupplier[]>;
   }
 
   private resolveScope(
@@ -691,6 +810,53 @@ export class MarketService {
     return matchesRegion(value, expected);
   }
 
+  private sortSupplierItems(
+    items: SupplierItemWithSupplier[],
+    isGpsMode: boolean,
+    filter: MarketLocationFilterDto,
+  ): SupplierItemWithSupplier[] {
+    if (!isGpsMode) {
+      return [...items].sort((a, b) => {
+        if (b.stock !== a.stock) return b.stock - a.stock;
+        if (a.priceUpdatedAt && b.priceUpdatedAt) {
+          const diff = b.priceUpdatedAt.getTime() - a.priceUpdatedAt.getTime();
+          if (diff !== 0) return diff;
+        } else if (a.priceUpdatedAt) return -1;
+        else if (b.priceUpdatedAt) return 1;
+        if (a.stockUpdatedAt && b.stockUpdatedAt) {
+          const diff = b.stockUpdatedAt.getTime() - a.stockUpdatedAt.getTime();
+          if (diff !== 0) return diff;
+        } else if (a.stockUpdatedAt) return -1;
+        else if (b.stockUpdatedAt) return 1;
+        return a.id.localeCompare(b.id);
+      });
+    }
+
+    const center = new GpsCoordinate(filter.latitude!, filter.longitude!);
+    const scored = items.map((item) => {
+      const coordinate = GpsCoordinate.fromPrisma(item.supplier);
+      const distanceKm =
+        center && coordinate
+          ? calculateDistanceKm(center, coordinate)
+          : Infinity;
+      return { item, distanceKm };
+    });
+
+    scored.sort((a, b) => {
+      if (a.distanceKm !== b.distanceKm) return a.distanceKm - b.distanceKm;
+      if (b.item.stock !== a.item.stock) return b.item.stock - a.item.stock;
+      if (a.item.priceUpdatedAt && b.item.priceUpdatedAt) {
+        const diff =
+          b.item.priceUpdatedAt.getTime() - a.item.priceUpdatedAt.getTime();
+        if (diff !== 0) return diff;
+      } else if (a.item.priceUpdatedAt) return -1;
+      else if (b.item.priceUpdatedAt) return 1;
+      return a.item.id.localeCompare(b.item.id);
+    });
+
+    return scored.map((s) => s.item);
+  }
+
   private buildDualStatistics(prices: number[]): DualPriceStatistics {
     const raw = this.computeStatistics(prices);
     const emptyStats = this.emptyStatistics();
@@ -774,6 +940,9 @@ export class MarketService {
         itemId: item.id,
         name: item.supplier.name,
         price: item.basePrice,
+        stock: item.stock,
+        priceUpdatedAt: item.priceUpdatedAt?.toISOString() ?? null,
+        stockUpdatedAt: item.stockUpdatedAt?.toISOString() ?? null,
         isAnomaly,
         address: item.supplier.address ?? undefined,
         province: item.supplier.province ?? undefined,
@@ -783,6 +952,7 @@ export class MarketService {
         longitude: item.supplier.longitude ?? undefined,
         distanceKm,
         isMarketSeller: item.supplier.isMarketSeller,
+        openStatus: item.supplier.openStatus,
         marketName: item.supplier.marketName ?? undefined,
         isSimulation,
       };

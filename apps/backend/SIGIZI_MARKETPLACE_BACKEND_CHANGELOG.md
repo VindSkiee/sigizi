@@ -109,3 +109,148 @@ When database is available:
 - [ ] Verify timestamp refresh on `updateItem()` with `stock` change
 - [ ] Verify NO timestamp refresh when only `name` or `description` changes
 - [ ] Verify validation: `basePrice < 0` rejected, `stock < 0` rejected
+
+---
+
+## Market API Improvements
+
+**Date**: 2026-09-03
+
+### New Files
+
+| File                                                      | Description                                 |
+| --------------------------------------------------------- | ------------------------------------------- |
+| `src/modules/market/dto/market-paginated-response.dto.ts` | Generic `{ data, meta }` pagination wrapper |
+
+### Modified Files
+
+| File                                                   | Change                                                       |
+| ------------------------------------------------------ | ------------------------------------------------------------ |
+| `src/modules/market/dto/market-location-filter.dto.ts` | Added `page` and `limit` fields to `MarketLocationFilterDto` |
+| `src/modules/market/services/market.service.ts`        | Sorting, pagination, stock/freshness fields                  |
+| `src/modules/market/controllers/market.controller.ts`  | Pagination params for regions/markets                        |
+
+### Sorting
+
+- **Non-GPS mode**: `stock desc`, `priceUpdatedAt desc`, `stockUpdatedAt desc`, `id asc`
+- **GPS mode**: `distanceKm asc` (primary), then stock/freshness/id as secondary
+- Added `sortSupplierItems()` private method
+
+### Pagination
+
+All collection endpoints now return `{ data, meta }` where:
+
+```typescript
+{
+  data: T,
+  meta: {
+    page: number,
+    limit: number,
+    total: number,
+    totalPages: number,
+    hasNextPage: boolean,
+    hasPreviousPage: boolean
+  }
+}
+```
+
+- `GET /market/prices` — paginated suppliers array within data
+- `GET /market/regions` — paginated provinces array
+- `GET /market/markets` — paginated markets array
+- `GET /market/anomalies` — paginated anomalies array
+- `GET /market/het-suggestion` — paginated (via getMarketPricesRaw)
+- `POST /market/validate-price` — unchanged (no pagination)
+
+**Default**: `page=1, limit=20`. Max `limit=100`.
+
+**Fetch-all in-memory pagination**: Entire scope set is fetched, sorted, then sliced. Acceptable for MVP. Future optimization: database-level pagination with WHERE cursors.
+
+**HET/anomaly calculations**: Always use full resolved dataset BEFORE pagination.
+
+### New SupplierItem Fields in Response
+
+Each supplier in `GET /market/prices` now includes:
+
+| Field            | Type             | Description                                                            |
+| ---------------- | ---------------- | ---------------------------------------------------------------------- |
+| `stock`          | `number`         | Current stock quantity                                                 |
+| `priceUpdatedAt` | `string \| null` | ISO timestamp of last price change                                     |
+| `stockUpdatedAt` | `string \| null` | ISO timestamp of last stock change                                     |
+| `openStatus`     | `boolean`        | Whether supplier is open for business (`true` = buka, `false` = tutup) |
+
+### Internal Callers
+
+- `getMarketPricesRaw()` — unpaginated, used by `getHETSuggestion()` and `getMarketContextForItem()`
+- `getMarketPrices()` — paginated, used by controller
+- `validatePrice()` — unchanged, calls `getMarketPricesRaw()` via `getMarketContextForItem()`
+
+---
+
+## Item Detail API
+
+**Date**: 2026-09-03
+
+### New Endpoint
+
+```
+GET /market/items/:id
+Authorization: Bearer <token>
+```
+
+Returns a single item with its full supplier profile. Requires JWT authentication.
+
+### Response Shape
+
+```json
+{
+  "item": {
+    "id": "clx...",
+    "name": "Beras Premium",
+    "unit": "kg",
+    "basePrice": 12000,
+    "description": "Beras premium grade A",
+    "minOrderQty": 10,
+    "orderStep": 5,
+    "isAvailable": true,
+    "image": "https://...",
+    "stock": 150,
+    "priceUpdatedAt": "2026-09-03T00:00:00.000Z",
+    "stockUpdatedAt": "2026-09-03T00:00:00.000Z",
+    "createdAt": "2026-07-09T00:00:00.000Z"
+  },
+  "supplier": {
+    "id": "clx...",
+    "name": "UD. Sumber Rejeki",
+    "phone": "08123456789",
+    "address": "Jl. Raya Purwakarta No. 1",
+    "province": "Jawa Barat",
+    "regency": "Purwakarta",
+    "district": "Babakancikao",
+    "latitude": -6.5563,
+    "longitude": 107.4439,
+    "openStatus": true,
+    "isMarketSeller": true,
+    "marketName": "Pasar Cibeunying"
+  }
+}
+```
+
+### Behavior
+
+- Returns `404` if item not found or soft-deleted (`deletedAt` is set)
+- Uses direct Prisma query with `include: { supplier: true }` (no cross-module dependency)
+
+### Files Modified
+
+| File                                                  | Change                                           |
+| ----------------------------------------------------- | ------------------------------------------------ |
+| `src/modules/market/services/market.service.ts`       | Added `getItemDetail(id)` method                 |
+| `src/modules/market/controllers/market.controller.ts` | Added `GET /items/:id` route with `JwtAuthGuard` |
+
+### Client Reorganization Suggestion
+
+Move the **"Buat Pesanan" (Create Order)** flow to the new item detail page (`/market/items/:id`):
+
+- Current: Order creation likely lives in a separate order management page
+- Suggested: On the item detail page, show full item info + supplier profile, then a "Pesan Sekarang" button that opens the order form with the item pre-selected
+- This gives users full context (item specs, supplier location, stock, open status) before placing an order

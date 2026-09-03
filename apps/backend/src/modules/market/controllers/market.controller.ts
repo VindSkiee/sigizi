@@ -1,5 +1,7 @@
-import { Controller, Get, Post, Body, Query } from "@nestjs/common";
+import { Controller, Get, Post, Body, Query, Param } from "@nestjs/common";
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
+import { UseGuards } from "@nestjs/common";
+import { JwtAuthGuard } from "../../auth/jwt-auth.guard";
 import { MarketService } from "../services/market.service";
 import { MarketPricesQueryDto } from "../dto/market-prices-query.dto";
 import { MarketAnomaliesQueryDto } from "../dto/market-anomalies-query.dto";
@@ -14,8 +16,8 @@ export class MarketController {
   @ApiOperation({
     summary: "Get distinct provinces & regencies from suppliers",
   })
-  getRegions() {
-    return this.marketService.getSupplierRegions();
+  getRegions(@Query("page") page?: number, @Query("limit") limit?: number) {
+    return this.marketService.getSupplierRegions(page, limit);
   }
 
   @Get("markets")
@@ -24,8 +26,16 @@ export class MarketController {
     @Query("province") province: string,
     @Query("regency") regency: string,
     @Query("item") item?: string,
+    @Query("page") page?: number,
+    @Query("limit") limit?: number,
   ) {
-    return this.marketService.getDistinctMarkets(province, regency, item);
+    return this.marketService.getDistinctMarkets(
+      province,
+      regency,
+      item,
+      page,
+      limit,
+    );
   }
 
   @Get("prices")
@@ -69,5 +79,12 @@ export class MarketController {
       proposedPrice: dto.proposedPrice,
       validation: result,
     };
+  }
+
+  @Get("items/:id")
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: "Get item detail with supplier info" })
+  async getItemDetail(@Param("id") id: string) {
+    return this.marketService.getItemDetail(id);
   }
 }
