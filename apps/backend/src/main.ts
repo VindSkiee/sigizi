@@ -1,6 +1,8 @@
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+import { join } from "path";
+import { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
 import {
   AllExceptionsFilter,
@@ -10,7 +12,7 @@ import {
 } from "./common";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
   });
 
@@ -45,6 +47,9 @@ async function bootstrap() {
     credentials: true,
     allowedHeaders: "Content-Type, Accept, Authorization",
   });
+
+  // 4b. Static file serving for uploads
+  app.useStaticAssets(join(__dirname, "..", "uploads"), { prefix: "/uploads" });
 
   // 5. Global prefix (Wajib SEBELUM app.listen)
   app.setGlobalPrefix("api");

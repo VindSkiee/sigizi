@@ -168,6 +168,7 @@ export class MarketService {
         id: raw.supplier.id,
         name: raw.supplier.name,
         phone: raw.supplier.phone ?? null,
+        profileImage: raw.supplier.profileImage ?? null,
         address: raw.supplier.address ?? null,
         province: raw.supplier.province,
         regency: raw.supplier.regency,

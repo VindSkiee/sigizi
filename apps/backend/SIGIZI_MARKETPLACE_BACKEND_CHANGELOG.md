@@ -222,6 +222,7 @@ Returns a single item with its full supplier profile. Requires JWT authenticatio
     "id": "clx...",
     "name": "UD. Sumber Rejeki",
     "phone": "08123456789",
+    "profileImage": "/uploads/profiles/1693420800000-abc123.jpg",
     "address": "Jl. Raya Purwakarta No. 1",
     "province": "Jawa Barat",
     "regency": "Purwakarta",
@@ -254,3 +255,83 @@ Move the **"Buat Pesanan" (Create Order)** flow to the new item detail page (`/m
 - Current: Order creation likely lives in a separate order management page
 - Suggested: On the item detail page, show full item info + supplier profile, then a "Pesan Sekarang" button that opens the order form with the item pre-selected
 - This gives users full context (item specs, supplier location, stock, open status) before placing an order
+
+---
+
+## File Upload
+
+**Date**: 2026-09-03
+
+### New Endpoints
+
+```
+POST /api/upload/image
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+Body: file (File)
+
+200: { "url": "/uploads/items/1693420800000-abc123.jpg" }
+
+POST /api/upload/profile
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+Body: file (File)
+
+200: { "url": "/uploads/profiles/1693420800000-abc123.jpg" }
+```
+
+### Constraints
+
+| Rule          | Value                                                                                   |
+| ------------- | --------------------------------------------------------------------------------------- |
+| Allowed types | `image/jpeg`, `image/png`, `image/webp`                                                 |
+| Max size      | 5MB                                                                                     |
+| Auth          | Required (any logged-in user)                                                           |
+| Storage       | `apps/backend/uploads/items/` and `apps/backend/uploads/profiles/`                      |
+| Filename      | `${Date.now()}-${randomBytes(8).hex}${ext}` (server-controlled, no trust original name) |
+
+### Static File Serving
+
+Files are served at `/uploads/...` via `app.useStaticAssets()` in `main.ts`.
+
+Example: `http://localhost:3001/uploads/items/1693420800000-abc123.jpg`
+
+Note: No `/api` prefix — the global prefix does not apply to static assets.
+
+### Upload-Enabled Endpoints
+
+| Endpoint                                 | File field | Storage dir         | Merges into        |
+| ---------------------------------------- | ---------- | ------------------- | ------------------ |
+| `POST /api/upload/image`                 | `file`     | `uploads/items/`    | N/A (returns URL)  |
+| `POST /api/upload/profile`               | `file`     | `uploads/profiles/` | N/A (returns URL)  |
+| `POST /api/suppliers/:id/items`          | `file`     | `uploads/items/`    | `dto.image`        |
+| `PATCH /api/suppliers/:id/items/:itemId` | `file`     | `uploads/items/`    | `dto.image`        |
+| `PUT /api/suppliers/me/profile`          | `file`     | `uploads/profiles/` | `dto.profileImage` |
+
+### Client Workflow
+
+1. Upload image: `POST /api/upload/image` → get `{ url: "/uploads/items/xxx.jpg" }`
+2. Create/update item with `image: "/uploads/items/xxx.jpg"` in JSON body
+3. Upload profile: `POST /api/upload/profile` → get `{ url: "/uploads/profiles/xxx.jpg" }`
+4. Update profile with `profileImage: "/uploads/profiles/xxx.jpg"` in JSON body
+5. Render images: `${API_BASE_URL}/uploads/items/xxx.jpg`
+
+### Files Created/Modified
+
+| File                                                            | Change                                                          |
+| --------------------------------------------------------------- | --------------------------------------------------------------- |
+| `src/types/multer.d.ts`                                         | **NEW** — Local Express.Multer type declaration                 |
+| `src/common/upload/upload.module.ts`                            | **NEW** — Upload module                                         |
+| `src/common/upload/upload.controller.ts`                        | **NEW** — `POST /upload/image` and `POST /upload/profile`       |
+| `src/main.ts`                                                   | Added `useStaticAssets` for `/uploads`                          |
+| `src/app.module.ts`                                             | Registered `UploadModule`                                       |
+| `src/modules/market/services/market.service.ts`                 | Added `profileImage` to `getItemDetail()` supplier response     |
+| `src/modules/supplier/presentation/http/supplier.controller.ts` | Added `FileInterceptor` to POST items, PATCH items, PUT profile |
+| `.gitignore`                                                    | Added `uploads/`                                                |
+
+### Known MVP Limitations
+
+- No file deletion/garbage collection for orphaned uploads
+- No image resizing or optimization
+- Files stored on local disk only (not S3/CDN)
+- No virus/malware scanning

@@ -10,13 +10,21 @@ import {
   Query,
   UseGuards,
   Request,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from "@nestjs/common";
 import {
   ApiTags,
   ApiOperation,
   ApiBearerAuth,
   ApiQuery,
+  ApiConsumes,
 } from "@nestjs/swagger";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { diskStorage } from "multer";
+import { extname, join } from "path";
+import { randomBytes } from "crypto";
 import { JwtAuthGuard } from "../../../auth/jwt-auth.guard";
 import { RolesGuard, Roles } from "../../../../common";
 import { Role } from "@sigizi/shared";
@@ -27,6 +35,43 @@ import { UpdateSupplierProfileDto } from "../../application/dto/update-supplier-
 import { CreateSupplierItemDto } from "../../application/dto/create-supplier-item.dto";
 import { UpdateSupplierItemDto } from "../../application/dto/update-supplier-item.dto";
 import { PaginationDto } from "../../../../core/dto/pagination.dto";
+
+const ALLOWED_MIMES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_SIZE = 5 * 1024 * 1024;
+
+function imageFileFilter(
+  req: any,
+  file: Express.Multer.File,
+  callback: (error: Error | null, accept: boolean) => void,
+) {
+  if (!ALLOWED_MIMES.includes(file.mimetype)) {
+    return callback(
+      new BadRequestException("Only JPEG, PNG, and WebP images are allowed"),
+      false,
+    );
+  }
+  callback(null, true);
+}
+
+function storageFor(subdir: string) {
+  return diskStorage({
+    destination: join(
+      __dirname,
+      "..",
+      "..",
+      "..",
+      "..",
+      "..",
+      "uploads",
+      subdir,
+    ),
+    filename: (_req, file, cb) => {
+      const uniqueSuffix = `${Date.now()}-${randomBytes(8).toString("hex")}`;
+      const ext = extname(file.originalname).toLowerCase();
+      cb(null, `${uniqueSuffix}${ext}`);
+    },
+  });
+}
 
 @ApiTags("Suppliers")
 @Controller("suppliers")
@@ -75,8 +120,23 @@ export class SupplierController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPPLIER)
   @ApiBearerAuth()
+  @UseInterceptors(
+    FileInterceptor("file", {
+      storage: storageFor("profiles"),
+      fileFilter: imageFileFilter,
+      limits: { fileSize: MAX_SIZE },
+    }),
+  )
+  @ApiConsumes("multipart/form-data")
   @ApiOperation({ summary: "Update own profile" })
-  updateProfile(@Request() req: any, @Body() dto: UpdateSupplierProfileDto) {
+  updateProfile(
+    @Request() req: any,
+    @Body() dto: UpdateSupplierProfileDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    if (file) {
+      (dto as any).profileImage = `/uploads/profiles/${file.filename}`;
+    }
     return this.supplierService.updateProfile(req.user.supplierId, dto);
   }
 
@@ -110,8 +170,23 @@ export class SupplierController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPPLIER)
   @ApiBearerAuth()
+  @UseInterceptors(
+    FileInterceptor("file", {
+      storage: storageFor("items"),
+      fileFilter: imageFileFilter,
+      limits: { fileSize: MAX_SIZE },
+    }),
+  )
+  @ApiConsumes("multipart/form-data")
   @ApiOperation({ summary: "Add supplier item" })
-  addItem(@Param("id") id: string, @Body() dto: CreateSupplierItemDto) {
+  addItem(
+    @Param("id") id: string,
+    @Body() dto: CreateSupplierItemDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    if (file) {
+      (dto as any).image = `/uploads/items/${file.filename}`;
+    }
     return this.supplierService.addItem(id, dto);
   }
 
@@ -119,14 +194,26 @@ export class SupplierController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPPLIER)
   @ApiBearerAuth()
+  @UseInterceptors(
+    FileInterceptor("file", {
+      storage: storageFor("items"),
+      fileFilter: imageFileFilter,
+      limits: { fileSize: MAX_SIZE },
+    }),
+  )
+  @ApiConsumes("multipart/form-data")
   @ApiOperation({
-    summary: "Update supplier item (name, price, availability, etc.)",
+    summary: "Update supplier item (name, price, availability, image, etc.)",
   })
   updateItem(
     @Param("id") id: string,
     @Param("itemId") itemId: string,
     @Body() dto: UpdateSupplierItemDto,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
+    if (file) {
+      (dto as any).image = `/uploads/items/${file.filename}`;
+    }
     return this.supplierService.updateItem(itemId, dto);
   }
 

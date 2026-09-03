@@ -15,6 +15,7 @@ import { ComplaintModule } from "./modules/complaint/complaint.module";
 import { MarketModule } from "./modules/market/market.module";
 import { ReportsModule } from "./modules/reports/reports.module";
 import { InventoryModule } from "./modules/inventory/inventory.module";
+import { UploadModule } from "./common/upload/upload.module";
 import { PrismaModule } from "./database/prisma.module";
 import {
   LoggerModule,
@@ -48,6 +49,7 @@ import { HealthModule } from "./health/health.module";
     ReportsModule,
     InventoryModule,
     HealthModule,
+    UploadModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
