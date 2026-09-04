@@ -511,6 +511,217 @@ Authorization: Bearer <token>
 - No changes to existing Order API behavior
 - `parseDateOnly` follows same pattern as Reports module (`YYYY-MM-DDT00:00:00.000Z`)
 
+### Frontend Implementation — SPPG Transaction History & Detail Pages
+
+**Purpose:** Build the **History Transaksi** and **Detail Transaksi** pages for SPPG admin dashboard.
+
+**Pages to build:**
+
+1. **`/dashboard/transactions`** — Transaction history list page
+2. **`/dashboard/transactions/:id`** — Transaction detail page
+
+**List page (`/dashboard/transactions`):**
+
+- Use `GET /api/orders/transactions` with query params
+- Default: show today's transactions
+- Date range picker (start/end date)
+- Status filter dropdown (ALL, PENDING, CONFIRMED, DELIVERED, COMPLETED, CANCELLED)
+- Table columns: Tanggal, Supplier, Jumlah Item, Total, Status, Pembayaran
+- Status badge colors: PENDING=yellow, CONFIRMED=blue, DELIVERED=orange, COMPLETED=green, CANCELLED=red
+- Paid badge: Paid=green, Unpaid=gray
+- Click row → navigate to `/dashboard/transactions/:id`
+- Pagination component
+
+**Detail page (`/dashboard/transactions/:id`):**
+
+- Use `GET /api/orders/transactions/:id`
+- Header: order ID, status badge, created date
+- Section 1: Info Pesanan — total, notes, expected/actual delivery dates
+- Section 2: Pihak Lawan — supplier name, phone, address, profile image
+- Section 3: Item Pesanan — table with item name, qty, unit price, subtotal, market median, warning bypass flag
+- Section 4: Status Timeline — chronological status changes with timestamps
+- Section 5: Info Pembayaran — paidAt, payment status
+
+---
+
+## P8: Supplier Transaction History Endpoints
+
+**Date**: 2026-09-04
+
+### New Endpoints
+
+```
+GET /api/orders/supplier-transactions
+Authorization: Bearer <token>
+Query: page, limit, startDate?, endDate?, status?
+
+GET /api/orders/supplier-transactions/:id
+Authorization: Bearer <token>
+```
+
+### Design Decision
+
+Separate routes (`/orders/supplier-transactions`) instead of reusing `/orders/transactions` with role branching. Rationale:
+
+- Existing SPPG endpoints use `@Roles(Role.SPPG_ADMIN)` — no modification needed
+- Clearer authorization per endpoint
+- No risk of route conflict with `GET /orders/:id`
+
+### Authorization & Scope
+
+| Aspect                    | Detail                                     |
+| ------------------------- | ------------------------------------------ |
+| **Guard**                 | `JwtAuthGuard` + `RolesGuard`              |
+| **Roles**                 | `SUPPLIER` only                            |
+| **List scoping**          | `where.supplierId = user.supplierId`       |
+| **Detail scoping**        | `findFirst({ where: { id, supplierId } })` |
+| **Cross-supplier access** | Blocked by `supplierId` filter             |
+
+### Behavior
+
+Identical to SPPG version:
+
+- Pagination (default: today)
+- Half-open date range `[start, end)`
+- Status filter
+- `createdAt DESC` sort
+- OrderItem snapshot data (no live SupplierItem fetch)
+- Payment/delivery/cancellation information
+- Status history timeline
+
+### Response — List
+
+```json
+{
+  "items": [
+    {
+      "id": "clx...",
+      "createdAt": "2026-07-09T08:30:00.000Z",
+      "status": "COMPLETED",
+      "total": 615000,
+      "sppg": { "id": "clx...", "name": "SPPG Purwakarta" },
+      "itemCount": 3,
+      "paidAt": "2026-07-09T10:00:00.000Z"
+    }
+  ],
+  "pagination": { "page": 1, "limit": 20, "total": 12, "totalPages": 1 }
+}
+```
+
+**Key difference from SPPG list:** Counterparty is `sppg` (not `supplier`).
+
+### Response — Detail
+
+```json
+{
+  "id": "clx...",
+  "status": "COMPLETED",
+  "total": 615000,
+  "notes": "Pesanan bahan baku minggu ini",
+  "createdAt": "2026-07-09T08:30:00.000Z",
+  "updatedAt": "2026-07-09T10:00:00.000Z",
+  "paidAt": "2026-07-09T10:00:00.000Z",
+  "cancelledAt": null,
+  "cancelledReason": null,
+  "expectedDeliveryDate": "2026-07-11T00:00:00.000Z",
+  "actualDeliveryDate": "2026-07-10T14:00:00.000Z",
+  "supplier": {
+    "id": "clx...",
+    "name": "UD. Sumber Rejeki",
+    "phone": "08123456789",
+    "address": "Jl. Raya Purwakarta No. 1",
+    "profileImage": "/uploads/profiles/xxx.jpg"
+  },
+  "sppg": { "id": "clx...", "name": "SPPG Purwakarta" },
+  "items": [
+    {
+      "id": "clx...",
+      "item": { "id": "clx...", "name": "Beras Premium", "unit": "kg" },
+      "quantity": 20,
+      "unitPrice": 11500,
+      "subtotal": 230000,
+      "marketMedianAtPurchase": 12000,
+      "isWarningBypass": false,
+      "justificationNote": "Semua harga valid sesuai data pasar"
+    }
+  ],
+  "statusHistory": [
+    {
+      "id": "clx...",
+      "fromStatus": null,
+      "toStatus": "PENDING",
+      "notes": "...",
+      "createdAt": "..."
+    },
+    {
+      "id": "clx...",
+      "fromStatus": "PENDING",
+      "toStatus": "CONFIRMED",
+      "notes": null,
+      "createdAt": "..."
+    }
+  ]
+}
+```
+
+**Detail shape identical to SPPG version** — both `supplier` and `sppg` included.
+
+### Files
+
+| File                                                | Change                                                                                |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `src/modules/order/services/order.service.ts`       | Added `findSupplierTransactions()`, `findSupplierTransactionDetail()`                 |
+| `src/modules/order/controllers/order.controller.ts` | Added `GET /orders/supplier-transactions` and `GET /orders/supplier-transactions/:id` |
+| `SIGIZI_MARKETPLACE_BACKEND_CHANGELOG.md`           | Added P8 section                                                                      |
+
+### Constraints
+
+- No DTO changes (reuses `TransactionHistoryQueryDto`)
+- No barrel export changes
+- No schema migration
+- No shared package changes
+- No changes to existing SPPG endpoints
+- No changes to Order state machine
+- Direct Prisma queries (matching existing Order module pattern)
+- `parseDateOnly` reused from existing private method
+
+### Frontend Implementation — Supplier Transaction History & Detail Pages
+
+**Purpose:** Build the **Riwayat Transaksi** and **Detail Transaksi** pages for Supplier portal.
+
+**Pages to build:**
+
+1. **`/supplier/transactions`** — Transaction history list page (Supplier perspective)
+2. **`/supplier/transactions/:id`** — Transaction detail page (Supplier perspective)
+
+**List page (`/supplier/transactions`):**
+
+- Use `GET /api/orders/supplier-transactions` with query params
+- Default: show today's transactions
+- Date range picker (start/end date)
+- Status filter dropdown (ALL, PENDING, CONFIRMED, DELIVERED, COMPLETED, CANCELLED)
+- Table columns: Tanggal, SPPG, Jumlah Item, Total, Status, Pembayaran
+- Status badge colors: PENDING=yellow, CONFIRMED=blue, DELIVERED=orange, COMPLETED=green, CANCELLED=red
+- Paid badge: Paid=green, Unpaid=gray
+- Click row → navigate to `/supplier/transactions/:id`
+- Pagination component
+
+**Detail page (`/supplier/transactions/:id`):**
+
+- Use `GET /api/orders/supplier-transactions/:id`
+- Header: order ID, status badge, created date
+- Section 1: Info Pesanan — total, notes, expected/actual delivery dates
+- Section 2: Pihak Lawan — SPPG name (counterparty)
+- Section 3: Item Pesanan — table with item name, qty, unit price, subtotal, market median, warning bypass flag
+- Section 4: Status Timeline — chronological status changes with timestamps
+- Section 5: Info Pembayaran — paidAt, payment status
+
+**Key difference from SPPG pages:**
+
+- List shows `sppg` as counterparty (not `supplier`)
+- Supplier cannot confirm payment (read-only payment status)
+- Same detail layout, same status timeline
+
 ---
 
 ## Known MVP Limitations

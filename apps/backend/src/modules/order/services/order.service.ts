@@ -743,6 +743,138 @@ export class OrderService {
     return order;
   }
 
+  // ═══════════════════════════════════════════════════════════════════
+  // SUPPLIER TRANSACTION HISTORY
+  // ═══════════════════════════════════════════════════════════════════
+
+  async findSupplierTransactions(
+    supplierId: string,
+    query: {
+      page?: number;
+      limit?: number;
+      startDate?: string;
+      endDate?: string;
+      status?: OrderStatus;
+    },
+  ): Promise<PaginatedResult<any>> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    const now = new Date();
+    const todayStr = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}-${String(now.getUTCDate()).padStart(2, "0")}`;
+
+    const startDateStr = query.startDate ?? todayStr;
+    const endDateStr = query.endDate ?? todayStr;
+
+    const start = this.parseDateOnly(startDateStr);
+    const endExclusive = this.parseDateOnly(endDateStr);
+    endExclusive.setUTCDate(endExclusive.getUTCDate() + 1);
+
+    if (start >= endExclusive) {
+      throw new BadRequestException("startDate harus lebih kecil dari endDate");
+    }
+
+    const where: any = {
+      supplierId,
+      createdAt: { gte: start, lt: endExclusive },
+    };
+
+    if (query.status) {
+      where.status = query.status;
+    }
+
+    const [items, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          createdAt: true,
+          status: true,
+          total: true,
+          paidAt: true,
+          sppg: { select: { id: true, name: true } },
+          items: { select: { id: true } },
+        },
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+
+    return {
+      items: items.map((o) => ({
+        id: o.id,
+        createdAt: o.createdAt,
+        status: o.status,
+        total: o.total,
+        sppg: o.sppg,
+        itemCount: o.items.length,
+        paidAt: o.paidAt,
+      })),
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  async findSupplierTransactionDetail(id: string, supplierId: string) {
+    const order = await this.prisma.order.findFirst({
+      where: { id, supplierId },
+      select: {
+        id: true,
+        status: true,
+        total: true,
+        notes: true,
+        createdAt: true,
+        updatedAt: true,
+        paidAt: true,
+        cancelledAt: true,
+        cancelledReason: true,
+        expectedDeliveryDate: true,
+        actualDeliveryDate: true,
+        supplier: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            address: true,
+            profileImage: true,
+          },
+        },
+        sppg: { select: { id: true, name: true } },
+        items: {
+          select: {
+            id: true,
+            quantity: true,
+            unitPrice: true,
+            subtotal: true,
+            marketMedianAtPurchase: true,
+            isWarningBypass: true,
+            justificationNote: true,
+            item: { select: { id: true, name: true, unit: true } },
+          },
+        },
+        statusHistory: {
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            fromStatus: true,
+            toStatus: true,
+            notes: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException(
+        `Transaksi dengan ID ${id} tidak ditemukan atau tidak termasuk dalam cakupan Supplier Anda`,
+      );
+    }
+
+    return order;
+  }
+
   private parseDateOnly(date: string): Date {
     const parsed = new Date(`${date}T00:00:00.000Z`);
     if (Number.isNaN(parsed.getTime())) {

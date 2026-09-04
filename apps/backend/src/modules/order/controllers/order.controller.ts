@@ -67,6 +67,32 @@ export class OrderController {
     return this.orderService.findTransactionDetail(id, user.sppgId);
   }
 
+  @Get("supplier-transactions")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPPLIER)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "List transactions for Supplier (date range, paginated)",
+  })
+  findSupplierTransactions(
+    @Query() query: TransactionHistoryQueryDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.orderService.findSupplierTransactions(user.supplierId, query);
+  }
+
+  @Get("supplier-transactions/:id")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPPLIER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get transaction detail by ID (Supplier)" })
+  findSupplierTransactionDetail(
+    @Param("id") id: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.orderService.findSupplierTransactionDetail(id, user.supplierId);
+  }
+
   @Get(":id")
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
