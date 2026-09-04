@@ -9,14 +9,19 @@
 
 Implement in this order. Each phase builds on the previous.
 
-| Priority | Domain                 | Why first                                                  |
-| -------- | ---------------------- | ---------------------------------------------------------- |
-| **P0**   | File Upload            | Everything with images depends on this                     |
-| **P1**   | Supplier Management    | CRUD + profile with images, needed before market browsing  |
-| **P2**   | Market Search & Prices | Main marketplace browsing experience                       |
-| **P3**   | Item Detail            | Individual item view with supplier info, needs market data |
-| **P4**   | Marketplace Filtering  | Zero-stock/deleted exclusion (already in backend)          |
-| **P5**   | Item Taxonomy          | Category/commodity browsing, filters, item mapping         |
+| Priority | Domain                            | Why first                                                  |
+| -------- | --------------------------------- | ---------------------------------------------------------- |
+| **P0**   | File Upload                       | Everything with images depends on this                     |
+| **P1**   | Supplier Management               | CRUD + profile with images, needed before market browsing  |
+| **P2**   | Market Search & Prices            | Main marketplace browsing experience                       |
+| **P3**   | Item Detail                       | Individual item view with supplier info, needs market data |
+| **P5**   | Order Status Flow + Payment Gate  | Order workflow and payment confirmation                    |
+| **P6**   | Order Stock Reservation           | Atomic stock decrement/restore on orders                   |
+| **P7**   | SPPG Transaction History          | SPPG admin transaction list + detail                       |
+| **P8**   | Supplier Transaction History      | Supplier transaction list + detail                         |
+| **P9**   | Item Taxonomy System              | Category/commodity models, market filter extensions        |
+| **P10**  | SupplierItem Commodity Enrichment | Taxonomy data in all SupplierItem responses                |
+| **P11**  | Supplier Taxonomy API             | Authoritative taxonomy source for supplier item forms      |
 
 ---
 
@@ -725,7 +730,7 @@ Identical to SPPG version:
 
 ---
 
-## P8: Item Taxonomy System
+## P9: Item Taxonomy System
 
 ### New Models
 
@@ -815,7 +820,7 @@ All endpoints are **read-only** and **JWT-protected**.
 
 ---
 
-## P9: SupplierItem Commodity & Category Enrichment
+## P10: SupplierItem Commodity & Category Enrichment
 
 ### What Changed
 
@@ -918,7 +923,7 @@ If `commodityId` is null (item not mapped):
 
 ---
 
-## P10: Supplier Taxonomy API
+## P11: Supplier Taxonomy API
 
 ### What Changed
 
@@ -938,6 +943,14 @@ Authorization: Bearer <token> (SUPPLIER role only)
 | `SUPPLIER`   | ✅     |
 | `SPPG_ADMIN` | ❌ 403 |
 | No token     | ❌ 401 |
+
+### Expected Responses
+
+| Status | Condition                                | Body                        |
+| ------ | ---------------------------------------- | --------------------------- |
+| `200`  | Authenticated as `SUPPLIER`              | `{ categories: [...] }`     |
+| `401`  | No token or invalid/expired JWT          | `{ error: "Unauthorized" }` |
+| `403`  | Authenticated but role is not `SUPPLIER` | `{ error: "Forbidden" }`    |
 
 ### Response
 
@@ -998,6 +1011,13 @@ No duplication of query or business logic.
 - `referencePrice` is for **reference only** — it does NOT automatically populate `basePrice`.
 - The Supplier still manually inputs their selling price (`basePrice`).
 - The frontend should display `referencePrice` as a helper/suggestion, not as a mandatory or auto-filled value.
+
+**Authoritative Taxonomy Source:**
+
+- `GET /api/suppliers/taxonomy` is the **primary/authoritative** taxonomy source for the SupplierItem Create/Update flow.
+- Frontend **tidak perlu** memanggil `GET /api/categories` atau `GET /api/commodities` secara terpisah untuk flow ini.
+- Gunakan `commodityId` dari taxonomy response saat submit Create/Update SupplierItem.
+- `referencePrice` hanya sebagai informasi/harga acuan dan **tidak otomatis** menjadi `basePrice`.
 
 ---
 
