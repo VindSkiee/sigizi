@@ -34,7 +34,7 @@ export class OrderService {
     [OS.PENDING]: [OS.CONFIRMED, OS.CANCELLED],
     [OS.CONFIRMED]: [OS.DELIVERED, OS.CANCELLED],
     [OS.DELIVERED]: [OS.COMPLETED, OS.CANCELLED],
-    [OS.COMPLETED]: [],
+    [OS.COMPLETED]: [OS.CANCELLED],
     [OS.CANCELLED]: [],
   };
 
@@ -45,11 +45,17 @@ export class OrderService {
     [`${OS.PENDING}→${OS.CANCELLED}`]: [Role.SPPG_ADMIN, Role.SUPPLIER],
     [`${OS.CONFIRMED}→${OS.CANCELLED}`]: [Role.SPPG_ADMIN, Role.SUPPLIER],
     [`${OS.DELIVERED}→${OS.CANCELLED}`]: [Role.SPPG_ADMIN],
+    [`${OS.COMPLETED}→${OS.CANCELLED}`]: [Role.SPPG_ADMIN],
   };
 
   async findAll(
     pagination: PaginationDto,
-    currentUser: { id: string; role: Role; sppgId?: string; supplierId?: string },
+    currentUser: {
+      id: string;
+      role: Role;
+      sppgId?: string;
+      supplierId?: string;
+    },
     sppgId?: string,
     supplierId?: string,
     status?: OrderStatus,
@@ -428,6 +434,14 @@ export class OrderService {
       await this.validateStockRollback(id);
     }
 
+    if (newStatus === OS.COMPLETED && currentStatus === OS.DELIVERED) {
+      if (!order.paidAt) {
+        throw new BadRequestException(
+          "Order belum dibayar. Konfirmasi pembayaran terlebih dahulu melalui endpoint payment sebelum menyelesaikan order.",
+        );
+      }
+    }
+
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
       const updateData: any = {
         status: newStatus,
@@ -494,11 +508,13 @@ export class OrderService {
   async confirmPayment(orderId: string, userId: string) {
     const order = await this.findOne(orderId);
 
-    if (order.status !== OS.CONFIRMED) {
+    if (order.status !== OS.DELIVERED) {
       throw new BadRequestException(
-        `Hanya order dengan status CONFIRMED yang dapat ditandai sebagai sudah dibayar. Status saat ini: "${order.status}"`,
+        `Hanya order dengan status DELIVERED yang dapat ditandai sebagai sudah dibayar. Status saat ini: "${order.status}"`,
       );
     }
+
+    const currentStatus = order.status as OrderStatus;
 
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
       const result = await tx.order.update({
@@ -513,8 +529,8 @@ export class OrderService {
       await tx.orderStatusHistory.create({
         data: {
           orderId: orderId,
-          fromStatus: OS.CONFIRMED,
-          toStatus: OS.CONFIRMED,
+          fromStatus: currentStatus,
+          toStatus: currentStatus,
           changedById: userId,
           notes: "Pembayaran dikonfirmasi oleh SPPG",
         },

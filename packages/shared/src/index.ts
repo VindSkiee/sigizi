@@ -964,7 +964,7 @@ export const VALID_ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
   [OrderStatus.CONFIRMED]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
   [OrderStatus.DELIVERED]: [OrderStatus.COMPLETED, OrderStatus.CANCELLED],
-  [OrderStatus.COMPLETED]: [],
+  [OrderStatus.COMPLETED]: [OrderStatus.CANCELLED],
   [OrderStatus.CANCELLED]: [],
 };
 

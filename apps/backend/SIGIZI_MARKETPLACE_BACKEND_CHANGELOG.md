@@ -1,6 +1,6 @@
 # SIGIZI Marketplace Backend - Changelog
 
-**Last Updated**: 2026-09-03
+**Last Updated**: 2026-09-04
 **Scope**: Backend only (`apps/backend/`)
 
 ---
@@ -270,6 +270,57 @@ Move the **"Buat Pesanan" (Create Order)** flow to the item detail page:
 | ----------------------------------------------------- | ------------------------------------------------ |
 | `src/modules/market/services/market.service.ts`       | Added `getItemDetail(id)` method                 |
 | `src/modules/market/controllers/market.controller.ts` | Added `GET /items/:id` route with `JwtAuthGuard` |
+
+---
+
+## P5: Order Status Flow + Payment Gate
+
+**Date**: 2026-09-04
+
+### Updated Flow
+
+```
+PENDING → CONFIRMED → DELIVERED → COMPLETED → CANCELLED
+                           ↑
+                    confirmPayment (DELIVERED only)
+```
+
+### Status Machine
+
+| From      | To        | Actor                | Gate                    |
+| --------- | --------- | -------------------- | ----------------------- |
+| PENDING   | CONFIRMED | SUPPLIER             | —                       |
+| CONFIRMED | DELIVERED | SUPPLIER             | —                       |
+| DELIVERED | COMPLETED | SPPG_ADMIN           | `paidAt` must be set    |
+| COMPLETED | CANCELLED | SPPG_ADMIN           | `validateStockRollback` |
+| PENDING   | CANCELLED | SPPG_ADMIN, SUPPLIER | `reason` required       |
+| CONFIRMED | CANCELLED | SPPG_ADMIN, SUPPLIER | `reason` required       |
+| DELIVERED | CANCELLED | SPPG_ADMIN           | `reason` required       |
+
+### Payment Gate
+
+- `confirmPayment` only accepts orders with status `DELIVERED`
+- `DELIVERED → COMPLETED` checks `order.paidAt !== null`
+- If `paidAt` is not set, transition is rejected with error message
+- `order.completed` event is NOT emitted if payment gate fails
+
+### Changes
+
+| File                                                  | Change                                                             |
+| ----------------------------------------------------- | ------------------------------------------------------------------ |
+| `packages/shared/src/index.ts:967`                    | `COMPLETED → [OrderStatus.CANCELLED]` (was `[]`)                   |
+| `src/modules/order/services/order.service.ts:37`      | `COMPLETED → [OS.CANCELLED]` (was `[]`)                            |
+| `src/modules/order/services/order.service.ts:48`      | Added `COMPLETED→CANCELLED: [SPPG_ADMIN]` role                     |
+| `src/modules/order/services/order.service.ts:437-443` | Payment gate: throws if `!order.paidAt` on `DELIVERED → COMPLETED` |
+| `src/modules/order/services/order.service.ts:508-515` | `confirmPayment` accepts `DELIVERED` only (was `CONFIRMED`)        |
+
+### Behavior After
+
+- `confirmPayment` can only be called when order is `DELIVERED`
+- `DELIVERED → COMPLETED` is blocked until payment is confirmed
+- `COMPLETED → CANCELLED` now works (was dead code before)
+- `validateStockRollback()` is now reachable
+- No changes to database, events, InventoryStock, DTOs, or controller routes
 
 ---
 
