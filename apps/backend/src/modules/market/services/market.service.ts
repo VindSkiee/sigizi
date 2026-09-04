@@ -231,9 +231,11 @@ export class MarketService {
         id: true,
         marketName: true,
         items: {
-          where: item
-            ? { name: { contains: item, mode: "insensitive" } }
-            : undefined,
+          where: {
+            deletedAt: null,
+            stock: { gt: 0 },
+            ...(item ? { name: { contains: item, mode: "insensitive" } } : {}),
+          },
           select: { id: true },
         },
       },
@@ -276,6 +278,9 @@ export class MarketService {
 
   async getSupplierRegions(page: number = 1, limit: number = 20) {
     const suppliers = await this.prisma.supplier.findMany({
+      where: {
+        items: { some: { deletedAt: null, stock: { gt: 0 } } },
+      },
       select: { province: true, regency: true },
       distinct: ["province", "regency"],
       orderBy: [{ province: "asc" }, { regency: "asc" }],
@@ -556,7 +561,10 @@ export class MarketService {
     item: string | undefined,
     filter: MarketLocationFilterDto,
   ): Promise<SupplierItemWithSupplier[]> {
-    const where: Prisma.SupplierItemWhereInput = {};
+    const where: Prisma.SupplierItemWhereInput = {
+      deletedAt: null,
+      stock: { gt: 0 },
+    };
 
     if (item) {
       where.name = { contains: item, mode: "insensitive" };

@@ -1,26 +1,92 @@
 # SIGIZI Marketplace Backend - Changelog
 
-**Date**: 2026-09-03
+**Last Updated**: 2026-09-03
 **Scope**: Backend only (`apps/backend/`)
 
 ---
 
-## Summary
+## Frontend Implementation Priority
 
-Added new fields to Supplier and SupplierItem models, cleaned up Prisma migrations (replaced 15 old migrations with one `init_clean`), refactored seeder to only keep SPPG/Supplier/Items/Users/Market data, and prepared backend for marketplace-focused implementation.
+Implement in this order. Each phase builds on the previous.
+
+| Priority | Domain                 | Why first                                                  |
+| -------- | ---------------------- | ---------------------------------------------------------- |
+| **P0**   | File Upload            | Everything with images depends on this                     |
+| **P1**   | Supplier Management    | CRUD + profile with images, needed before market browsing  |
+| **P2**   | Market Search & Prices | Main marketplace browsing experience                       |
+| **P3**   | Item Detail            | Individual item view with supplier info, needs market data |
+| **P4**   | Marketplace Filtering  | Zero-stock/deleted exclusion (already in backend)          |
 
 ---
 
-## Schema Changes
+## P0: File Upload
 
-### Supplier Model
+### New Endpoints
+
+```
+POST /api/upload/image
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+Body: file (File)
+200: { "url": "/uploads/items/1693420800000-abc123.jpg" }
+
+POST /api/upload/profile
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+Body: file (File)
+200: { "url": "/uploads/profiles/1693420800000-abc123.jpg" }
+```
+
+### Constraints
+
+| Rule          | Value                                                              |
+| ------------- | ------------------------------------------------------------------ |
+| Allowed types | `image/jpeg`, `image/png`, `image/webp`                            |
+| Max size      | 5MB                                                                |
+| Auth          | Required (any logged-in user)                                      |
+| Storage       | `apps/backend/uploads/items/` and `apps/backend/uploads/profiles/` |
+| Filename      | `${Date.now()}-${randomBytes(8).hex}${ext}` (server-controlled)    |
+
+### Static File Serving
+
+Files served at `/uploads/...` via `app.useStaticAssets()` in `main.ts`.
+No `/api` prefix — global prefix does not apply to static assets.
+
+Example: `http://localhost:3001/uploads/items/1693420800000-abc123.jpg`
+
+### Client Workflow
+
+1. Upload image: `POST /api/upload/image` → get `{ url: "/uploads/items/xxx.jpg" }`
+2. Create/update item with `image: "/uploads/items/xxx.jpg"` in JSON body
+3. Upload profile: `POST /api/upload/profile` → get `{ url: "/uploads/profiles/xxx.jpg" }`
+4. Update profile with `profileImage: "/uploads/profiles/xxx.jpg"` in JSON body
+5. Render images: `${API_BASE_URL}/uploads/items/xxx.jpg`
+
+### Files
+
+| File                                     | Change                                                    |
+| ---------------------------------------- | --------------------------------------------------------- |
+| `src/types/multer.d.ts`                  | **NEW** — Local Express.Multer type declaration           |
+| `src/common/upload/upload.module.ts`     | **NEW** — Upload module                                   |
+| `src/common/upload/upload.controller.ts` | **NEW** — `POST /upload/image` and `POST /upload/profile` |
+| `src/main.ts`                            | Added `useStaticAssets` for `/uploads`                    |
+| `src/app.module.ts`                      | Registered `UploadModule`                                 |
+| `.gitignore`                             | Added `uploads/`                                          |
+
+---
+
+## P1: Supplier Management
+
+### Schema Changes
+
+#### Supplier Model — New Fields
 
 | Field          | Type      | Default | Description                           |
 | -------------- | --------- | ------- | ------------------------------------- |
 | `profileImage` | `String?` | null    | Supplier profile image URL            |
 | `openStatus`   | `Boolean` | `true`  | Whether supplier is open for business |
 
-### SupplierItem Model
+#### SupplierItem Model — New Fields
 
 | Field            | Type        | Default | Description                 |
 | ---------------- | ----------- | ------- | --------------------------- |
@@ -29,123 +95,71 @@ Added new fields to Supplier and SupplierItem models, cleaned up Prisma migratio
 | `priceUpdatedAt` | `DateTime?` | null    | Last price change timestamp |
 | `stockUpdatedAt` | `DateTime?` | null    | Last stock change timestamp |
 
----
+### Upload-Enabled Supplier Endpoints
 
-## Files Modified
+| Endpoint                                 | File field | Storage dir         | Merges into        |
+| ---------------------------------------- | ---------- | ------------------- | ------------------ |
+| `POST /api/suppliers/:id/items`          | `file`     | `uploads/items/`    | `dto.image`        |
+| `PATCH /api/suppliers/:id/items/:itemId` | `file`     | `uploads/items/`    | `dto.image`        |
+| `PUT /api/suppliers/me/profile`          | `file`     | `uploads/profiles/` | `dto.profileImage` |
 
-| File                                                                  | Change                                                                                                                                     |
-| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `prisma/schema.prisma`                                                | Added 6 new fields across Supplier + SupplierItem                                                                                          |
-| `prisma/migrations/20260903000000_init_clean/migration.sql`           | **NEW** - Complete DDL migration                                                                                                           |
-| `prisma/seed.ts`                                                      | Removed sections 5-13 (Beneficiaries, MoU, Orders, Batches, Complaints, Inventory, OpEx)                                                   |
-| `src/modules/supplier/domain/entities/supplier.entity.ts`             | Added `profileImage`, `openStatus` to constructor + `updateProfile()`                                                                      |
-| `src/modules/supplier/domain/repositories/supplier.repository.ts`     | Updated all interfaces: `CreateSupplierData`, `UpdateSupplierData`, `SupplierItemData`, `CreateSupplierItemData`, `UpdateSupplierItemData` |
-| `src/modules/supplier/application/dto/create-supplier.dto.ts`         | Added `profileImage`, `openStatus`                                                                                                         |
-| `src/modules/supplier/application/dto/update-supplier-profile.dto.ts` | Added `profileImage`, `openStatus`                                                                                                         |
-| `src/modules/supplier/application/dto/create-supplier-item.dto.ts`    | Added `image`, `stock` with `@Min(0)`                                                                                                      |
-| `src/modules/supplier/application/dto/update-supplier-item.dto.ts`    | Added `image`, `stock` with `@Min(0)`                                                                                                      |
-| `src/modules/supplier/application/services/supplier.service.ts`       | Timestamp refresh logic in `addItem()` and `updateItem()`                                                                                  |
-| `src/modules/supplier/infrastructure/prisma/supplier.repository.ts`   | Updated all Prisma mappings for new fields                                                                                                 |
-
----
-
-## Key Design Decisions
+All three accept `multipart/form-data` with optional `file` field. The uploaded URL is merged into the DTO body automatically.
 
 ### Timestamp Refresh Logic
 
-- **`addItem()`**: Both `priceUpdatedAt` and `stockUpdatedAt` set to a single `const now = new Date()`
+- **`addItem()`**: Both `priceUpdatedAt` and `stockUpdatedAt` set to `new Date()`
 - **`updateItem()`**: Uses `"basePrice" in dto` / `"stock" in dto` checks (presence-based, NOT value comparison)
   - If field is **present** in dto → refresh timestamp, even if value is identical
   - If field is **absent** → no timestamp refresh
-- Fields `updatedAt`, `priceUpdatedAt`, `stockUpdatedAt` are **NOT exposed in DTOs** (server-managed only)
+- Fields `updatedAt`, `priceUpdatedAt`, `stockUpdatedAt` are NOT exposed in DTOs (server-managed only)
 
-### Validation
+### Files
 
-- `basePrice >= 0` via `@Min(0)` decorator
-- `stock >= 0` via `@Min(0)` decorator
-- No unnecessary abstractions
-
-### Seeder Cleanup
-
-- Removed seed sections 5-13 (Beneficiaries through OperationalExpenses)
-- Kept: SPPG (3), Users (3 admin + 18 supplier + 60 market sellers), Suppliers (78 total), SupplierItems (~250+ items)
-- Prisma schema/domain for Orders, Batches, etc. remains intact — just no seed data
-
----
-
-## Migration
-
-The `init_clean` migration replaces all 15 previous migrations with a single DDL script. This is appropriate for a pre-production/hackathon project.
-
-```bash
-# Apply migration (when database is available)
-cd apps/backend
-npx prisma migrate deploy
-
-# Or for development
-npx prisma migrate dev
-```
+| File                                                                  | Change                                                             |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `prisma/schema.prisma`                                                | Added 6 new fields across Supplier + SupplierItem                  |
+| `prisma/migrations/20260903000000_init_clean/migration.sql`           | **NEW** — Complete DDL migration                                   |
+| `prisma/seed.ts`                                                      | Removed sections 5-13 ( Beneficiaries through OperationalExpenses) |
+| `src/modules/supplier/domain/entities/supplier.entity.ts`             | Added `profileImage`, `openStatus`                                 |
+| `src/modules/supplier/domain/repositories/supplier.repository.ts`     | Updated all interfaces                                             |
+| `src/modules/supplier/application/dto/create-supplier.dto.ts`         | Added `profileImage`, `openStatus`                                 |
+| `src/modules/supplier/application/dto/update-supplier-profile.dto.ts` | Added `profileImage`, `openStatus`                                 |
+| `src/modules/supplier/application/dto/create-supplier-item.dto.ts`    | Added `image`, `stock`                                             |
+| `src/modules/supplier/application/dto/update-supplier-item.dto.ts`    | Added `image`, `stock`                                             |
+| `src/modules/supplier/application/services/supplier.service.ts`       | Timestamp refresh logic                                            |
+| `src/modules/supplier/infrastructure/prisma/supplier.repository.ts`   | Updated all Prisma mappings                                        |
+| `src/modules/supplier/presentation/http/supplier.controller.ts`       | Added `FileInterceptor` to POST items, PATCH items, PUT profile    |
 
 ---
 
-## Known Issues
+## P2: Market Search & Prices
 
-1. **LSP errors on `supplier.repository.ts`**: The LSP reports errors on new schema fields (`profileImage`, `image`, `stock`, `priceUpdatedAt`, `stockUpdatedAt`). These are false positives — the Prisma client needs regeneration after the migration is applied. Run `npx prisma generate` to resolve.
+### Modified Endpoints
 
-2. **Tests not written**: `@types/jest` and `@nestjs/testing` are not in `package.json`. Tests should be added when testing dependencies are installed.
-
----
-
-## Testing Checklist
-
-When database is available:
-
-- [ ] Run `npx prisma migrate deploy`
-- [ ] Run `npx prisma db seed`
-- [ ] Verify Supplier CRUD with new fields (`profileImage`, `openStatus`)
-- [ ] Verify SupplierItem CRUD with new fields (`image`, `stock`, `priceUpdatedAt`, `stockUpdatedAt`)
-- [ ] Verify timestamp refresh on `addItem()` (both timestamps set)
-- [ ] Verify timestamp refresh on `updateItem()` with `basePrice` change
-- [ ] Verify timestamp refresh on `updateItem()` with `stock` change
-- [ ] Verify NO timestamp refresh when only `name` or `description` changes
-- [ ] Verify validation: `basePrice < 0` rejected, `stock < 0` rejected
-
----
-
-## Market API Improvements
-
-**Date**: 2026-09-03
-
-### New Files
-
-| File                                                      | Description                                 |
-| --------------------------------------------------------- | ------------------------------------------- |
-| `src/modules/market/dto/market-paginated-response.dto.ts` | Generic `{ data, meta }` pagination wrapper |
-
-### Modified Files
-
-| File                                                   | Change                                                       |
-| ------------------------------------------------------ | ------------------------------------------------------------ |
-| `src/modules/market/dto/market-location-filter.dto.ts` | Added `page` and `limit` fields to `MarketLocationFilterDto` |
-| `src/modules/market/services/market.service.ts`        | Sorting, pagination, stock/freshness fields                  |
-| `src/modules/market/controllers/market.controller.ts`  | Pagination params for regions/markets                        |
+| Endpoint                      | Change                                                 |
+| ----------------------------- | ------------------------------------------------------ |
+| `GET /market/prices`          | Sorting, pagination, stock/freshness/openStatus fields |
+| `GET /market/regions`         | Pagination                                             |
+| `GET /market/markets`         | Pagination                                             |
+| `GET /market/anomalies`       | Pagination                                             |
+| `GET /market/het-suggestion`  | Pagination (via getMarketPricesRaw)                    |
+| `POST /market/validate-price` | Unchanged (no pagination)                              |
 
 ### Sorting
 
 - **Non-GPS mode**: `stock desc`, `priceUpdatedAt desc`, `stockUpdatedAt desc`, `id asc`
 - **GPS mode**: `distanceKm asc` (primary), then stock/freshness/id as secondary
-- Added `sortSupplierItems()` private method
 
 ### Pagination
 
-All collection endpoints now return `{ data, meta }` where:
+All collection endpoints return `{ data, meta }`:
 
 ```typescript
 {
   data: T,
   meta: {
-    page: number,
-    limit: number,
+    page: number,       // default: 1
+    limit: number,      // default: 20, max: 100
     total: number,
     totalPages: number,
     hasNextPage: boolean,
@@ -154,41 +168,42 @@ All collection endpoints now return `{ data, meta }` where:
 }
 ```
 
-- `GET /market/prices` — paginated suppliers array within data
-- `GET /market/regions` — paginated provinces array
-- `GET /market/markets` — paginated markets array
-- `GET /market/anomalies` — paginated anomalies array
-- `GET /market/het-suggestion` — paginated (via getMarketPricesRaw)
-- `POST /market/validate-price` — unchanged (no pagination)
-
-**Default**: `page=1, limit=20`. Max `limit=100`.
-
-**Fetch-all in-memory pagination**: Entire scope set is fetched, sorted, then sliced. Acceptable for MVP. Future optimization: database-level pagination with WHERE cursors.
+**Fetch-all in-memory pagination**: Entire scope set is fetched, sorted, then sliced. Acceptable for MVP.
 
 **HET/anomaly calculations**: Always use full resolved dataset BEFORE pagination.
 
-### New SupplierItem Fields in Response
+### New Fields in Supplier Response
 
 Each supplier in `GET /market/prices` now includes:
 
-| Field            | Type             | Description                                                            |
-| ---------------- | ---------------- | ---------------------------------------------------------------------- |
-| `stock`          | `number`         | Current stock quantity                                                 |
-| `priceUpdatedAt` | `string \| null` | ISO timestamp of last price change                                     |
-| `stockUpdatedAt` | `string \| null` | ISO timestamp of last stock change                                     |
-| `openStatus`     | `boolean`        | Whether supplier is open for business (`true` = buka, `false` = tutup) |
+| Field            | Type             | Description                        |
+| ---------------- | ---------------- | ---------------------------------- |
+| `stock`          | `number`         | Current stock quantity             |
+| `priceUpdatedAt` | `string \| null` | ISO timestamp of last price change |
+| `stockUpdatedAt` | `string \| null` | ISO timestamp of last stock change |
+| `openStatus`     | `boolean`        | `true` = buka, `false` = tutup     |
 
-### Internal Callers
+### Marketplace Filtering
 
-- `getMarketPricesRaw()` — unpaginated, used by `getHETSuggestion()` and `getMarketContextForItem()`
-- `getMarketPrices()` — paginated, used by controller
-- `validatePrice()` — unchanged, calls `getMarketPricesRaw()` via `getMarketContextForItem()`
+All market queries exclude:
+
+- Soft-deleted items (`deletedAt = null`)
+- Zero-stock items (`stock > 0`)
+
+Applied in `fetchSupplierItems()`, `getDistinctMarkets()`, and `getSupplierRegions()`.
+
+### Files
+
+| File                                                      | Change                                                 |
+| --------------------------------------------------------- | ------------------------------------------------------ |
+| `src/modules/market/dto/market-paginated-response.dto.ts` | **NEW** — Generic `{ data, meta }` wrapper             |
+| `src/modules/market/dto/market-location-filter.dto.ts`    | Added `page`, `limit` fields                           |
+| `src/modules/market/services/market.service.ts`           | Sorting, pagination, stock/freshness fields, filtering |
+| `src/modules/market/controllers/market.controller.ts`     | Pagination params, new routes                          |
 
 ---
 
-## Item Detail API
-
-**Date**: 2026-09-03
+## P3: Item Detail
 
 ### New Endpoint
 
@@ -197,7 +212,7 @@ GET /market/items/:id
 Authorization: Bearer <token>
 ```
 
-Returns a single item with its full supplier profile. Requires JWT authentication.
+Returns a single item with its full supplier profile. Requires JWT.
 
 ### Response Shape
 
@@ -212,7 +227,7 @@ Returns a single item with its full supplier profile. Requires JWT authenticatio
     "minOrderQty": 10,
     "orderStep": 5,
     "isAvailable": true,
-    "image": "https://...",
+    "image": "/uploads/items/xxx.jpg",
     "stock": 150,
     "priceUpdatedAt": "2026-09-03T00:00:00.000Z",
     "stockUpdatedAt": "2026-09-03T00:00:00.000Z",
@@ -222,7 +237,7 @@ Returns a single item with its full supplier profile. Requires JWT authenticatio
     "id": "clx...",
     "name": "UD. Sumber Rejeki",
     "phone": "08123456789",
-    "profileImage": "/uploads/profiles/1693420800000-abc123.jpg",
+    "profileImage": "/uploads/profiles/xxx.jpg",
     "address": "Jl. Raya Purwakarta No. 1",
     "province": "Jawa Barat",
     "regency": "Purwakarta",
@@ -239,99 +254,53 @@ Returns a single item with its full supplier profile. Requires JWT authenticatio
 ### Behavior
 
 - Returns `404` if item not found or soft-deleted (`deletedAt` is set)
-- Uses direct Prisma query with `include: { supplier: true }` (no cross-module dependency)
+- Direct Prisma query with `include: { supplier: true }` (no cross-module dependency)
 
-### Files Modified
+### Client Reorganization Suggestion
+
+Move the **"Buat Pesanan" (Create Order)** flow to the item detail page:
+
+- Show full item info + supplier profile
+- "Pesan Sekarang" button opens order form with item pre-selected
+- Users get full context before ordering
+
+### Files
 
 | File                                                  | Change                                           |
 | ----------------------------------------------------- | ------------------------------------------------ |
 | `src/modules/market/services/market.service.ts`       | Added `getItemDetail(id)` method                 |
 | `src/modules/market/controllers/market.controller.ts` | Added `GET /items/:id` route with `JwtAuthGuard` |
 
-### Client Reorganization Suggestion
+---
 
-Move the **"Buat Pesanan" (Create Order)** flow to the new item detail page (`/market/items/:id`):
+## Known MVP Limitations
 
-- Current: Order creation likely lives in a separate order management page
-- Suggested: On the item detail page, show full item info + supplier profile, then a "Pesan Sekarang" button that opens the order form with the item pre-selected
-- This gives users full context (item specs, supplier location, stock, open status) before placing an order
+1. No file deletion/garbage collection for orphaned uploads
+2. No image resizing or optimization
+3. Files stored on local disk only (not S3/CDN)
+4. No virus/malware scanning
+5. Fetch-all in-memory pagination (not DB-level cursors)
+6. Tests not written (`@types/jest` and `@nestjs/testing` not installed)
 
 ---
 
-## File Upload
+## Migration
 
-**Date**: 2026-09-03
+The `init_clean` migration replaces all 15 previous migrations with a single DDL script.
 
-### New Endpoints
-
-```
-POST /api/upload/image
-Authorization: Bearer <token>
-Content-Type: multipart/form-data
-Body: file (File)
-
-200: { "url": "/uploads/items/1693420800000-abc123.jpg" }
-
-POST /api/upload/profile
-Authorization: Bearer <token>
-Content-Type: multipart/form-data
-Body: file (File)
-
-200: { "url": "/uploads/profiles/1693420800000-abc123.jpg" }
+```bash
+cd apps/backend
+npx prisma migrate deploy   # apply migration
+npx prisma db seed          # seed data (optional)
+npx prisma generate         # regenerate client
 ```
 
-### Constraints
+---
 
-| Rule          | Value                                                                                   |
-| ------------- | --------------------------------------------------------------------------------------- |
-| Allowed types | `image/jpeg`, `image/png`, `image/webp`                                                 |
-| Max size      | 5MB                                                                                     |
-| Auth          | Required (any logged-in user)                                                           |
-| Storage       | `apps/backend/uploads/items/` and `apps/backend/uploads/profiles/`                      |
-| Filename      | `${Date.now()}-${randomBytes(8).hex}${ext}` (server-controlled, no trust original name) |
+## Seed Data
 
-### Static File Serving
-
-Files are served at `/uploads/...` via `app.useStaticAssets()` in `main.ts`.
-
-Example: `http://localhost:3001/uploads/items/1693420800000-abc123.jpg`
-
-Note: No `/api` prefix — the global prefix does not apply to static assets.
-
-### Upload-Enabled Endpoints
-
-| Endpoint                                 | File field | Storage dir         | Merges into        |
-| ---------------------------------------- | ---------- | ------------------- | ------------------ |
-| `POST /api/upload/image`                 | `file`     | `uploads/items/`    | N/A (returns URL)  |
-| `POST /api/upload/profile`               | `file`     | `uploads/profiles/` | N/A (returns URL)  |
-| `POST /api/suppliers/:id/items`          | `file`     | `uploads/items/`    | `dto.image`        |
-| `PATCH /api/suppliers/:id/items/:itemId` | `file`     | `uploads/items/`    | `dto.image`        |
-| `PUT /api/suppliers/me/profile`          | `file`     | `uploads/profiles/` | `dto.profileImage` |
-
-### Client Workflow
-
-1. Upload image: `POST /api/upload/image` → get `{ url: "/uploads/items/xxx.jpg" }`
-2. Create/update item with `image: "/uploads/items/xxx.jpg"` in JSON body
-3. Upload profile: `POST /api/upload/profile` → get `{ url: "/uploads/profiles/xxx.jpg" }`
-4. Update profile with `profileImage: "/uploads/profiles/xxx.jpg"` in JSON body
-5. Render images: `${API_BASE_URL}/uploads/items/xxx.jpg`
-
-### Files Created/Modified
-
-| File                                                            | Change                                                          |
-| --------------------------------------------------------------- | --------------------------------------------------------------- |
-| `src/types/multer.d.ts`                                         | **NEW** — Local Express.Multer type declaration                 |
-| `src/common/upload/upload.module.ts`                            | **NEW** — Upload module                                         |
-| `src/common/upload/upload.controller.ts`                        | **NEW** — `POST /upload/image` and `POST /upload/profile`       |
-| `src/main.ts`                                                   | Added `useStaticAssets` for `/uploads`                          |
-| `src/app.module.ts`                                             | Registered `UploadModule`                                       |
-| `src/modules/market/services/market.service.ts`                 | Added `profileImage` to `getItemDetail()` supplier response     |
-| `src/modules/supplier/presentation/http/supplier.controller.ts` | Added `FileInterceptor` to POST items, PATCH items, PUT profile |
-| `.gitignore`                                                    | Added `uploads/`                                                |
-
-### Known MVP Limitations
-
-- No file deletion/garbage collection for orphaned uploads
-- No image resizing or optimization
-- Files stored on local disk only (not S3/CDN)
-- No virus/malware scanning
+- SPPG: 3
+- Users: 3 admin + 18 supplier + 60 market sellers
+- Suppliers: 78 total
+- SupplierItems: ~250+ items
+- Beneficiaries, MoU, Orders, Batches, Complaints, Inventory, OpEx: schema intact, no seed data
