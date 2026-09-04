@@ -22,6 +22,11 @@
     "db:reset": "cd apps/backend && pnpm prisma:reset",
     "db:fresh": "cd apps/backend && pnpm prisma:fresh",
     "db:reseed": "cd apps/backend && pnpm prisma:reseed",
+    "test": "turbo run test --filter=@sigizi/backend",
+    "test:backend": "turbo run test --filter=@sigizi/backend",
+    "test:backend:watch": "cd apps/backend && pnpm test:watch",
+    "test:backend:cov": "cd apps/backend && pnpm test:cov",
+    "test:backend:e2e": "cd apps/backend && pnpm test:e2e",
     "env:dev": "copy .env apps\\portal\\.env.local",
     "env:tunnel": "copy .env.tunnel apps\\portal\\.env.local"
   },
