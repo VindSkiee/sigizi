@@ -918,6 +918,89 @@ If `commodityId` is null (item not mapped):
 
 ---
 
+## P10: Supplier Taxonomy API
+
+### What Changed
+
+Added a read-only endpoint for Suppliers to fetch item taxonomy (categories + commodities + reference prices) for the Create/Update SupplierItem form.
+
+### New Endpoint
+
+```
+GET /api/suppliers/taxonomy
+Authorization: Bearer <token> (SUPPLIER role only)
+```
+
+### Authorization
+
+| Role         | Access |
+| ------------ | ------ |
+| `SUPPLIER`   | ✅     |
+| `SPPG_ADMIN` | ❌ 403 |
+| No token     | ❌ 401 |
+
+### Response
+
+```json
+{
+  "categories": [
+    {
+      "id": "cat_karbohidrat",
+      "name": "Karbohidrat",
+      "commodities": [
+        {
+          "id": "com_beras",
+          "name": "Beras",
+          "referencePrice": 15000
+        }
+      ]
+    }
+  ]
+}
+```
+
+`referencePrice` berasal dari `ItemCommodity.referencePrice` dan hanya menjadi **harga acuan/informasi**, bukan otomatis menjadi `SupplierItem.basePrice`.
+
+Category tanpa commodity dikembalikan dengan `commodities: []`.
+
+### Implementation
+
+| File                     | Change                                              |
+| ------------------------ | --------------------------------------------------- |
+| `supplier.module.ts`     | Import `CategoryModule`                             |
+| `supplier.service.ts`    | Inject `CategoryService`, add `findTaxonomy()`      |
+| `supplier.controller.ts` | Add `GET /taxonomy` endpoint with JWT + Roles guard |
+
+Delegation chain: `SupplierController` → `SupplierService.findTaxonomy()` → `CategoryService.findAllCategories()`
+
+No duplication of query or business logic.
+
+### What Was NOT Changed
+
+- Prisma schema/migration
+- SupplierItem CRUD/business logic
+- Existing `/api/categories` and `/api/commodities`
+- No new DTO (read-only, no request body)
+- No shared type changes
+
+### Frontend Sync Notes
+
+**Flow:**
+
+1. Frontend fetches `GET /api/suppliers/taxonomy` when the SupplierItem create/update form opens.
+2. Display **Category** dropdown (from `categories[].name`).
+3. When a category is selected, show **Commodity/Subcategory** dropdown (from `category.commodities[].name`).
+4. When a commodity is selected, display `referencePrice` as informational "Harga Acuan Pasar".
+5. The `commodityId` of the selected commodity is sent to `POST /api/suppliers/:id/items` or `PATCH /api/suppliers/:id/items/:itemId` (existing endpoints).
+
+**Important:**
+
+- `referencePrice` is for **reference only** — it does NOT automatically populate `basePrice`.
+- The Supplier still manually inputs their selling price (`basePrice`).
+- The frontend should display `referencePrice` as a helper/suggestion, not as a mandatory or auto-filled value.
+
+---
+
 ## Known MVP Limitations
 
 1. No file deletion/garbage collection for orphaned uploads

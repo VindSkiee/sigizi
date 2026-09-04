@@ -3,8 +3,10 @@ import { SupplierController } from "./presentation/http/supplier.controller";
 import { SupplierService } from "./application/services/supplier.service";
 import { PrismaSupplierRepository } from "./infrastructure/prisma/supplier.repository";
 import { SUPPLIER_REPOSITORY } from "./domain";
+import { CategoryModule } from "../category/category.module";
 
 @Module({
+  imports: [CategoryModule],
   controllers: [SupplierController],
   providers: [
     SupplierService,

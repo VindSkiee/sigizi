@@ -99,6 +99,18 @@ export class SupplierController {
     return this.supplierService.findOne(req.user.supplierId);
   }
 
+  @Get("taxonomy")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPPLIER)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      "Get item taxonomy (categories + commodities + reference prices) for SupplierItem form",
+  })
+  getTaxonomy() {
+    return this.supplierService.findTaxonomy();
+  }
+
   @Get(":id")
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

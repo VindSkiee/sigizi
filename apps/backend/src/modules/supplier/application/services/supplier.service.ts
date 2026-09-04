@@ -17,12 +17,14 @@ import {
   PaginatedResult,
 } from "../../../../core/dto/pagination.dto";
 import type { UpdateSupplierItemData } from "../../domain";
+import { CategoryService } from "../../../category/category.service";
 
 @Injectable()
 export class SupplierService {
   constructor(
     @Inject(SUPPLIER_REPOSITORY)
     private readonly repository: SupplierRepository,
+    private readonly categoryService: CategoryService,
   ) {}
 
   async findAll(
@@ -135,5 +137,9 @@ export class SupplierService {
       });
     }
     await this.repository.removeItem(itemId);
+  }
+
+  async findTaxonomy() {
+    return this.categoryService.findAllCategories();
   }
 }
