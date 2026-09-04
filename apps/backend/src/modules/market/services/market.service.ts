@@ -56,6 +56,7 @@ interface SupplierItemWithSupplier {
   stock: number;
   priceUpdatedAt: Date | null;
   stockUpdatedAt: Date | null;
+  commodityId: string | null;
   supplier: {
     id: string;
     name: string;
@@ -101,24 +102,7 @@ export interface IntegratedValidationResult {
 
 @Injectable()
 export class MarketService {
-  private static readonly MASTER_REFERENCE_PRICES: ReadonlyArray<{
-    keywords: readonly string[];
-    price: number;
-  }> = [
-    { keywords: ["beras"], price: 15_000 },
-    { keywords: ["kentang"], price: 12_000 },
-    { keywords: ["ayam"], price: 40_000 },
-    { keywords: ["sapi"], price: 120_000 },
-    { keywords: ["telur"], price: 28_000 },
-    { keywords: ["ikan"], price: 35_000 },
-    { keywords: ["tahu"], price: 8_000 },
-    { keywords: ["tempe"], price: 10_000 },
-    { keywords: ["susu"], price: 18_000 },
-    { keywords: ["minyak"], price: 16_000 },
-    { keywords: ["wortel"], price: 10_000 },
-    { keywords: ["bayam"], price: 8_000 },
-    { keywords: ["sawi"], price: 7_000 },
-  ];
+  private static readonly FALLBACK_MASTER_PRICE = 20_000;
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -141,7 +125,12 @@ export class MarketService {
   async getItemDetail(id: string) {
     const raw = await this.prisma.supplierItem.findUnique({
       where: { id },
-      include: { supplier: true },
+      include: {
+        supplier: true,
+        commodity: {
+          include: { category: true },
+        },
+      },
     });
 
     if (!raw || raw.deletedAt) {
@@ -162,6 +151,18 @@ export class MarketService {
         stock: raw.stock,
         priceUpdatedAt: raw.priceUpdatedAt?.toISOString() ?? null,
         stockUpdatedAt: raw.stockUpdatedAt?.toISOString() ?? null,
+        commodityId: raw.commodityId ?? null,
+        commodity: raw.commodity
+          ? {
+              id: raw.commodity.id,
+              name: raw.commodity.name,
+              referencePrice: raw.commodity.referencePrice,
+              category: {
+                id: raw.commodity.category.id,
+                name: raw.commodity.category.name,
+              },
+            }
+          : null,
         createdAt: raw.createdAt.toISOString(),
       },
       supplier: {
@@ -314,33 +315,43 @@ export class MarketService {
     const allItems = await this.fetchSupplierItems(undefined, filter);
     const scopedItems = this.resolveScope(allItems, filter).items;
 
-    const itemGroups = new Map<string, number[]>();
+    // Group by commodityId (fallback to name for items without commodity)
+    const itemGroups = new Map<string, { name: string; prices: number[] }>();
     for (const supplierItem of scopedItems) {
-      const prices = itemGroups.get(supplierItem.name) ?? [];
-      prices.push(supplierItem.basePrice);
-      itemGroups.set(supplierItem.name, prices);
+      const groupKey = supplierItem.commodityId ?? supplierItem.name;
+      const existing = itemGroups.get(groupKey);
+      if (existing) {
+        existing.prices.push(supplierItem.basePrice);
+      } else {
+        itemGroups.set(groupKey, {
+          name: supplierItem.name,
+          prices: [supplierItem.basePrice],
+        });
+      }
     }
 
     const allAnomalies: Array<{
       item: string;
+      commodityId: string | null;
       outlierCount: number;
       prices: number[];
     }> = [];
 
-    for (const [itemName, prices] of itemGroups) {
-      if (prices.length < MIN_IQR_SAMPLE) continue;
+    for (const [groupKey, group] of itemGroups) {
+      if (group.prices.length < MIN_IQR_SAMPLE) continue;
 
-      const sorted = [...prices].sort((a, b) => a - b);
+      const sorted = [...group.prices].sort((a, b) => a - b);
       const bounds = this.calculateIQRBounds(sorted);
       if (!bounds) continue;
 
-      const outlierPrices = prices.filter(
+      const outlierPrices = group.prices.filter(
         (price) => price < bounds.lower || price > bounds.upper,
       );
 
       if (outlierPrices.length > 0) {
         allAnomalies.push({
-          item: itemName,
+          item: group.name,
+          commodityId: groupKey === group.name ? null : groupKey,
           outlierCount: outlierPrices.length,
           prices: outlierPrices,
         });
@@ -366,7 +377,10 @@ export class MarketService {
 
   async getHETSuggestion(item: string, filter: MarketLocationFilterDto = {}) {
     const result = await this.getMarketPricesRaw(item, filter);
-    const masterPrice = this.getMasterReferencePrice(item);
+    const masterPrice = await this.getMasterReferencePrice(
+      item,
+      filter.commodityId,
+    );
     const { statistics, sampleCount, scopeUsed } = result;
 
     if (sampleCount === 0 || scopeUsed === "master") {
@@ -422,7 +436,10 @@ export class MarketService {
     itemName: string,
     filter: MarketLocationFilterDto = {},
   ): Promise<MarketValidationContext> {
-    const masterPrice = this.getMasterReferencePrice(itemName);
+    const masterPrice = await this.getMasterReferencePrice(
+      itemName,
+      filter.commodityId,
+    );
     const marketPrices = await this.getMarketPricesRaw(itemName, filter);
 
     let basedOn: HETBasedOn;
@@ -570,6 +587,15 @@ export class MarketService {
       where.name = { contains: item, mode: "insensitive" };
     }
 
+    // Taxonomy filters
+    if (filter.commodityId) {
+      where.commodityId = filter.commodityId;
+    }
+
+    if (filter.categoryId) {
+      where.commodity = { categoryId: filter.categoryId };
+    }
+
     const supplierFilter: Record<string, any> = {};
 
     if (filter.province) {
@@ -606,6 +632,7 @@ export class MarketService {
         stock: true,
         priceUpdatedAt: true,
         stockUpdatedAt: true,
+        commodityId: true,
         supplier: {
           select: {
             id: true,
@@ -982,16 +1009,37 @@ export class MarketService {
     };
   }
 
-  private getMasterReferencePrice(item: string): number {
-    const normalizedItem = item.toLowerCase();
+  private async getMasterReferencePrice(
+    itemName: string,
+    commodityId?: string,
+  ): Promise<number> {
+    // 1. If commodityId provided, look up referencePrice from ItemCommodity
+    if (commodityId) {
+      const commodity = await this.prisma.itemCommodity.findUnique({
+        where: { id: commodityId },
+        select: { referencePrice: true, name: true },
+      });
+      if (commodity) return commodity.referencePrice;
+    }
 
-    for (const entry of MarketService.MASTER_REFERENCE_PRICES) {
-      if (entry.keywords.some((keyword) => normalizedItem.includes(keyword))) {
-        return entry.price;
+    // 2. Try to find a matching commodity by item name
+    const commodities = await this.prisma.itemCommodity.findMany({
+      where: { isActive: true },
+      select: { name: true, referencePrice: true },
+    });
+
+    const normalizedItem = itemName.toLowerCase();
+    for (const c of commodities) {
+      if (
+        normalizedItem.includes(c.name.toLowerCase()) ||
+        c.name.toLowerCase().includes(normalizedItem)
+      ) {
+        return c.referencePrice;
       }
     }
 
-    return 20_000;
+    // 3. Fallback
+    return MarketService.FALLBACK_MASTER_PRICE;
   }
 
   private calculateMedian(sorted: number[]): number {

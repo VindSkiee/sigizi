@@ -63,4 +63,11 @@ export class UpdateSupplierItemDto {
   @IsNumber()
   @Min(0)
   stock?: number;
+
+  @ApiPropertyOptional({
+    description: "ID komoditas (link ke taxonomy ItemCommodity)",
+  })
+  @IsOptional()
+  @IsString()
+  commodityId?: string;
 }

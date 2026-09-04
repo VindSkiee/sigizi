@@ -503,6 +503,271 @@ async function main() {
   // 4. Create Supplier Items (~85 items for realistic market simulation)
   // ============================================================================
 
+  // ============================================================================
+  // 3A. ITEM TAXONOMY — Categories & Commodities
+  // ============================================================================
+
+  const categories = await Promise.all([
+    prisma.itemCategory.upsert({
+      where: { id: "cat_karbohidrat" },
+      update: {},
+      create: {
+        id: "cat_karbohidrat",
+        name: "Karbohidrat",
+        description: "Sumber karbohidrat utama (nasi, mie, kentang, dll)",
+        sortOrder: 1,
+      },
+    }),
+    prisma.itemCategory.upsert({
+      where: { id: "cat_protein_hewani" },
+      update: {},
+      create: {
+        id: "cat_protein_hewani",
+        name: "Protein Hewani",
+        description: "Sumber protein dari hewan (ayam, sapi, telur, ikan)",
+        sortOrder: 2,
+      },
+    }),
+    prisma.itemCategory.upsert({
+      where: { id: "cat_protein_nabati" },
+      update: {},
+      create: {
+        id: "cat_protein_nabati",
+        name: "Protein Nabati",
+        description: "Sumber protein dari tumbuhan (tahu, tempe, kacang)",
+        sortOrder: 3,
+      },
+    }),
+    prisma.itemCategory.upsert({
+      where: { id: "cat_sayur" },
+      update: {},
+      create: {
+        id: "cat_sayur",
+        name: "Sayur",
+        description: "Sayuran segar dan olahan",
+        sortOrder: 4,
+      },
+    }),
+    prisma.itemCategory.upsert({
+      where: { id: "cat_bumbu" },
+      update: {},
+      create: {
+        id: "cat_bumbu",
+        name: "Bumbu & Rempah",
+        description: "Bumbu dapur dan rempah-rempah",
+        sortOrder: 5,
+      },
+    }),
+    prisma.itemCategory.upsert({
+      where: { id: "cat_lainnya" },
+      update: {},
+      create: {
+        id: "cat_lainnya",
+        name: "Lainnya",
+        description: "Bahan makanan lainnya (minyak, gula, susu, dll)",
+        sortOrder: 6,
+      },
+    }),
+  ]);
+
+  console.log("✅ Categories seeded:", categories.length);
+
+  // Create commodities with reference prices
+  const commodities = await Promise.all([
+    prisma.itemCommodity.upsert({
+      where: { id: "com_beras" },
+      update: {},
+      create: {
+        id: "com_beras",
+        name: "Beras",
+        description: "Beras untuk nasi",
+        referencePrice: 15000,
+        categoryId: "cat_karbohidrat",
+      },
+    }),
+    prisma.itemCommodity.upsert({
+      where: { id: "com_kentang" },
+      update: {},
+      create: {
+        id: "com_kentang",
+        name: "Kentang",
+        description: "Kentang segar",
+        referencePrice: 12000,
+        categoryId: "cat_karbohidrat",
+      },
+    }),
+    prisma.itemCommodity.upsert({
+      where: { id: "com_ayam" },
+      update: {},
+      create: {
+        id: "com_ayam",
+        name: "Ayam",
+        description: "Daging ayam potong",
+        referencePrice: 40000,
+        categoryId: "cat_protein_hewani",
+      },
+    }),
+    prisma.itemCommodity.upsert({
+      where: { id: "com_sapi" },
+      update: {},
+      create: {
+        id: "com_sapi",
+        name: "Sapi",
+        description: "Daging sapi",
+        referencePrice: 120000,
+        categoryId: "cat_protein_hewani",
+      },
+    }),
+    prisma.itemCommodity.upsert({
+      where: { id: "com_telur" },
+      update: {},
+      create: {
+        id: "com_telur",
+        name: "Telur",
+        description: "Telur ayam",
+        referencePrice: 28000,
+        categoryId: "cat_protein_hewani",
+      },
+    }),
+    prisma.itemCommodity.upsert({
+      where: { id: "com_ikan" },
+      update: {},
+      create: {
+        id: "com_ikan",
+        name: "Ikan",
+        description: "Ikan segar",
+        referencePrice: 35000,
+        categoryId: "cat_protein_hewani",
+      },
+    }),
+    prisma.itemCommodity.upsert({
+      where: { id: "com_tahu" },
+      update: {},
+      create: {
+        id: "com_tahu",
+        name: "Tahu",
+        description: "Tahu putih",
+        referencePrice: 8000,
+        categoryId: "cat_protein_nabati",
+      },
+    }),
+    prisma.itemCommodity.upsert({
+      where: { id: "com_tempe" },
+      update: {},
+      create: {
+        id: "com_tempe",
+        name: "Tempe",
+        description: "Tempe kedelai",
+        referencePrice: 10000,
+        categoryId: "cat_protein_nabati",
+      },
+    }),
+    prisma.itemCommodity.upsert({
+      where: { id: "com_bayam" },
+      update: {},
+      create: {
+        id: "com_bayam",
+        name: "Bayam",
+        description: "Sayur bayam segar",
+        referencePrice: 8000,
+        categoryId: "cat_sayur",
+      },
+    }),
+    prisma.itemCommodity.upsert({
+      where: { id: "com_wortel" },
+      update: {},
+      create: {
+        id: "com_wortel",
+        name: "Wortel",
+        description: "Wortel segar",
+        referencePrice: 10000,
+        categoryId: "cat_sayur",
+      },
+    }),
+    prisma.itemCommodity.upsert({
+      where: { id: "com_sawi" },
+      update: {},
+      create: {
+        id: "com_sawi",
+        name: "Sawi",
+        description: "Sayur sawi hijau",
+        referencePrice: 7000,
+        categoryId: "cat_sayur",
+      },
+    }),
+    prisma.itemCommodity.upsert({
+      where: { id: "com_minyak" },
+      update: {},
+      create: {
+        id: "com_minyak",
+        name: "Minyak Goreng",
+        referencePrice: 16000,
+        categoryId: "cat_lainnya",
+      },
+    }),
+    prisma.itemCommodity.upsert({
+      where: { id: "com_gula" },
+      update: {},
+      create: {
+        id: "com_gula",
+        name: "Gula Pasir",
+        referencePrice: 14000,
+        categoryId: "cat_lainnya",
+      },
+    }),
+    prisma.itemCommodity.upsert({
+      where: { id: "com_garam" },
+      update: {},
+      create: {
+        id: "com_garam",
+        name: "Garam",
+        referencePrice: 5000,
+        categoryId: "cat_bumbu",
+      },
+    }),
+    prisma.itemCommodity.upsert({
+      where: { id: "com_bawang_merah" },
+      update: {},
+      create: {
+        id: "com_bawang_merah",
+        name: "Bawang Merah",
+        referencePrice: 28000,
+        categoryId: "cat_bumbu",
+      },
+    }),
+    prisma.itemCommodity.upsert({
+      where: { id: "com_cabai" },
+      update: {},
+      create: {
+        id: "com_cabai",
+        name: "Cabai",
+        referencePrice: 38000,
+        categoryId: "cat_bumbu",
+      },
+    }),
+  ]);
+
+  console.log("✅ Commodities seeded:", commodities.length);
+
+  // Map item names to commodityIds for automatic linking
+  const commodityMap: Record<string, string> = {
+    "Beras Premium": "com_beras",
+    "Daging Ayam": "com_ayam",
+    "Telur Ayam": "com_telur",
+    "Tahu Putih": "com_tahu",
+    Tempe: "com_tempe",
+    "Sayur Bayam": "com_bayam",
+    Wortel: "com_wortel",
+    "Minyak Goreng": "com_minyak",
+    Kentang: "com_kentang",
+    "Daging Sapi": "com_sapi",
+    "Bawang Merah": "com_bawang_merah",
+    "Cabai Merah": "com_cabai",
+    "Gula Pasir": "com_gula",
+    Garam: "com_garam",
+    "Sayur Sawi": "com_sawi",
+  };
+
   const items: Array<{
     name: string;
     unit: string;
@@ -511,6 +776,7 @@ async function main() {
     minOrderQty: number;
     orderStep: number;
     supplierId: string;
+    commodityId?: string;
   }> = [];
   let itemIndex = 0;
 
@@ -532,6 +798,7 @@ async function main() {
       minOrderQty,
       orderStep,
       supplierId: suppliers[supplierIdx].id,
+      commodityId: commodityMap[name],
     });
     itemIndex++;
   };

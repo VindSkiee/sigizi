@@ -31,6 +31,16 @@ export class MarketLocationFilterDto {
   @IsString()
   marketName?: string;
 
+  @ApiPropertyOptional({ description: "Filter by ItemCategory ID" })
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+
+  @ApiPropertyOptional({ description: "Filter by ItemCommodity ID" })
+  @IsOptional()
+  @IsString()
+  commodityId?: string;
+
   @ApiPropertyOptional({ example: -6.5398 })
   @ValidateIf((dto: MarketLocationFilterDto) => dto.longitude !== undefined)
   @Type(() => Number)

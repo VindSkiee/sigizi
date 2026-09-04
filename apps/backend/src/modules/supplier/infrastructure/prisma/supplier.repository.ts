@@ -34,7 +34,15 @@ export class PrismaSupplierRepository implements SupplierRepository {
       skip,
       take,
       orderBy: { createdAt: "desc" },
-      include: { items: true },
+      include: {
+        items: {
+          include: {
+            commodity: {
+              include: { category: true },
+            },
+          },
+        },
+      },
     });
 
     return items.map((item) => this.toDomain(item));
@@ -43,7 +51,15 @@ export class PrismaSupplierRepository implements SupplierRepository {
   async findById(id: string): Promise<Supplier | null> {
     const item = await this.prisma.supplier.findUnique({
       where: { id },
-      include: { items: true },
+      include: {
+        items: {
+          include: {
+            commodity: {
+              include: { category: true },
+            },
+          },
+        },
+      },
     });
     return item ? this.toDomain(item) : null;
   }
@@ -51,7 +67,15 @@ export class PrismaSupplierRepository implements SupplierRepository {
   async findByNib(nib: string): Promise<Supplier | null> {
     const item = await this.prisma.supplier.findUnique({
       where: { nib },
-      include: { items: true },
+      include: {
+        items: {
+          include: {
+            commodity: {
+              include: { category: true },
+            },
+          },
+        },
+      },
     });
     return item ? this.toDomain(item) : null;
   }
@@ -87,7 +111,15 @@ export class PrismaSupplierRepository implements SupplierRepository {
         profileImage: data.profileImage ?? null,
         openStatus: data.openStatus ?? true,
       },
-      include: { items: true },
+      include: {
+        items: {
+          include: {
+            commodity: {
+              include: { category: true },
+            },
+          },
+        },
+      },
     });
     return this.toDomain(item);
   }
@@ -96,7 +128,15 @@ export class PrismaSupplierRepository implements SupplierRepository {
     const item = await this.prisma.supplier.update({
       where: { id },
       data,
-      include: { items: true },
+      include: {
+        items: {
+          include: {
+            commodity: {
+              include: { category: true },
+            },
+          },
+        },
+      },
     });
     return this.toDomain(item);
   }
@@ -110,6 +150,11 @@ export class PrismaSupplierRepository implements SupplierRepository {
     const items = await this.prisma.supplierItem.findMany({
       where: { supplierId, deletedAt: null } as any,
       orderBy: { createdAt: "desc" },
+      include: {
+        commodity: {
+          include: { category: true },
+        },
+      },
     });
     return items.map((item) => ({
       id: item.id,
@@ -125,6 +170,18 @@ export class PrismaSupplierRepository implements SupplierRepository {
       priceUpdatedAt: item.priceUpdatedAt,
       stockUpdatedAt: item.stockUpdatedAt,
       deletedAt: item.deletedAt,
+      commodityId: item.commodityId ?? null,
+      commodity: item.commodity
+        ? {
+            id: item.commodity.id,
+            name: item.commodity.name,
+            referencePrice: item.commodity.referencePrice,
+            category: {
+              id: item.commodity.category.id,
+              name: item.commodity.category.name,
+            },
+          }
+        : null,
       supplierId: item.supplierId,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
@@ -134,6 +191,11 @@ export class PrismaSupplierRepository implements SupplierRepository {
   async findItemById(itemId: string): Promise<SupplierItemData | null> {
     const item = await this.prisma.supplierItem.findUnique({
       where: { id: itemId },
+      include: {
+        commodity: {
+          include: { category: true },
+        },
+      },
     });
     if (!item) return null;
     return {
@@ -150,6 +212,18 @@ export class PrismaSupplierRepository implements SupplierRepository {
       priceUpdatedAt: item.priceUpdatedAt,
       stockUpdatedAt: item.stockUpdatedAt,
       deletedAt: item.deletedAt,
+      commodityId: item.commodityId ?? null,
+      commodity: item.commodity
+        ? {
+            id: item.commodity.id,
+            name: item.commodity.name,
+            referencePrice: item.commodity.referencePrice,
+            category: {
+              id: item.commodity.category.id,
+              name: item.commodity.category.name,
+            },
+          }
+        : null,
       supplierId: item.supplierId,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
@@ -173,7 +247,13 @@ export class PrismaSupplierRepository implements SupplierRepository {
         stock: data.stock ?? 0,
         priceUpdatedAt: data.priceUpdatedAt ?? null,
         stockUpdatedAt: data.stockUpdatedAt ?? null,
+        commodityId: data.commodityId ?? null,
         supplierId,
+      },
+      include: {
+        commodity: {
+          include: { category: true },
+        },
       },
     });
     return {
@@ -190,6 +270,18 @@ export class PrismaSupplierRepository implements SupplierRepository {
       priceUpdatedAt: item.priceUpdatedAt,
       stockUpdatedAt: item.stockUpdatedAt,
       deletedAt: item.deletedAt,
+      commodityId: item.commodityId ?? null,
+      commodity: item.commodity
+        ? {
+            id: item.commodity.id,
+            name: item.commodity.name,
+            referencePrice: item.commodity.referencePrice,
+            category: {
+              id: item.commodity.category.id,
+              name: item.commodity.category.name,
+            },
+          }
+        : null,
       supplierId: item.supplierId,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
@@ -203,6 +295,11 @@ export class PrismaSupplierRepository implements SupplierRepository {
     const item = await this.prisma.supplierItem.update({
       where: { id: itemId },
       data,
+      include: {
+        commodity: {
+          include: { category: true },
+        },
+      },
     });
     return {
       id: item.id,
@@ -218,6 +315,18 @@ export class PrismaSupplierRepository implements SupplierRepository {
       priceUpdatedAt: item.priceUpdatedAt,
       stockUpdatedAt: item.stockUpdatedAt,
       deletedAt: item.deletedAt,
+      commodityId: item.commodityId ?? null,
+      commodity: item.commodity
+        ? {
+            id: item.commodity.id,
+            name: item.commodity.name,
+            referencePrice: item.commodity.referencePrice,
+            category: {
+              id: item.commodity.category.id,
+              name: item.commodity.category.name,
+            },
+          }
+        : null,
       supplierId: item.supplierId,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,

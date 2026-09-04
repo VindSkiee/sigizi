@@ -102,7 +102,17 @@ export class OrderService {
         take: limit,
         orderBy: { createdAt: "desc" },
         include: {
-          items: { include: { item: true } },
+          items: {
+            include: {
+              item: {
+                include: {
+                  commodity: {
+                    include: { category: true },
+                  },
+                },
+              },
+            },
+          },
           supplier: true,
           sppg: true,
         },
@@ -129,7 +139,18 @@ export class OrderService {
     const order = await this.prisma.order.findUnique({
       where: { id },
       include: {
-        items: { include: { item: true, inventoryStocks: true } },
+        items: {
+          include: {
+            item: {
+              include: {
+                commodity: {
+                  include: { category: true },
+                },
+              },
+            },
+            inventoryStocks: true,
+          },
+        },
         supplier: true,
         sppg: true,
         statusHistory: { orderBy: { createdAt: "desc" } },
@@ -718,7 +739,24 @@ export class OrderService {
             marketMedianAtPurchase: true,
             isWarningBypass: true,
             justificationNote: true,
-            item: { select: { id: true, name: true, unit: true } },
+            item: {
+              select: {
+                id: true,
+                name: true,
+                unit: true,
+                commodityId: true,
+                commodity: {
+                  select: {
+                    id: true,
+                    name: true,
+                    referencePrice: true,
+                    category: {
+                      select: { id: true, name: true },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
         statusHistory: {
@@ -850,7 +888,24 @@ export class OrderService {
             marketMedianAtPurchase: true,
             isWarningBypass: true,
             justificationNote: true,
-            item: { select: { id: true, name: true, unit: true } },
+            item: {
+              select: {
+                id: true,
+                name: true,
+                unit: true,
+                commodityId: true,
+                commodity: {
+                  select: {
+                    id: true,
+                    name: true,
+                    referencePrice: true,
+                    category: {
+                      select: { id: true, name: true },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
         statusHistory: {

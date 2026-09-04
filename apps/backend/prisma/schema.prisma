@@ -189,9 +189,54 @@ model Supplier {
 }
 
 // ----------------------------------------------------------------------------
+// 3A. ITEM CATEGORY — Kategori utama item (Karbohidrat, Protein, Sayur, dll)
+// Read-only dari sisi API; di-seed saat setup
+// ----------------------------------------------------------------------------
+
+model ItemCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique // "Karbohidrat", "Protein Hewani", "Sayur", dll
+  description String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  commodities ItemCommodity[]
+
+  @@index([name])
+  @@index([isActive])
+}
+
+// ----------------------------------------------------------------------------
+// 3B. ITEM COMMODITY — Sub-kategori / komoditas spesifik dalam satu kategori
+// referencePrice menggantikan MASTER_REFERENCE_PRICES yang hardcoded
+// ----------------------------------------------------------------------------
+
+model ItemCommodity {
+  id             String   @id @default(cuid())
+  name           String   @unique // "Beras", "Ayam", "Telur", "Bayam", dll
+  description    String?
+  referencePrice Float    // H acuan nasional (replaces MASTER_REFERENCE_PRICES)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  category   ItemCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  categoryId String
+
+  supplierItems SupplierItem[]
+
+  @@index([categoryId])
+  @@index([name])
+  @@index([isActive])
+}
+
+// ----------------------------------------------------------------------------
 // 4. SUPPLIER ITEM — Catalogue harga terkini (BISA BERUBAH)
 // Harga di sini adalah "list price" / "catalogue price".
 // Harga transaksi dibekukan di OrderItem.unitPrice / MouItem.agreedPrice.
+// commodityId nullable untuk backward-compat items yang belum di-map
 // ----------------------------------------------------------------------------
 
 model SupplierItem {
@@ -209,6 +254,11 @@ model SupplierItem {
   priceUpdatedAt DateTime? // Kapan harga terakhir diupdate
   stockUpdatedAt DateTime? // Kapan stok terakhir diupdate
   deletedAt    DateTime? // Soft delete: null = aktif, ada = dihapus (karena ada referensi pesanan)
+
+  // --- Taxonomy FK (nullable untuk backward-compat) ---
+  commodity   ItemCommodity? @relation(fields: [commodityId], references: [id], onDelete: SetNull)
+  commodityId String?
+
   supplier     Supplier  @relation(fields: [supplierId], references: [id], onDelete: Restrict)
   supplierId   String
   createdAt    DateTime  @default(now())
@@ -220,6 +270,7 @@ model SupplierItem {
 
   @@index([supplierId])
   @@index([name])
+  @@index([commodityId])
 }
 
 // ----------------------------------------------------------------------------

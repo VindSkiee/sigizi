@@ -55,6 +55,16 @@ export interface SupplierItemData {
   priceUpdatedAt: Date | null;
   stockUpdatedAt: Date | null;
   deletedAt: Date | null;
+  commodityId: string | null;
+  commodity: {
+    id: string;
+    name: string;
+    referencePrice: number;
+    category: {
+      id: string;
+      name: string;
+    };
+  } | null;
   supplierId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -73,6 +83,7 @@ export interface CreateSupplierItemData {
   priceUpdatedAt?: Date;
   stockUpdatedAt?: Date;
   updatedAt?: Date;
+  commodityId?: string;
 }
 
 export interface UpdateSupplierItemData {
@@ -89,6 +100,7 @@ export interface UpdateSupplierItemData {
   stockUpdatedAt?: Date;
   updatedAt?: Date;
   deletedAt?: Date | null;
+  commodityId?: string | null;
 }
 
 export interface ItemReferenceCheck {

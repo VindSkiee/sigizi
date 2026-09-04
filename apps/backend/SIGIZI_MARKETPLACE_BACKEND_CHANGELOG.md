@@ -16,6 +16,7 @@ Implement in this order. Each phase builds on the previous.
 | **P2**   | Market Search & Prices | Main marketplace browsing experience                       |
 | **P3**   | Item Detail            | Individual item view with supplier info, needs market data |
 | **P4**   | Marketplace Filtering  | Zero-stock/deleted exclusion (already in backend)          |
+| **P5**   | Item Taxonomy          | Category/commodity browsing, filters, item mapping         |
 
 ---
 
@@ -724,6 +725,199 @@ Identical to SPPG version:
 
 ---
 
+## P8: Item Taxonomy System
+
+### New Models
+
+**ItemCategory** — Kategori utama item:
+
+| Field     | Type    | Description                |
+| --------- | ------- | -------------------------- |
+| id        | String  | PK (cuid)                  |
+| name      | String  | Unique, e.g. "Karbohidrat" |
+| sortOrder | Int     | Display ordering           |
+| isActive  | Boolean | Soft toggle                |
+
+**ItemCommodity** — Sub-kategori / komoditas:
+
+| Field          | Type   | Description                                         |
+| -------------- | ------ | --------------------------------------------------- |
+| id             | String | PK (cuid)                                           |
+| name           | String | Unique, e.g. "Beras", "Ayam"                        |
+| referencePrice | Float  | H acuan nasional (replaces MASTER_REFERENCE_PRICES) |
+| categoryId     | String | FK → ItemCategory                                   |
+
+**SupplierItem.commodityId** — Nullable FK to ItemCommodity (migration-safe).
+
+### Categories & Commodities (Seeded)
+
+| Category       | Commodities                |
+| -------------- | -------------------------- |
+| Karbohidrat    | Beras, Kentang             |
+| Protein Hewani | Ayam, Sapi, Telur, Ikan    |
+| Protein Nabati | Tahu, Tempe                |
+| Sayur          | Bayam, Wortel, Sawi        |
+| Bumbu & Rempah | Bawang Merah, Cabai, Garam |
+| Lainnya        | Minyak Goreng, Gula Pasir  |
+
+### New API Endpoints
+
+```
+GET /api/categories
+GET /api/categories/:id
+GET /api/categories/by-name/:name
+GET /api/commodities?categoryId=
+GET /api/commodities/:id
+GET /api/commodities/by-name/:name
+```
+
+All endpoints are **read-only** and **JWT-protected**.
+
+### Market Filter Extensions
+
+`MarketLocationFilterDto` now accepts:
+
+| Param         | Type   | Description                |
+| ------------- | ------ | -------------------------- |
+| `categoryId`  | String | Filter by ItemCategory ID  |
+| `commodityId` | String | Filter by ItemCommodity ID |
+
+### Market Prices Behavior Changes
+
+| Before                              | After                                                |
+| ----------------------------------- | ---------------------------------------------------- |
+| `MASTER_REFERENCE_PRICES` hardcoded | `ItemCommodity.referencePrice` from DB               |
+| `getMasterReferencePrice()` sync    | `getMasterReferencePrice()` async (DB lookup)        |
+| Anomaly grouping by `name`          | Anomaly grouping by `commodityId` (fallback to name) |
+| Anomaly response `{ item }`         | Anomaly response `{ item, commodityId }`             |
+
+### Frontend Guidance
+
+**Category/Commodity browsing:**
+
+- Fetch `GET /api/categories` for sidebar/top-nav category list
+- Each category includes its commodities inline
+- Use `categoryId` or `commodityId` as query params in market search
+
+**Supplier item creation/edit:**
+
+- Add commodity picker dropdown (fetch from `/api/commodities`)
+- `commodityId` is optional (nullable) — items without mapping remain unmapped
+
+**Market search filters:**
+
+- Add category/commodity filter chips or dropdown
+- Pass `categoryId` or `commodityId` as URL params
+
+**Anomaly page:**
+
+- Response now includes `commodityId` field — use for grouping in UI
+
+---
+
+## P9: SupplierItem Commodity & Category Enrichment
+
+### What Changed
+
+All APIs that return SupplierItem data now include the full taxonomy chain: `commodity` + `category`.
+
+### Enriched Endpoints
+
+| #   | Domain       | Endpoint                                    | Query Method                      | Change                                                          |
+| --- | ------------ | ------------------------------------------- | --------------------------------- | --------------------------------------------------------------- |
+| 1   | **Market**   | `GET /api/market/items/:id`                 | `getItemDetail()`                 | Added `commodity: { include: { category: true } }`              |
+| 2   | **Supplier** | `GET /api/suppliers`                        | `findAll()`                       | Supplier `items` now include `commodity → category`             |
+| 3   | **Supplier** | `GET /api/suppliers/:id`                    | `findById()`                      | Same                                                            |
+| 4   | **Supplier** | `GET /api/suppliers/:id/items`              | `findItems()`                     | Added `include: { commodity: { include: { category: true } } }` |
+| 5   | **Supplier** | `POST /api/suppliers/:id/items`             | `addItem()`                       | Return now includes `commodity → category`                      |
+| 6   | **Supplier** | `PATCH /api/suppliers/:id/items/:itemId`    | `updateItem()`                    | Return now includes `commodity → category`                      |
+| 7   | **Order**    | `GET /api/orders`                           | `findAll()`                       | Order items now include `item → commodity → category`           |
+| 8   | **Order**    | `GET /api/orders/:id`                       | `findOne()`                       | Same                                                            |
+| 9   | **Order**    | `GET /api/orders/transactions/:id`          | `findTransactionDetail()`         | Item select now includes `commodityId`, `commodity → category`  |
+| 10  | **Order**    | `GET /api/orders/supplier-transactions/:id` | `findSupplierTransactionDetail()` | Same                                                            |
+
+### Response Shape
+
+Every SupplierItem in any response now includes:
+
+```json
+{
+  "id": "...",
+  "name": "Beras Premium",
+  "commodityId": "com_beras",
+  "commodity": {
+    "id": "com_beras",
+    "name": "Beras",
+    "referencePrice": 15000,
+    "category": {
+      "id": "cat_karbohidrat",
+      "name": "Karbohidrat"
+    }
+  }
+}
+```
+
+If `commodityId` is null (item not mapped):
+
+```json
+{
+  "commodityId": null,
+  "commodity": null
+}
+```
+
+### What Was NOT Changed
+
+- **Batch module** — out of scope (will be enriched in a future patch)
+- **Inventory module** — out of scope
+- **Order historical snapshots** — `OrderItem.unitPrice`, `marketMedianAtPurchase`, `justificationNote` are untouched
+- **No new endpoints** — purely enriching existing responses
+- **No business logic changes** — only Prisma `include`/`select` additions
+- **No schema/migration changes** — commodity/category relations already exist
+
+### Code Quality
+
+- Removed all `(item as any).commodityId` casts in supplier repository — now uses proper Prisma `include`
+- `SupplierItemData` interface updated with `commodity` field (typed, no `any`)
+- `prisma generate` + `tsc --noEmit` pass cleanly
+
+### Frontend Sync Notes
+
+**New fields available on every SupplierItem:**
+
+| Field                      | Type             | Description                                         |
+| -------------------------- | ---------------- | --------------------------------------------------- |
+| `commodityId`              | `string \| null` | ID komoditas (null jika belum di-map)               |
+| `commodity`                | `object \| null` | Objek komoditas (null jika belum di-map)            |
+| `commodity.id`             | `string`         | ID komoditas                                        |
+| `commodity.name`           | `string`         | Nama komoditas, e.g. "Beras", "Ayam"                |
+| `commodity.referencePrice` | `number`         | Harga acuan nasional                                |
+| `commodity.category`       | `object`         | Objek kategori                                      |
+| `commodity.category.id`    | `string`         | ID kategori                                         |
+| `commodity.category.name`  | `string`         | Nama kategori, e.g. "Karbohidrat", "Protein Hewani" |
+
+**Endpoints yang sekarang mengembalikan field tersebut:**
+
+- `GET /api/market/items/:id` → `item.commodity`
+- `GET /api/suppliers` → `items[].commodity`
+- `GET /api/suppliers/:id` → `items[].commodity`
+- `GET /api/suppliers/:id/items` → `[].commodity`
+- `POST /api/suppliers/:id/items` → return `.commodity`
+- `PATCH /api/suppliers/:id/items/:itemId` → return `.commodity`
+- `GET /api/orders` → `items[].item.commodity`
+- `GET /api/orders/:id` → `items[].item.commodity`
+- `GET /api/orders/transactions/:id` → `items[].item.commodity`
+- `GET /api/orders/supplier-transactions/:id` → `items[].item.commodity`
+
+**Frontend handling:**
+
+- `commodity` bisa `null` — selalu null-check sebelum akses `commodity.name`
+- Gunakan `commodity.category.name` untuk breadcrumb / filter label
+- `commodity.referencePrice` bisa ditampilkan sebagai "Harga Acuan Nasional" di UI
+- Field ini **additive** — tidak ada field yang dihapus atau di-rename
+
+---
+
 ## Known MVP Limitations
 
 1. No file deletion/garbage collection for orphaned uploads
@@ -738,10 +932,11 @@ Identical to SPPG version:
 ## Migration
 
 The `init_clean` migration replaces all 15 previous migrations with a single DDL script.
+The `add_item_taxonomy` migration adds ItemCategory, ItemCommodity, and SupplierItem.commodityId.
 
 ```bash
 cd apps/backend
-npx prisma migrate deploy   # apply migration
+npx prisma migrate deploy   # apply migrations
 npx prisma db seed          # seed data (optional)
 npx prisma generate         # regenerate client
 ```
@@ -753,5 +948,7 @@ npx prisma generate         # regenerate client
 - SPPG: 3
 - Users: 3 admin + 18 supplier + 60 market sellers
 - Suppliers: 78 total
-- SupplierItems: ~250+ items
+- SupplierItems: ~250+ items (auto-mapped to commodities via `commodityMap`)
+- ItemCategories: 6
+- ItemCommodities: 16
 - Beneficiaries, MoU, Orders, Batches, Complaints, Inventory, OpEx: schema intact, no seed data

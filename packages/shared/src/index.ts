@@ -126,6 +126,32 @@ export interface Supplier {
   updatedAt: Date;
 }
 
+// ============================================================================
+// Item Taxonomy — Category → Commodity → SupplierItem
+// ============================================================================
+
+export interface ItemCategory {
+  id: string;
+  name: string;
+  description?: string;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ItemCommodity {
+  id: string;
+  name: string;
+  description?: string;
+  referencePrice: number;
+  isActive: boolean;
+  categoryId: string;
+  category?: ItemCategory;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface SupplierItem {
   id: string;
   name: string;
@@ -136,6 +162,7 @@ export interface SupplierItem {
   orderStep?: number;
   minThreshold?: number;
   isAvailable: boolean;
+  commodityId?: string;
   supplierId: string;
   createdAt: Date;
 }
@@ -662,6 +689,7 @@ export interface CreateSupplierItemRequest {
   minOrderQty?: number;
   orderStep?: number;
   isAvailable?: boolean;
+  commodityId?: string;
 }
 
 export interface UpdateSupplierItemRequest {
@@ -672,6 +700,7 @@ export interface UpdateSupplierItemRequest {
   minOrderQty?: number;
   orderStep?: number;
   isAvailable?: boolean;
+  commodityId?: string | null;
 }
 
 // ============================================================================
