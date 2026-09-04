@@ -10,7 +10,11 @@ import {
 } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { OrderService } from "../services/order.service";
-import { CreateOrderDto, UpdateOrderStatusDto } from "../dto";
+import {
+  CreateOrderDto,
+  UpdateOrderStatusDto,
+  TransactionHistoryQueryDto,
+} from "../dto";
 import { OrderStatus, Role } from "@sigizi/shared";
 import { PaginationDto } from "../../../core/dto/pagination.dto";
 import { JwtAuthGuard, RolesGuard, Roles, CurrentUser } from "../../../common";
@@ -31,7 +35,36 @@ export class OrderController {
     @Query("supplierId") supplierId?: string,
     @Query("status") status?: OrderStatus,
   ) {
-    return this.orderService.findAll(pagination, user, sppgId, supplierId, status);
+    return this.orderService.findAll(
+      pagination,
+      user,
+      sppgId,
+      supplierId,
+      status,
+    );
+  }
+
+  @Get("transactions")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SPPG_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "List transactions for SPPG (date range, paginated)",
+  })
+  findTransactions(
+    @Query() query: TransactionHistoryQueryDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.orderService.findTransactions(user.sppgId, query);
+  }
+
+  @Get("transactions/:id")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SPPG_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get transaction detail by ID" })
+  findTransactionDetail(@Param("id") id: string, @CurrentUser() user: any) {
+    return this.orderService.findTransactionDetail(id, user.sppgId);
   }
 
   @Get(":id")

@@ -4,7 +4,13 @@ import {
   BadRequestException,
 } from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";
+import { PrismaClient } from "@prisma/client";
 import { PrismaService } from "../../../database/prisma.service";
+
+type TxClient = Omit<
+  PrismaClient,
+  "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
+>;
 import {
   PaginationDto,
   PaginatedResult,
@@ -183,8 +189,12 @@ export class OrderService {
 
     const [supplierItems, sppg] = await Promise.all([
       this.prisma.supplierItem.findMany({
-        where: { id: { in: itemIds } },
-        select: { id: true, basePrice: true, name: true },
+        where: {
+          id: { in: itemIds },
+          deletedAt: null,
+          stock: { gt: 0 },
+        },
+        select: { id: true, basePrice: true, name: true, stock: true },
       }),
       this.prisma.sppg.findUnique({
         where: { id: sppgId },
@@ -194,12 +204,47 @@ export class OrderService {
 
     const itemMap = new Map(supplierItems.map((i) => [i.id, i]));
 
-    // Validasi semua item ditemukan
+    // Validasi semua item ditemukan dan tersedia
     for (const item of dto.items) {
       if (!itemMap.has(item.itemId)) {
-        throw new NotFoundException(
-          `Barang dengan ID ${item.itemId} tidak ditemukan dalam katalog supplier`,
+        const raw = await this.prisma.supplierItem.findUnique({
+          where: { id: item.itemId },
+          select: { deletedAt: true, stock: true, name: true },
+        });
+        if (!raw) {
+          throw new NotFoundException(
+            `Barang dengan ID ${item.itemId} tidak ditemukan dalam sistem`,
+          );
+        }
+        if (raw.deletedAt) {
+          throw new BadRequestException(
+            `Barang "${raw.name}" sudah tidak tersedia (dihapus)`,
+          );
+        }
+        throw new BadRequestException(
+          `Barang "${raw.name}" sedang habis (stok: ${raw.stock})`,
         );
+      }
+    }
+
+    // Validasi kuantitas > 0 dan stok mencukupi
+    for (const item of dto.items) {
+      if (item.quantity <= 0) {
+        throw new BadRequestException(
+          `Kuantitas untuk item ${item.itemId} harus lebih dari 0`,
+        );
+      }
+      const supplierItem = itemMap.get(item.itemId)!;
+      if (item.quantity > supplierItem.stock) {
+        throw new BadRequestException({
+          message: `Stok "${supplierItem.name}" tidak mencukupi`,
+          details: {
+            itemId: item.itemId,
+            itemName: supplierItem.name,
+            requested: item.quantity,
+            available: supplierItem.stock,
+          },
+        });
       }
     }
 
@@ -380,6 +425,25 @@ export class OrderService {
         },
       });
 
+      // Atomic stock decrement dengan concurrency guard
+      for (const item of dto.items) {
+        const result = await tx.supplierItem.updateMany({
+          where: {
+            id: item.itemId,
+            stock: { gte: item.quantity },
+          },
+          data: {
+            stock: { decrement: item.quantity },
+            stockUpdatedAt: new Date(),
+          },
+        });
+        if (result.count === 0) {
+          throw new BadRequestException(
+            `Stok "${item.itemId}" tidak mencukupi atau berubah saat proses pemesanan. Silakan coba lagi.`,
+          );
+        }
+      }
+
       return newOrder;
     });
 
@@ -475,6 +539,10 @@ export class OrderService {
         },
       });
 
+      if (newStatus === OS.CANCELLED) {
+        await this.restoreStockForOrder(tx, id);
+      }
+
       return result;
     });
 
@@ -540,6 +608,164 @@ export class OrderService {
     });
 
     return updatedOrder;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // TRANSACTION HISTORY
+  // ═══════════════════════════════════════════════════════════════════
+
+  async findTransactions(
+    sppgId: string,
+    query: {
+      page?: number;
+      limit?: number;
+      startDate?: string;
+      endDate?: string;
+      status?: OrderStatus;
+    },
+  ): Promise<PaginatedResult<any>> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    // Build date range: default to today, use half-open [start, end)
+    const now = new Date();
+    const todayStr = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}-${String(now.getUTCDate()).padStart(2, "0")}`;
+
+    const startDateStr = query.startDate ?? todayStr;
+    const endDateStr = query.endDate ?? todayStr;
+
+    const start = this.parseDateOnly(startDateStr);
+    const endExclusive = this.parseDateOnly(endDateStr);
+    endExclusive.setUTCDate(endExclusive.getUTCDate() + 1);
+
+    if (start >= endExclusive) {
+      throw new BadRequestException("startDate harus lebih kecil dari endDate");
+    }
+
+    const where: any = {
+      sppgId,
+      createdAt: { gte: start, lt: endExclusive },
+    };
+
+    if (query.status) {
+      where.status = query.status;
+    }
+
+    const [items, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          createdAt: true,
+          status: true,
+          total: true,
+          paidAt: true,
+          supplier: { select: { id: true, name: true } },
+          items: { select: { id: true } },
+        },
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+
+    return {
+      items: items.map((o) => ({
+        id: o.id,
+        createdAt: o.createdAt,
+        status: o.status,
+        total: o.total,
+        supplier: o.supplier,
+        itemCount: o.items.length,
+        paidAt: o.paidAt,
+      })),
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  async findTransactionDetail(id: string, sppgId: string) {
+    const order = await this.prisma.order.findFirst({
+      where: { id, sppgId },
+      select: {
+        id: true,
+        status: true,
+        total: true,
+        notes: true,
+        createdAt: true,
+        updatedAt: true,
+        paidAt: true,
+        cancelledAt: true,
+        cancelledReason: true,
+        expectedDeliveryDate: true,
+        actualDeliveryDate: true,
+        supplier: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            address: true,
+            profileImage: true,
+          },
+        },
+        sppg: { select: { id: true, name: true } },
+        items: {
+          select: {
+            id: true,
+            quantity: true,
+            unitPrice: true,
+            subtotal: true,
+            marketMedianAtPurchase: true,
+            isWarningBypass: true,
+            justificationNote: true,
+            item: { select: { id: true, name: true, unit: true } },
+          },
+        },
+        statusHistory: {
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            fromStatus: true,
+            toStatus: true,
+            notes: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException(
+        `Transaksi dengan ID ${id} tidak ditemukan atau tidak termasuk dalam cakupan SPPG Anda`,
+      );
+    }
+
+    return order;
+  }
+
+  private parseDateOnly(date: string): Date {
+    const parsed = new Date(`${date}T00:00:00.000Z`);
+    if (Number.isNaN(parsed.getTime())) {
+      throw new BadRequestException(`Tanggal tidak valid: ${date}`);
+    }
+    return parsed;
+  }
+
+  private async restoreStockForOrder(tx: TxClient, orderId: string) {
+    const orderItems = await tx.orderItem.findMany({
+      where: { orderId },
+      select: { itemId: true, quantity: true },
+    });
+
+    for (const item of orderItems) {
+      await tx.supplierItem.update({
+        where: { id: item.itemId },
+        data: {
+          stock: { increment: item.quantity },
+          stockUpdatedAt: new Date(),
+        },
+      });
+    }
   }
 
   private async validateStockRollback(orderId: string) {

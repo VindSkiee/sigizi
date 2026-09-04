@@ -324,6 +324,195 @@ PENDING → CONFIRMED → DELIVERED → COMPLETED → CANCELLED
 
 ---
 
+## P6: Order Stock Reservation + Stock Guard
+
+**Date**: 2026-09-04
+
+### Summary
+
+Saat create order, `SupplierItem.stock` di-decrement secara atomik. Saat order dibatalkan, stock di-restore. Seluruh operasi berada dalam satu Prisma transaction.
+
+### Flow
+
+```
+CREATE ORDER:
+  ├─ Filter: deletedAt=null, stock>0, isAvailable
+  ├─ Validate: quantity > 0, quantity <= stock
+  ├─ Atomic decrement: SupplierItem.stock -= quantity (inside $transaction)
+  └─ If concurrent request wins race → entire transaction rolls back
+
+CANCEL ORDER (any status → CANCELLED):
+  └─ Restore: SupplierItem.stock += quantity (inside same $transaction)
+```
+
+### Changes
+
+| File                                                  | Change                                                                          |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `src/modules/order/services/order.service.ts:7`       | Import `PrismaClient` from `@prisma/client`                                     |
+| `src/modules/order/services/order.service.ts:10-14`   | `TxClient` type alias for transaction client                                    |
+| `src/modules/order/services/order.service.ts:191-197` | `findMany` filters `deletedAt: null`, `stock: { gt: 0 }`, selects `stock`       |
+| `src/modules/order/services/order.service.ts:207-227` | Item error messages: distinguishes not found / deleted / zero-stock             |
+| `src/modules/order/services/order.service.ts:230-247` | Stock validation: `quantity > 0`, `quantity <= stock`                           |
+| `src/modules/order/services/order.service.ts:428-445` | Atomic `updateMany` decrement with `stock: { gte: quantity }` concurrency guard |
+| `src/modules/order/services/order.service.ts:542-544` | Call `restoreStockForOrder(tx, id)` on CANCELLED                                |
+| `src/modules/order/services/order.service.ts:613-628` | New `restoreStockForOrder(tx, orderId)` method                                  |
+
+### Concurrency Guard
+
+`updateMany({ where: { id, stock: { gte: quantity } } })` ensures:
+
+- Only one concurrent request can decrement stock for the same item
+- If stock changed between read and write, `count === 0` → transaction rolls back
+- No partial stock decrements
+
+### Stock Restore on Cancel
+
+- `restoreStockForOrder(tx, orderId)` reads `OrderItem` records and increments `SupplierItem.stock`
+- Called inside `$transaction` for all cancel paths: PENDING/CONFIRMED/DELIVERED/COMPLETED → CANCELLED
+- Uses `tx` client (same transaction as order status update)
+- `stockUpdatedAt` updated on every decrement/restore
+
+### Behavior After
+
+- Soft-deleted items (`deletedAt != null`) cannot be ordered
+- Zero-stock items (`stock = 0`) cannot be ordered
+- Orders exceeding available stock are rejected
+- Concurrent orders for same item: atomic guard prevents over-reservation
+- Cancellation restores stock atomically
+- No changes to database schema, events, InventoryStock, DTOs, or controller routes
+
+---
+
+## P7: Transaction History Endpoints
+
+**Date**: 2026-09-04
+
+### New Endpoints
+
+```
+GET /api/orders/transactions
+Authorization: Bearer <token>
+Query: page, limit, startDate?, endDate?, status?
+
+GET /api/orders/transactions/:id
+Authorization: Bearer <token>
+```
+
+### GET /orders/transactions
+
+| Aspect                 | Detail                                                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Guard**              | `JwtAuthGuard` + `RolesGuard`                                                                                                  |
+| **Roles**              | `SPPG_ADMIN` only                                                                                                              |
+| **SPPG scoping**       | Automatic from JWT (`user.sppgId`)                                                                                             |
+| **Default date range** | Today (UTC)                                                                                                                    |
+| **Date filter field**  | `createdAt`                                                                                                                    |
+| **Date range pattern** | Half-open: `{ gte: start, lt: exclusiveEnd }`                                                                                  |
+| **Timezone handling**  | `parseDateOnly("YYYY-MM-DD")` → `new Date("YYYY-MM-DDT00:00:00.000Z")` — consistent UTC midnight regardless of server timezone |
+| **Sort**               | `createdAt desc`                                                                                                               |
+| **Status filter**      | Optional, matches exact `OrderStatus` enum                                                                                     |
+
+**Response:**
+
+```json
+{
+  "items": [
+    {
+      "id": "clx...",
+      "createdAt": "2026-07-09T08:30:00.000Z",
+      "status": "COMPLETED",
+      "total": 615000,
+      "supplier": { "id": "clx...", "name": "UD. Sumber Rejeki" },
+      "itemCount": 3,
+      "paidAt": "2026-07-09T10:00:00.000Z"
+    }
+  ],
+  "pagination": { "page": 1, "limit": 20, "total": 45, "totalPages": 3 }
+}
+```
+
+### GET /orders/transactions/:id
+
+| Aspect           | Detail                                                                              |
+| ---------------- | ----------------------------------------------------------------------------------- |
+| **Guard**        | `JwtAuthGuard` + `RolesGuard`                                                       |
+| **Roles**        | `SPPG_ADMIN` only                                                                   |
+| **SPPG scoping** | `findFirst({ where: { id, sppgId } })` — rejects if order belongs to different SPPG |
+| **Data**         | Uses OrderItem snapshot data (prices, quantities as recorded at order time)         |
+
+**Response:**
+
+```json
+{
+  "id": "clx...",
+  "status": "COMPLETED",
+  "total": 615000,
+  "notes": "Pesanan bahan baku minggu ini",
+  "createdAt": "2026-07-09T08:30:00.000Z",
+  "updatedAt": "2026-07-09T10:00:00.000Z",
+  "paidAt": "2026-07-09T10:00:00.000Z",
+  "cancelledAt": null,
+  "cancelledReason": null,
+  "expectedDeliveryDate": "2026-07-11T00:00:00.000Z",
+  "actualDeliveryDate": "2026-07-10T14:00:00.000Z",
+  "supplier": {
+    "id": "clx...",
+    "name": "UD. Sumber Rejeki",
+    "phone": "08123456789",
+    "address": "Jl. Raya Purwakarta No. 1",
+    "profileImage": "/uploads/profiles/xxx.jpg"
+  },
+  "sppg": { "id": "clx...", "name": "SPPG Purwakarta" },
+  "items": [
+    {
+      "id": "clx...",
+      "item": { "id": "clx...", "name": "Beras Premium", "unit": "kg" },
+      "quantity": 20,
+      "unitPrice": 11500,
+      "subtotal": 230000,
+      "marketMedianAtPurchase": 12000,
+      "isWarningBypass": false,
+      "justificationNote": "Semua harga valid sesuai data pasar"
+    }
+  ],
+  "statusHistory": [
+    {
+      "id": "clx...",
+      "fromStatus": null,
+      "toStatus": "PENDING",
+      "notes": "...",
+      "createdAt": "..."
+    },
+    {
+      "id": "clx...",
+      "fromStatus": "PENDING",
+      "toStatus": "CONFIRMED",
+      "notes": null,
+      "createdAt": "..."
+    }
+  ]
+}
+```
+
+### Files
+
+| File                                                     | Change                                                                              |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `src/modules/order/dto/transaction-history-query.dto.ts` | **NEW** — Query DTO extending `PaginationDto` with `startDate`, `endDate`, `status` |
+| `src/modules/order/dto/index.ts`                         | Added `TransactionHistoryQueryDto` export                                           |
+| `src/modules/order/services/order.service.ts`            | Added `findTransactions()`, `findTransactionDetail()`, `parseDateOnly()`            |
+| `src/modules/order/controllers/order.controller.ts`      | Added `GET /orders/transactions` and `GET /orders/transactions/:id`                 |
+
+### Constraints
+
+- Direct Prisma queries (no repository layer, matching existing Order module pattern)
+- No schema migration, no shared package changes
+- No changes to existing Order API behavior
+- `parseDateOnly` follows same pattern as Reports module (`YYYY-MM-DDT00:00:00.000Z`)
+
+---
+
 ## Known MVP Limitations
 
 1. No file deletion/garbage collection for orphaned uploads
