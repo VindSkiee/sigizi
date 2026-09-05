@@ -768,6 +768,29 @@ async function main() {
     "Sayur Sawi": "com_sawi",
   };
 
+  // Default stock per item (realistic kg/liter values)
+  const DEFAULT_STOCKS: Record<string, number> = {
+    "Beras Premium": 120,
+    "Daging Ayam": 35,
+    "Telur Ayam": 50,
+    "Tahu Putih": 30,
+    Tempe: 30,
+    "Sayur Bayam": 15,
+    Wortel: 25,
+    "Minyak Goreng": 60,
+    Kentang: 40,
+    "Sayur Kangkung": 10,
+    "Ikan Tongkol": 20,
+    "Ikan Lele": 25,
+    "Tepung Terigu": 80,
+    "Daging Sapi": 15,
+    "Bawang Merah": 35,
+    "Cabai Merah": 25,
+    "Gula Pasir": 70,
+    Garam: 50,
+    "Sayur Sawi": 12,
+  };
+
   const items: Array<{
     name: string;
     unit: string;
@@ -777,6 +800,7 @@ async function main() {
     orderStep: number;
     supplierId: string;
     commodityId?: string;
+    stock: number;
   }> = [];
   let itemIndex = 0;
 
@@ -789,6 +813,7 @@ async function main() {
     description: string,
     minOrderQty: number = 1,
     orderStep: number = 0.5,
+    stock: number = DEFAULT_STOCKS[name] ?? 20,
   ) => {
     items.push({
       name,
@@ -799,6 +824,7 @@ async function main() {
       orderStep,
       supplierId: suppliers[supplierIdx].id,
       commodityId: commodityMap[name],
+      stock,
     });
     itemIndex++;
   };
@@ -1441,6 +1467,7 @@ async function main() {
             minOrderQty: catalog.minOrderQty,
             orderStep: catalog.orderStep,
             supplierId: supplier.id,
+            stock: DEFAULT_STOCKS[catalog.name] ?? 20,
           });
         }
       }
