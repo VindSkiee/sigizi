@@ -28,8 +28,7 @@ type MarketScopeUsed =
 type HETBasedOn =
   | "master_reference_cold_start"
   | "blended_small_sample"
-  | "clean_dynamic_median"
-  | "all_anomaly_fallback";
+  | "clean_dynamic_median";
 
 export interface IQRBounds {
   lower: number;
@@ -406,17 +405,6 @@ export class MarketService {
       };
     }
 
-    if (statistics.clean.count === 0) {
-      return {
-        item,
-        filter: result.filter,
-        scopeUsed: result.scopeUsed,
-        het: Math.ceil(masterPrice),
-        basedOn: "all_anomaly_fallback" satisfies HETBasedOn,
-        statistics,
-      };
-    }
-
     const het = Math.ceil(statistics.clean.median * 1.1);
     return {
       item,
@@ -447,8 +435,6 @@ export class MarketService {
       basedOn = "master_reference_cold_start";
     } else if (marketPrices.sampleCount < MIN_MATURE_SAMPLE) {
       basedOn = "blended_small_sample";
-    } else if (marketPrices.statistics.clean.count === 0) {
-      basedOn = "all_anomaly_fallback";
     } else {
       basedOn = "clean_dynamic_median";
     }
@@ -477,11 +463,8 @@ export class MarketService {
     ctx: MarketValidationContext,
     proposedPrice: number,
   ): IntegratedValidationResult {
-    // ── Cold Start / Fallback ──
-    if (
-      ctx.basedOn === "master_reference_cold_start" ||
-      ctx.basedOn === "all_anomaly_fallback"
-    ) {
+    // ── Cold Start ──
+    if (ctx.basedOn === "master_reference_cold_start") {
       if (proposedPrice > ctx.masterPrice * 1.2) {
         return {
           status: "INVALID",

@@ -508,8 +508,7 @@ export type MarketScopeUsed =
 export type HETBasedOn =
   | "master_reference_cold_start"
   | "blended_small_sample"
-  | "clean_dynamic_median"
-  | "all_anomaly_fallback";
+  | "clean_dynamic_median";
 
 export interface MarketLocationFilter {
   province?: string | null;

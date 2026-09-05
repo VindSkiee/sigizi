@@ -377,7 +377,6 @@ Authorization: Bearer <token>
 | `master_reference_cold_start` | 0 supplier di semua scope    | `ceil(master)`                    |
 | `blended_small_sample`        | 1–4 supplier                 | `ceil((master + mean) / 2 * 1.1)` |
 | `clean_dynamic_median`        | ≥ 5 supplier, clean data ada | `ceil(median(clean) * 1.1)`       |
-| `all_anomaly_fallback`        | ≥ 5 supplier, semua outlier  | `ceil(master)`                    |
 
 **Master Reference Prices (MVP 90% budget):**
 

@@ -16,7 +16,7 @@ Implementasi Price Validation Engine — integrasi ketat validasi harga supplier
 - [x] Tambah `iqrBounds` ke response getMarketPrices()
 - [x] Buat method `getMarketContextForItem()` — single DB call, hindari duplikasi query
 - [x] Buat method `validatePrice()` + `evaluatePrice()` dengan logic adaptif:
-  - Cold Start/Fallback: master_reference_cold_start, all_anomaly_fallback
+  - Cold Start: master_reference_cold_start
   - Mature Market: clean_dynamic_median dengan IQR bounds + deviasi median
 - [x] Tambah endpoint `POST /api/market/validate-price` di MarketController
 - [x] Fix module dependency: OrderModule import MarketModule

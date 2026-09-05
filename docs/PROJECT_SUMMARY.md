@@ -16,22 +16,26 @@ SIGIZI adalah platform GovTech end-to-end yang menghubungkan **SPPG** (Satuan Pe
 ## 2. Konteks Domain & Masalah
 
 ### 2.1 Problem Statement
+
 Program MBG pemerintah rentan penyimpangan:
+
 - **Mark-up harga pengadaan**: tanpa pengawasan real-time, supplier dapat mematok harga di atas pasar.
 - **Tidak ada traceability porsi**: publik (ortu/wali) tidak dapat memverifikasi gizi, alergen, dan asal bahan.
 - **Keluhan tidak akuntabel**: masyarakat tidak punya kanal formal & terverifikasi.
 - **Manipulasi stok**: SPPG belum punya akuntansi lot-based untuk mencegah fraud persediaan.
 
 ### 2.2 Stakeholders
-| Stakeholder | Peran | Akses |
-|-------------|-------|-------|
-| **BGN** (Badan Gizi Nasional) | Regulator, SSO provider | SSO endpoint `mitra.bgn.go.id` |
-| **SPPG** | Unit pelaksana MBG | JWT via SSO BGN, role `SPPG_ADMIN` |
-| **Supplier** | Pemasok bahan baku (pasar/toko) | Email+password, role `SUPPLIER` |
-| **Publik** | ortu/wali, masyarakat | Tanpa login (Cek Resi, Komplain, Cari SPPG) |
-| **Beneficiary** | Sekolah, panti asuhan, pesantren | Dikelola SPPG |
+
+| Stakeholder                   | Peran                            | Akses                                       |
+| ----------------------------- | -------------------------------- | ------------------------------------------- |
+| **BGN** (Badan Gizi Nasional) | Regulator, SSO provider          | SSO endpoint `mitra.bgn.go.id`              |
+| **SPPG**                      | Unit pelaksana MBG               | JWT via SSO BGN, role `SPPG_ADMIN`          |
+| **Supplier**                  | Pemasok bahan baku (pasar/toko)  | Email+password, role `SUPPLIER`             |
+| **Publik**                    | ortu/wali, masyarakat            | Tanpa login (Cek Resi, Komplain, Cari SPPG) |
+| **Beneficiary**               | Sekolah, panti asuhan, pesantren | Dikelola SPPG                               |
 
 ### 2.3 Locus Pilot
+
 **Cirebon, Jawa Barat** — 3 SPPG (Utara, Selatan, Barat), 9 pasar tradisional (Ciledug, Weru, Arjawinangun, Plumbon, Depok, Talun, Astanajapura, Plered, Kapetakan), ~81 supplier, 6 beneficiary. Dipilih karena merepresentasikan pasar MBG tipikal dengan fluktuasi harga & outlier yang relevan untuk validasi algoritma IQR.
 
 ---
@@ -39,15 +43,17 @@ Program MBG pemerintah rentan penyimpangan:
 ## 3. Arsitektur Teknis
 
 ### 3.1 Stack
-| Layer | Teknologi |
-|-------|----------|
-| **Backend** | NestJS 10.3, Prisma 5.10, PostgreSQL, Passport-JWT, bcrypt, class-validator, EventEmitter, Scheduler, Terminus, Swagger, Pino, PDFKit |
+
+| Layer        | Teknologi                                                                                                                                                                                      |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Backend**  | NestJS 10.3, Prisma 5.10, PostgreSQL, Passport-JWT, bcrypt, class-validator, EventEmitter, Scheduler, Terminus, Swagger, Pino, PDFKit                                                          |
 | **Frontend** | Next.js 14 (App Router), React 18, Tailwind 3.4, Leaflet, react-leaflet, QRCode, jsPDF + autotable, framer-motion, lucide-react, sonner (toast), nextjs-toploader, clsx, tailwind-merge, sharp |
-| **Monorepo** | pnpm workspace, Turborepo 2 |
-| **Infra** | Docker Compose (Postgres + Backend + Portal), `sigizi.go.id` (target domain) |
-| **Shared** | `@sigizi/shared` (region normalization, tipe, konstanta) |
+| **Monorepo** | pnpm workspace, Turborepo 2                                                                                                                                                                    |
+| **Infra**    | Docker Compose (Postgres + Backend + Portal), `sigizi.go.id` (target domain)                                                                                                                   |
+| **Shared**   | `@sigizi/shared` (region normalization, tipe, konstanta)                                                                                                                                       |
 
 ### 3.2 Arsitektur Backend — 12 Modul
+
 ```
 apps/backend/src/
 ├── modules/
@@ -70,6 +76,7 @@ apps/backend/src/
 ```
 
 ### 3.3 Pola Arsitektur
+
 - **DDD 4-layer** pada modul inti (SPPG, Supplier, Beneficiary): `domain/` (entities, repositories interface, tokens) → `application/` (services, DTOs) → `infrastructure/prisma/` (repository impl) → `presentation/http/` (controllers).
 - **Event-Driven**: `order.completed` → buat InventoryStock lot; `order.cancelled`/`batch.cancelled`/`batch.failed` → return stok.
 - **State Machine**: Order (PENDING→CONFIRMED→DELIVERED→COMPLETED/CANCELLED), Batch (ACTIVE→COMPLETED/CANCELLED/FAILED), MoU (DRAFT→ACTIVE→EXPIRED/TERMINATED), Complaint (PENDING→REVIEWED→RESOLVED).
@@ -77,6 +84,7 @@ apps/backend/src/
 - **Audit Trail Append-Only**: `OrderStatusHistory`, `InventoryAdjustmentLog` (SPOILAGE/THEFT/DISCREPANCY), `ReportSnapshot` (immutable + unique constraint).
 
 ### 3.4 Cross-Cutting Concerns
+
 - **Request tracing**: `RequestIdMiddleware` (UUID `X-Request-Id`)
 - **Logging terstruktur**: Pino + RequestLoggerMiddleware (duration)
 - **Response format**: `ResponseTransformInterceptor` → `{ success, data, meta: { requestId, timestamp } }`
@@ -90,27 +98,29 @@ apps/backend/src/
 ## 4. Model Data (Prisma)
 
 ### 4.1 14 Model Utama
-| Model | Fungsi |
-|-------|--------|
-| **User** | Akun dengan role SPPG_ADMIN/SUPPLIER, link ke SPPG/Supplier |
-| **Sppg** | Unit pelaksana dengan alamat terstruktur + GPS |
-| **Supplier** | Pemasok dengan NIB, alamat, GPS, `isMarketSeller` + `marketName` |
-| **SupplierItem** | Katalog harga (`basePrice`), soft delete, `minThreshold` |
-| **Beneficiary** | Penerima manfaat (sekolah, panti, pesantren) |
-| **Mou** | Kontrak SPPG-Supplier dengan `terms` JSON, `nibSnapshot`, `documentUrl` |
-| **MouItem** | Item kontrak dengan `agreedPrice` (unique [mouId, itemId]) |
-| **Order** | Pemesanan, link opsional ke MoU, tracking delivery/payment/cancellation |
-| **OrderItem** | Detail dengan `unitPrice` dibekukan + `marketMedianAtPurchase` snapshot + `isWarningBypass` + `justificationNote` |
-| **InventoryStock** | Lot-based stok, `purchasePrice` dikunci, FIFO + FEFO via `expiredAt` |
-| **InventoryAdjustmentLog** | Audit trail penyesuaian |
-| **OrderStatusHistory** | Append-only status order |
-| **Batch** | Produksi makanan: `batchNumber`, `reportKey`, `menu`, `nutrition` JSON, `allergens`, `costPerPortion`, `totalCost`, `budgetVariance` vs Rp 10.000 |
-| **BatchItem** | Bahan baku dengan link ke InventoryStock (FIFO tracking) |
-| **Complaint** | Keluhan publik via `reportKey` |
-| **OperationalExpense** | Pengeluaran non-batch/order (TRANSPORTATION/FUEL/...) |
-| **ReportSnapshot** | Immutable report + `pdfHash` SHA-256 + unique [sppgId, type, periodKey] |
+
+| Model                      | Fungsi                                                                                                                                            |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **User**                   | Akun dengan role SPPG_ADMIN/SUPPLIER, link ke SPPG/Supplier                                                                                       |
+| **Sppg**                   | Unit pelaksana dengan alamat terstruktur + GPS                                                                                                    |
+| **Supplier**               | Pemasok dengan NIB, alamat, GPS, `isMarketSeller` + `marketName`                                                                                  |
+| **SupplierItem**           | Katalog harga (`basePrice`), soft delete, `minThreshold`                                                                                          |
+| **Beneficiary**            | Penerima manfaat (sekolah, panti, pesantren)                                                                                                      |
+| **Mou**                    | Kontrak SPPG-Supplier dengan `terms` JSON, `nibSnapshot`, `documentUrl`                                                                           |
+| **MouItem**                | Item kontrak dengan `agreedPrice` (unique [mouId, itemId])                                                                                        |
+| **Order**                  | Pemesanan, link opsional ke MoU, tracking delivery/payment/cancellation                                                                           |
+| **OrderItem**              | Detail dengan `unitPrice` dibekukan + `marketMedianAtPurchase` snapshot + `isWarningBypass` + `justificationNote`                                 |
+| **InventoryStock**         | Lot-based stok, `purchasePrice` dikunci, FIFO + FEFO via `expiredAt`                                                                              |
+| **InventoryAdjustmentLog** | Audit trail penyesuaian                                                                                                                           |
+| **OrderStatusHistory**     | Append-only status order                                                                                                                          |
+| **Batch**                  | Produksi makanan: `batchNumber`, `reportKey`, `menu`, `nutrition` JSON, `allergens`, `costPerPortion`, `totalCost`, `budgetVariance` vs Rp 10.000 |
+| **BatchItem**              | Bahan baku dengan link ke InventoryStock (FIFO tracking)                                                                                          |
+| **Complaint**              | Keluhan publik via `reportKey`                                                                                                                    |
+| **OperationalExpense**     | Pengeluaran non-batch/order (TRANSPORTATION/FUEL/...)                                                                                             |
+| **ReportSnapshot**         | Immutable report + `pdfHash` SHA-256 + unique [sppgId, type, periodKey]                                                                           |
 
 ### 4.2 9 Enum
+
 `Role`, `BatchStatus`, `ComplaintStatus`, `OrderStatus`, `MouStatus`, `StockSource` (SYSTEM_ORDER/MANUAL_ADJUSTMENT/BATCH_RETURN), `OperationalExpenseCategory`, `ReportType` (DAILY/WEEKLY/MONTHLY), `ReportSnapshotStatus` (DRAFT/FINAL).
 
 ---
@@ -120,9 +130,11 @@ apps/backend/src/
 File: [apps/backend/src/modules/market/services/market.service.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/src/modules/market/services/market.service.ts) (~840 baris)
 
 ### 5.1 Tujuan
+
 **Anti-markup & anti-korupsi** — validasi setiap harga supplier vs data pasar real-time dengan statistik adaptif.
 
 ### 5.2 Komponen Algoritma
+
 1. **Master Reference Prices** — 13 keyword-based reference (beras, ayam, sapi, telur, ikan, tahu, tempe, susu, minyak, wortel, bayam, sawi, kentang) untuk fallback cold-start.
 2. **Dual Statistics** — `raw` (semua harga) + `clean` (setelah outlier removal).
 3. **IQR (Interquartile Range)** outlier detection:
@@ -133,17 +145,17 @@ File: [apps/backend/src/modules/market/services/market.service.ts](file:///c:/MY
    - `district` → `regency` → `province` (admin cascade)
    - `gps_radius` (default 25km, expand ke 50km) via Haversine
    - `master` (fallback)
-5. **HET (Harga Eceran Tertinggi) Suggestion** — 4 strategi:
+5. **HET (Harga Eceran Tertinggi) Suggestion** — 3 strategi:
    - `master_reference_cold_start` (sample = 0)
    - `blended_small_sample` (sample < 5, blend master+mean × 1.1)
    - `clean_dynamic_median` (mature, clean median × 1.1)
-   - `all_anomaly_fallback`
 6. **Integrated Price Validation** (`validatePrice`) → 3 status:
    - **VALID**: harga dalam IQR & ≤ median+15%
    - **WARNING**: harga > median+15% atau < IQR lower → wajib `justificationNote`
    - **INVALID**: harga > IQR upper atau > master×1.2 → ditolak
 
 ### 5.3 Transparansi Keputusan
+
 Setiap decision disimpan di `MarketValidationContext` (itemName, masterPrice, scopeUsed, sampleCount, statistics, iqrBounds, basedOn) + snapshot `marketMedianAtPurchase` & `isWarningBypass` dibekukan di `OrderItem`, dan dimunculkan di Report PDF "Audit Table" (warningBypassCount + deviation %).
 
 ---
@@ -151,7 +163,9 @@ Setiap decision disimpan di `MarketValidationContext` (itemName, masterPrice, sc
 ## 6. Algoritma Pendukung
 
 ### 6.1 FIFO/FEFO Inventory
+
 File: [apps/backend/src/modules/batch/services/batch.service.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/src/modules/batch/services/batch.service.ts)
+
 - Konsumsi lot tertua (`createdAt ASC`) dengan `remainingQty > 0`
 - Split BatchItem jika satu item memotong 2 lot
 - `unitPrice` dikunci dari `InventoryStock.purchasePrice`
@@ -159,22 +173,30 @@ File: [apps/backend/src/modules/batch/services/batch.service.ts](file:///c:/MYPR
 - Hitung `costPerPortion`, `totalBudget` (Rp 10.000 × beneficiary), `budgetVariance`
 
 ### 6.2 Event-Driven Inventory
+
 File: [apps/backend/src/modules/inventory/inventory-event.handler.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/src/modules/inventory/inventory-event.handler.ts)
+
 - `@OnEvent("order.completed")` → buat InventoryStock lot (source: SYSTEM_ORDER)
 - `@OnEvent("order.cancelled")` → hapus stok jika previousStatus COMPLETED
 - `@OnEvent("batch.cancelled")` / `batch.failed` → return stok (source: BATCH_RETURN)
 
 ### 6.3 Haversine Geolocation
+
 File: [apps/backend/src/core/utils/geolocation.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/src/core/utils/geolocation.ts)
+
 - `calculateDistanceKm`, `findWithinRadius` untuk SPPG search & supplier proximity
 
 ### 6.4 PDF Immutable Report
+
 File: [apps/backend/src/modules/reports/services/pdf-generator.service.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/src/modules/reports/services/pdf-generator.service.ts)
+
 - PDFKit generate + **SHA-256 hash** untuk integritas audit
 - Header, summary, COGS, Procurement, **Audit Table** (price validation bypass), OpEx
 
 ### 6.5 Scheduler Cron (Asia/Jakarta)
+
 File: [apps/backend/src/modules/reports/services/reports-scheduler.service.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/src/modules/reports/services/reports-scheduler.service.ts)
+
 - Daily: `0 10 0 * * *` (00:10)
 - Weekly: `0 15 0 * * 1` (00:15 Senin)
 - Monthly: `0 20 0 1 * *` (00:20 tanggal 1)
@@ -184,6 +206,7 @@ File: [apps/backend/src/modules/reports/services/reports-scheduler.service.ts](f
 ## 7. Frontend — 25 Halaman
 
 ### 7.1 Publik (tanpa login)
+
 - [Home](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/page.tsx) — tab "Cek Resi" + "Cari SPPG" (region cascading + GPS Haversine)
 - [Batch Verify](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/batch/verify/[batchNumber]/page.tsx) — gizi, alergen, biaya, form komplain via reportKey
 - [Batch Lookup](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/batch/page.tsx)
@@ -191,6 +214,7 @@ File: [apps/backend/src/modules/reports/services/reports-scheduler.service.ts](f
 - [Login](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/auth/login/page.tsx) + [Register](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/auth/register/page.tsx) + [SSO Redirect](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/auth/sso-redirect/page.tsx) + [Dev Login](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/auth/dev-login/page.tsx)
 
 ### 7.2 Admin (SPPG_ADMIN)
+
 - [Dashboard](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/admin/page.tsx) — stats: porsi, laporan aktif, total biaya, reputasi vendor
 - [Suppliers](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/admin/suppliers/page.tsx) — CRUD + create page
 - [Batches](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/admin/batches/page.tsx) — card ringkas + report key + detail modal + 12 feature components
@@ -204,6 +228,7 @@ File: [apps/backend/src/modules/reports/services/reports-scheduler.service.ts](f
 - [Profile](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/admin/profile/page.tsx)
 
 ### 7.3 Supplier (SUPPLIER)
+
 - [Dashboard](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/supplier/page.tsx) — pesanan hari ini, katalog available/unavailable, MoU aktif
 - [Pesanan](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/supplier/pesanan/page.tsx) — view/accept incoming orders + 10 components
 - [Katalog](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/supplier/katalog/page.tsx)
@@ -211,6 +236,7 @@ File: [apps/backend/src/modules/reports/services/reports-scheduler.service.ts](f
 - [Profil](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/supplier/profil/page.tsx)
 
 ### 7.4 Komponen UI Kunci
+
 - `Skeleton.tsx` + skeleton loading di 11 halaman
 - `ErrorBoundary` + `PageErrorBoundary`
 - `AdminStatsCard`, `AdminStatsGrid`, `StatsCard` (supplier)
@@ -224,27 +250,35 @@ File: [apps/backend/src/modules/reports/services/reports-scheduler.service.ts](f
 ## 8. API Endpoints (~60+)
 
 ### Auth (`/api/auth`)
+
 - `POST /sso` · `GET /callback` · `POST /register` · `POST /login` · `GET /me` · `GET /dev-users` (dev) · `GET /dev-login` (dev)
 
 ### SPPG (`/api/sppg` + `/api/public/sppg`)
+
 - CRUD + **Public**: search by region/GPS Haversine, batches summary, profile (cache `public, max-age=300, stale-while-revalidate=600`)
 
 ### Supplier (`/api/suppliers`)
+
 - CRUD + `/me` (JWT) + nested items (POST/PATCH/DELETE dengan soft/hard delete)
 
 ### Beneficiary, MoU, Order, Batch, Complaint
+
 - CRUD dengan role guard + state transition
 
 ### Market (`/api/market`)
+
 - `/regions` · `/markets` · `/prices` · `/anomalies` (IQR) · `/het-suggestion` · `/validate-price`
 
 ### Inventory (`/api/inventory`)
+
 - `POST /manual` · `PATCH /:id/adjust` · `GET /` · `/balance` · `/valuation` · `/alerts` · `/:id/history`
 
 ### Reports (`/api/reports`)
+
 - `/daily` · `/weekly` · `/monthly` · `/expenses` (granular COGS/PROCUREMENT/OPEX/ALL) · `/:id/download` · `/operational-expenses` CRUD
 
 ### Health (`/api/health`)
+
 - `/` (full) · `/live` (liveness) · `/ready` (readiness)
 
 ---
@@ -252,17 +286,20 @@ File: [apps/backend/src/modules/reports/services/reports-scheduler.service.ts](f
 ## 9. Auth & Security
 
 ### 9.1 Alur Autentikasi
+
 - **Production (SSO BGN)**: frontend `POST /api/auth/sso` → backend return redirect ke `https://mitra.bgn.go.id/sso/authorize?client_id=sigizi&state=...` → user login di BGN → callback `GET /api/auth/callback` → return JWT
 - **Dev login**: `GET /auth/dev-login?role=...&userId=...` (tanpa password, hanya `NODE_ENV=development`)
 - **Email/password**: register supplier (transaksi buat Supplier+User+bcrypt) → login (bcrypt compare) → JWT 7 hari
 
 ### 9.2 JWT
+
 - Secret: `JWT_SECRET` (default `sigizi-secret-key`)
 - Expiry: `JWT_EXPIRES_IN` (default `7d`)
 - Payload: `{ sub: user.id, email, role }`
 - Strategy: `JwtStrategy` → `AuthService.validateToken`
 
 ### 9.3 Akun Seed (password: `password123`)
+
 - `admin-cirebon-utara@sigizi.go.id`
 - `admin-cirebon-selatan@sigizi.go.id`
 - `admin-cirebon-barat@sigizi.go.id`
@@ -290,6 +327,7 @@ File: [apps/backend/prisma/seed.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/
 ## 11. Status & Roadmap
 
 ### 11.1 Status Saat Ini (Phase 1: MVP)
+
 Lihat [docs/PROJECT_STATUS.md](file:///c:/MYPROJECTS/HACKATHON/sigizi/docs/PROJECT_STATUS.md)
 
 **Backend**: 12/12 modul ✅ 100%
@@ -299,6 +337,7 @@ Lihat [docs/PROJECT_STATUS.md](file:///c:/MYPROJECTS/HACKATHON/sigizi/docs/PROJE
 **Overall**: ~85%
 
 ### 11.2 Yang Belum (Phase 2: Post-MVP)
+
 - Real SSO BGN token exchange
 - Redis caching (price statistics, session)
 - BullMQ queue (async PDF generation)
@@ -308,6 +347,7 @@ Lihat [docs/PROJECT_STATUS.md](file:///c:/MYPROJECTS/HACKATHON/sigizi/docs/PROJE
 - Role-based UI routing yang lebih granular
 
 ### 11.3 Yang Belum (Phase 3: Production)
+
 - CI/CD pipeline (GitHub Actions)
 - Kubernetes / Docker Swarm deployment
 - SSL Let's Encrypt + domain `sigizi.go.id`
@@ -321,6 +361,7 @@ Lihat [docs/PROJECT_STATUS.md](file:///c:/MYPROJECTS/HACKATHON/sigizi/docs/PROJE
 ## 12. Eksekusi & Pilot
 
 ### 12.1 Rencana Eksekusi MVP
+
 - **Minggu 1**: `docker-compose up` end-to-end, validasi flow: login SPPG → create order + IQR → supplier accept → COMPLETED → batch FIFO → publik cek resi → komplain. Polish UI/UX.
 - **Pilot 1 (Cirebon)**: onboarding 3 SPPG + 9 pasar dengan data real. Metrik:
   - 100% order tervalidasi IQR
@@ -331,11 +372,13 @@ Lihat [docs/PROJECT_STATUS.md](file:///c:/MYPROJECTS/HACKATHON/sigizi/docs/PROJE
 - **Pilot 2**: tambah SPPG di kabupaten tetangga + koordinasi SSO BGN real
 
 ### 12.2 Business Model
+
 - **B2G (Business-to-Government)**: lisensi tahunan ke pemerintah daerah / Kementerian BGN, harga per SPPG terdaftar
 - **SaaS tier**: dasar (1–5 SPPG) → pro (multi-SPPG + analytics) → enterprise (multi-province + SSO BGN real)
 - **Add-on**: custom report, payment gateway integration, AI menu rekomendasi (post-MVP)
 
 ### 12.3 ROI Proyeksi
+
 - 1 SPPG: 1000 porsi/hari × Rp 10.000 × 200 hari × 20% leakage = **Rp 400 juta/tahun** terhindar
 - 1 provinsi (30 SPPG): **~Rp 12 miliar/tahun** vs lisensi Rp 50–100 juta/tahun = ROI 120–240×
 
@@ -345,12 +388,12 @@ Lihat [docs/PROJECT_STATUS.md](file:///c:/MYPROJECTS/HACKATHON/sigizi/docs/PROJE
 
 **TraceBite — 4 anggota**
 
-| Peran | Tanggung Jawab | Own |
-|-------|----------------|-----|
-| **Backend Lead** | NestJS + Prisma + DDD + MarketService IQR + event-driven inventory | `apps/backend/`, `packages/shared` |
-| **Frontend Lead** | Next.js 14 + Tailwind + Leaflet + QR + jsPDF | `apps/portal/` |
-| **Full-stack / Integrator** | Docker Compose, Turborepo, seed 2080 baris, e2e testing | root configs |
-| **Product/Domain** | PROJECT_STATUS, hackathon docs, alur bisnis MBG, koordinasi SSO BGN | `docs/` |
+| Peran                       | Tanggung Jawab                                                      | Own                                |
+| --------------------------- | ------------------------------------------------------------------- | ---------------------------------- |
+| **Backend Lead**            | NestJS + Prisma + DDD + MarketService IQR + event-driven inventory  | `apps/backend/`, `packages/shared` |
+| **Frontend Lead**           | Next.js 14 + Tailwind + Leaflet + QR + jsPDF                        | `apps/portal/`                     |
+| **Full-stack / Integrator** | Docker Compose, Turborepo, seed 2080 baris, e2e testing             | root configs                       |
+| **Product/Domain**          | PROJECT_STATUS, hackathon docs, alur bisnis MBG, koordinasi SSO BGN | `docs/`                            |
 
 **Kompetensi kolektif**: DDD 4-layer, event-driven, state machine, IQR statistik, FIFO accounting, PDF immutable hash, Haversine geolocation, Next.js CSR/SSR boundary.
 
@@ -372,16 +415,16 @@ Lihat [docs/PROJECT_STATUS.md](file:///c:/MYPROJECTS/HACKATHON/sigizi/docs/PROJE
 
 ## 15. Referensi File Kunci
 
-| Area | File |
-|------|------|
-| Root | [package.json](file:///c:/MYPROJECTS/HACKATHON/sigizi/package.json), [docker-compose.yml](file:///c:/MYPROJECTS/HACKATHON/sigizi/docker-compose.yml), [README.md](file:///c:/MYPROJECTS/HACKATHON/sigizi/README.md) |
-| Status | [docs/PROJECT_STATUS.md](file:///c:/MYPROJECTS/HACKATHON/sigizi/docs/PROJECT_STATUS.md), [docs/HACKATHON_QUESTION.md](file:///c:/MYPROJECTS/HACKATHON/sigizi/docs/HACKATHON_QUESTION.md) |
-| Backend entry | [apps/backend/src/main.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/src/main.ts), [apps/backend/src/app.module.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/src/app.module.ts) |
-| Database | [apps/backend/prisma/schema.prisma](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/prisma/schema.prisma), [apps/backend/prisma/seed.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/prisma/seed.ts) |
-| Algoritma | [apps/backend/src/modules/market/services/market.service.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/src/modules/market/services/market.service.ts) |
-| Inventory event | [apps/backend/src/modules/inventory/inventory-event.handler.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/src/modules/inventory/inventory-event.handler.ts) |
-| PDF | [apps/backend/src/modules/reports/services/pdf-generator.service.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/src/modules/reports/services/pdf-generator.service.ts) |
-| Frontend home | [apps/portal/src/app/page.tsx](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/page.tsx) |
+| Area               | File                                                                                                                                                                                                                                   |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Root               | [package.json](file:///c:/MYPROJECTS/HACKATHON/sigizi/package.json), [docker-compose.yml](file:///c:/MYPROJECTS/HACKATHON/sigizi/docker-compose.yml), [README.md](file:///c:/MYPROJECTS/HACKATHON/sigizi/README.md)                    |
+| Status             | [docs/PROJECT_STATUS.md](file:///c:/MYPROJECTS/HACKATHON/sigizi/docs/PROJECT_STATUS.md), [docs/HACKATHON_QUESTION.md](file:///c:/MYPROJECTS/HACKATHON/sigizi/docs/HACKATHON_QUESTION.md)                                               |
+| Backend entry      | [apps/backend/src/main.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/src/main.ts), [apps/backend/src/app.module.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/src/app.module.ts)                                   |
+| Database           | [apps/backend/prisma/schema.prisma](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/prisma/schema.prisma), [apps/backend/prisma/seed.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/prisma/seed.ts)                       |
+| Algoritma          | [apps/backend/src/modules/market/services/market.service.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/src/modules/market/services/market.service.ts)                                                                        |
+| Inventory event    | [apps/backend/src/modules/inventory/inventory-event.handler.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/src/modules/inventory/inventory-event.handler.ts)                                                                  |
+| PDF                | [apps/backend/src/modules/reports/services/pdf-generator.service.ts](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/backend/src/modules/reports/services/pdf-generator.service.ts)                                                        |
+| Frontend home      | [apps/portal/src/app/page.tsx](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/page.tsx)                                                                                                                                    |
 | Frontend dashboard | [apps/portal/src/app/admin/page.tsx](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/admin/page.tsx), [apps/portal/src/app/supplier/page.tsx](file:///c:/MYPROJECTS/HACKATHON/sigizi/apps/portal/src/app/supplier/page.tsx) |
 
 ---
