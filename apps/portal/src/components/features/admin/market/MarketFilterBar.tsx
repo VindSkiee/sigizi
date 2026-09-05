@@ -1,15 +1,19 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, MapPin, Navigation, AlertTriangle, Store } from "lucide-react";
+import { Search, MapPin, Navigation, AlertTriangle, Store, Tag } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   MarketFilter,
   LocationMode,
-  POPULAR_ITEMS,
   DEFAULT_FILTER,
 } from "./types";
-import { getSupplierRegions, getDistinctMarkets } from "@/lib/api";
+import {
+  getSupplierRegions,
+  getDistinctMarkets,
+  getItemCategories,
+  getItemCommodities,
+} from "@/lib/api";
 import { denormalizeRegion } from "@sigizi/shared";
 
 interface MarketFilterBarProps {
@@ -31,6 +35,16 @@ interface MarketData {
   itemCount: number;
 }
 
+interface Category {
+  id: string;
+  name: string;
+}
+
+interface Commodity {
+  id: string;
+  name: string;
+}
+
 export function MarketFilterBar({
   onSearch,
   isLoading,
@@ -43,8 +57,13 @@ export function MarketFilterBar({
 
   const [regions, setRegions] = useState<RegionData[]>([]);
   const [markets, setMarkets] = useState<MarketData[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [commodities, setCommodities] = useState<Commodity[]>([]);
   const [loadingRegions, setLoadingRegions] = useState(false);
   const [loadingMarkets, setLoadingMarkets] = useState(false);
+
+  const [categoryId, setCategoryId] = useState("");
+  const [commodityName, setCommodityName] = useState("");
 
   useEffect(() => {
     if (initialFilter) {
@@ -59,12 +78,35 @@ export function MarketFilterBar({
       .then((res) => {
         if (res.success) {
           const data = res.data as any;
-          setRegions(data?.provinces || []);
+          // Backend P2 returns { data: [...provinces], meta: {...} }
+          const regions = data?.data || data?.provinces || data || [];
+          setRegions(Array.isArray(regions) ? regions : []);
         }
       })
       .catch(() => {})
       .finally(() => setLoadingRegions(false));
   }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    getItemCategories(token)
+      .then((res) => {
+        if (res.success) setCategories((res.data as any) || []);
+      })
+      .catch(() => {});
+  }, [token]);
+
+  useEffect(() => {
+    if (!token || !categoryId) {
+      setCommodities([]);
+      return;
+    }
+    getItemCommodities(token, categoryId)
+      .then((res) => {
+        if (res.success) setCommodities((res.data as any) || []);
+      })
+      .catch(() => {});
+  }, [token, categoryId]);
 
   useEffect(() => {
     if (!token || !filter.province || !filter.regency) {
@@ -81,7 +123,9 @@ export function MarketFilterBar({
       .then((res) => {
         if (res.success) {
           const data = res.data as any;
-          setMarkets(data?.markets || []);
+          // Backend P2 returns { data: [...markets], meta: {...} }
+          const marketsData = data?.data || data?.markets || data || [];
+          setMarkets(Array.isArray(marketsData) ? marketsData : []);
         }
       })
       .catch(() => setMarkets([]))
@@ -113,6 +157,25 @@ export function MarketFilterBar({
       });
     },
     [],
+  );
+
+  const handleCategoryChange = useCallback(
+    (value: string) => {
+      setCategoryId(value);
+      setCommodityName("");
+      handleChange("item", "");
+    },
+    [handleChange],
+  );
+
+  const handleCommodityChange = useCallback(
+    (value: string) => {
+      const commodity = commodities.find((c) => c.id === value);
+      const name = commodity?.name || "";
+      setCommodityName(name);
+      handleChange("item", name);
+    },
+    [commodities, handleChange],
   );
 
   const handleRadiusChange = useCallback(
@@ -166,30 +229,59 @@ export function MarketFilterBar({
       className="bg-white rounded-xl border border-gray-200 p-6 mb-6"
     >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        {/* Bahan Baku */}
+        {/* Kategori */}
         <div>
           <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-            Bahan Baku <span className="text-red-500">*</span>
+            Kategori Bahan
+          </label>
+          <div className="relative">
+            <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <select
+              value={categoryId}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+              className="w-full pl-9 pr-4 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="">Semua kategori</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Komoditas */}
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            Komoditas <span className="text-red-500">*</span>
           </label>
           <select
-            value={filter.item}
-            onChange={(e) => handleChange("item", e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            value={
+              commodityName
+                ? commodities.find((c) => c.name === commodityName)?.id || ""
+                : ""
+            }
+            onChange={(e) => handleCommodityChange(e.target.value)}
+            disabled={!categoryId}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-50 disabled:text-gray-400"
           >
-            <option value="">Pilih bahan baku</option>
-            {POPULAR_ITEMS.map((item) => (
-              <option key={item} value={item}>
-                {item}
+            <option value="">
+              {categoryId ? "Pilih komoditas" : "Pilih kategori dulu"}
+            </option>
+            {commodities.map((com) => (
+              <option key={com.id} value={com.id}>
+                {com.name}
               </option>
             ))}
           </select>
-          <p className="text-xs text-gray-400 mt-1">
-            Contoh: Beras, Ayam, Telur, dll.
-          </p>
+          {categoryId && commodities.length === 0 && (
+            <p className="text-xs text-gray-400 mt-1">Tidak ada komoditas</p>
+          )}
         </div>
 
         {/* Location Mode Toggle */}
-        <div className="md:col-span-2">
+        <div className="md:col-span-1">
           <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
             Lokasi <span className="text-red-500">*</span>
           </label>

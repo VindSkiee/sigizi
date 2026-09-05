@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, DragEvent, ChangeEvent } from "react";
-import { FileText, X, Upload } from "lucide-react";
+import { FileText, X, Upload, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +13,14 @@ export interface FileUploadProps {
   label?: string;
   required?: boolean;
   helperText?: string;
+}
+
+function isImageFile(file: File): boolean {
+  return file.type.startsWith("image/");
+}
+
+function createImagePreview(file: File): string {
+  return URL.createObjectURL(file);
 }
 
 export function FileUpload({
@@ -27,6 +35,7 @@ export function FileUpload({
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   function validateFile(file: File): string | null {
     const acceptedTypes = accept.split(",").map((t) => t.trim());
@@ -49,7 +58,13 @@ export function FileUpload({
       toast.error(validationError);
       return;
     }
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
     setSelectedFile(file);
+    if (isImageFile(file)) {
+      setPreviewUrl(createImagePreview(file));
+    } else {
+      setPreviewUrl(null);
+    }
     onFileSelect(file);
   }
 
@@ -88,7 +103,9 @@ export function FileUpload({
   }
 
   function handleRemove() {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
     setSelectedFile(null);
+    setPreviewUrl(null);
     onFileSelect(null);
     if (inputRef.current) {
       inputRef.current.value = "";
@@ -137,7 +154,15 @@ export function FileUpload({
 
         {selectedFile ? (
           <div className="flex items-center justify-center gap-3 relative z-0 pointer-events-none">
-            <FileText className="w-8 h-8 text-green-600" />
+            {previewUrl ? (
+              <img
+                src={previewUrl}
+                alt={selectedFile.name}
+                className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+              />
+            ) : (
+              <FileText className="w-8 h-8 text-green-600" />
+            )}
             <div className="text-left">
               <p className="text-sm font-medium text-gray-700">
                 {selectedFile.name}
@@ -159,9 +184,9 @@ export function FileUpload({
           </div>
         ) : (
           <div className="relative z-0 pointer-events-none">
-            <Upload className="mx-auto w-10 h-10 text-gray-400 mb-2" />
+            <ImageIcon className="mx-auto w-10 h-10 text-gray-400 mb-2" />
             <p className="text-sm text-gray-600">
-              {helperText || "Klik atau seret file di sini"}
+              {helperText || "Klik atau seret gambar di sini"}
             </p>
             <p className="text-xs text-gray-400 mt-1">
               Format: {accept.replace(/\./g, "").toUpperCase()} (Maks. {maxSize}

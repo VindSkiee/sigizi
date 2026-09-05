@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react";
 import { X, Package, Loader2 } from "lucide-react";
 import { UNIT_OPTIONS } from "@sigizi/shared";
+import { useAuth } from "@/contexts/AuthContext";
+import { getItemCategories, getItemCommodities } from "@/lib/api";
+import { FileUpload } from "@/components/ui/FileUpload";
 
 interface ProductCreateModalProps {
   isOpen: boolean;
@@ -17,6 +20,19 @@ export interface CreateProductData {
   description?: string;
   minOrderQty?: number;
   orderStep?: number;
+  stock?: number;
+  imageFile?: File;
+  commodityId?: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+}
+
+interface Commodity {
+  id: string;
+  name: string;
 }
 
 export function ProductCreateModal({
@@ -24,12 +40,19 @@ export function ProductCreateModal({
   onClose,
   onSubmit,
 }: ProductCreateModalProps) {
+  const { token } = useAuth();
   const [name, setName] = useState("");
   const [unit, setUnit] = useState("");
   const [basePrice, setBasePrice] = useState("");
   const [description, setDescription] = useState("");
   const [minOrderQty, setMinOrderQty] = useState("");
   const [orderStep, setOrderStep] = useState("");
+  const [stock, setStock] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [categoryId, setCategoryId] = useState("");
+  const [commodityId, setCommodityId] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [commodities, setCommodities] = useState<Commodity[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -41,9 +64,31 @@ export function ProductCreateModal({
       setDescription("");
       setMinOrderQty("");
       setOrderStep("");
+      setStock("");
+      setImageFile(null);
+      setCategoryId("");
+      setCommodityId("");
       setError("");
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!token || !isOpen) return;
+    getItemCategories(token).then((res) => {
+      if (res.success) setCategories((res.data as any) || []);
+    }).catch(() => {});
+  }, [token, isOpen]);
+
+  useEffect(() => {
+    if (!token || !categoryId) {
+      setCommodities([]);
+      setCommodityId("");
+      return;
+    }
+    getItemCommodities(token, categoryId).then((res) => {
+      if (res.success) setCommodities((res.data as any) || []);
+    }).catch(() => {});
+  }, [token, categoryId]);
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -63,14 +108,18 @@ export function ProductCreateModal({
     setError("");
 
     try {
-      await onSubmit({
+      const payload: CreateProductData = {
         name: name.trim(),
         unit: unit.trim(),
         basePrice: Number(basePrice),
         description: description.trim() || undefined,
         minOrderQty: minOrderQty ? Number(minOrderQty) : undefined,
         orderStep: orderStep ? Number(orderStep) : undefined,
-      });
+        stock: stock ? Number(stock) : undefined,
+        imageFile: imageFile || undefined,
+        commodityId: commodityId || undefined,
+      };
+      await onSubmit(payload);
       onClose();
     } catch (err: any) {
       setError(err.message || "Gagal menyimpan produk. Silakan coba lagi.");
@@ -115,6 +164,15 @@ export function ProductCreateModal({
             </div>
           )}
 
+          {/* Image Upload */}
+          <FileUpload
+            accept=".jpg,.jpeg,.png,.webp"
+            maxSize={5}
+            onFileSelect={(file) => setImageFile(file)}
+            label="Gambar Produk"
+            helperText="Seret atau klik untuk upload gambar produk"
+          />
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               Nama Produk <span className="text-red-500">*</span>
@@ -126,6 +184,41 @@ export function ProductCreateModal({
               placeholder="contoh: Beras Premium"
               className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             />
+          </div>
+
+          {/* Category + Commodity */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Kategori <span className="text-gray-400 font-normal">(opsional)</span>
+              </label>
+              <select
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                <option value="">Semua Kategori</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Komoditas <span className="text-gray-400 font-normal">(opsional)</span>
+              </label>
+              <select
+                value={commodityId}
+                onChange={(e) => setCommodityId(e.target.value)}
+                disabled={!categoryId}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white disabled:opacity-50"
+              >
+                <option value="">Pilih komoditas</option>
+                {commodities.map((com) => (
+                  <option key={com.id} value={com.id}>{com.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -164,6 +257,21 @@ export function ProductCreateModal({
                 />
               </div>
             </div>
+          </div>
+
+          {/* Stock */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Stok <span className="text-gray-400 font-normal">(opsional)</span>
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={stock}
+              onChange={(e) => setStock(e.target.value)}
+              placeholder="Jumlah stok tersedia"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            />
           </div>
 
           <div>

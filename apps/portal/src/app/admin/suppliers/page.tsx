@@ -180,9 +180,23 @@ export default function SupplierIntegrationPage() {
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     const order = orders.find((o) => o.id === orderId);
 
-    // CONFIRMED → "PAY": navigate directly to payment
+    // CONFIRMED → "PAY": confirm payment via API
     if (order?.status === OrderStatus.CONFIRMED && newStatus === "PAY") {
-      router.push(`/admin/payments/${orderId}`);
+      if (!token) return;
+      try {
+        const { confirmOrderPayment } = await import("@/lib/api");
+        await confirmOrderPayment(token, orderId);
+        setOrders((prev) =>
+          prev.map((o) =>
+            o.id === orderId
+              ? { ...o, status: "PAID" as any, paidAt: new Date().toISOString() }
+              : o,
+          ),
+        );
+      } catch (err: any) {
+        console.error("Failed to confirm payment:", err);
+        alert(err.message || "Gagal konfirmasi pembayaran");
+      }
       return;
     }
 

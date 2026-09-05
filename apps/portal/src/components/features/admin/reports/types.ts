@@ -1,4 +1,4 @@
-export type ExpenseSource = "CASH" | "PRODUCTION" | "ALL";
+export type ExpenseSource = "OPEX" | "MARKET" | "ALL";
 
 export type FinancialSourceType = "PROCUREMENT" | "COGS" | "OPEX";
 
@@ -17,24 +17,19 @@ export interface ReportFilter {
 }
 
 export interface ReportStats {
-  totalPengeluaran: number;
-  invoiceCount: number;
-  totalPorsi: number;
-  totalTambahan: number;
-  totalCogs: number;
-  totalProcured: number;
   totalOpex: number;
+  opexCount: number;
+  topCategory: string;
 }
 
 export interface InvoiceRow {
   id: string;
   date: string;
   ref: string;
-  supplierName?: string;
   category: string;
+  description: string;
   nominal: number;
   statusBukti: string;
-  fileUrl?: string;
   isManual: boolean;
   source: FinancialSourceType;
   meta?: {
@@ -58,29 +53,27 @@ export interface ManualExpense {
   category?: string;
 }
 
-export const MANUAL_EXPENSE_KEY = "sigizi_manual_expenses";
-
 const today = new Date().toISOString().slice(0, 10);
-const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   .toISOString()
   .slice(0, 10);
 
 export const DEFAULT_FILTER: ReportFilter = {
-  startDate: sevenDaysAgo,
+  startDate: thirtyDaysAgo,
   endDate: today,
-  source: "CASH",
+  source: "ALL",
 };
 
 export const SOURCE_LABELS: Record<ExpenseSource, string> = {
-  CASH: "Pengeluaran Kas",
-  PRODUCTION: "Biaya Produksi",
+  OPEX: "Pengeluaran Operasional",
+  MARKET: "Referensi Harga Pasar",
   ALL: "Semua",
 };
 
 export const SOURCE_DESCRIPTIONS: Record<ExpenseSource, string> = {
-  CASH: "Pembayaran pesanan + biaya operasional",
-  PRODUCTION: "Biaya bahan yang dikonsumsi batch",
-  ALL: "Seluruh transaksi keuangan",
+  OPEX: "Biaya operasional (bensin, transport, administrasi, dll)",
+  MARKET: "Data harga pasar untuk referensi pengadaan",
+  ALL: "Ringkasan pengeluaran dan harga pasar",
 };
 
 export const FINANCIAL_SOURCE_CONFIG: Record<

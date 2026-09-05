@@ -7,6 +7,8 @@ import {
   ArrowUp,
   MapPin,
   RefreshCw,
+  Package,
+  Clock,
 } from "lucide-react";
 
 interface MarketSortFilterProps {
@@ -37,6 +39,16 @@ const SORT_OPTIONS: {
     value: "price_asc",
     label: "Harga Terendah",
     icon: <ArrowUp className="w-3.5 h-3.5" />,
+  },
+  {
+    value: "stock_desc",
+    label: "Stok Tersedia",
+    icon: <Package className="w-3.5 h-3.5" />,
+  },
+  {
+    value: "freshness_desc",
+    label: "Terbaru",
+    icon: <Clock className="w-3.5 h-3.5" />,
   },
   {
     value: "distance_asc",

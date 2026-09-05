@@ -14,61 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-const NOMINATIM_HEADERS = { "User-Agent": "SIGIZI-App/1.0" };
-
-function reverseGeocode(
-  lat: number,
-  lng: number,
-): Promise<{
-  province: string;
-  regency: string;
-  district: string;
-  village: string;
-  postalCode: string;
-}> {
-  return fetch(
-    `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=id&addressdetails=1`,
-    { headers: NOMINATIM_HEADERS },
-  )
-    .then((res) => res.json())
-    .then((data) => {
-      const addr = data.address || {};
-      return {
-        province: addr.state || addr.region || "",
-        regency: addr.city || addr.county || addr.state_district || "",
-        district: addr.suburb || addr.village || addr.neighbourhood || "",
-        village: addr.village || addr.hamlet || "",
-        postalCode: addr.postcode || "",
-      };
-    })
-    .catch(() => ({
-      province: "",
-      regency: "",
-      district: "",
-      village: "",
-      postalCode: "",
-    }));
-}
-
-function forwardGeocode(
-  query: string,
-): Promise<{ latitude: number; longitude: number } | null> {
-  return fetch(
-    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&accept-language=id`,
-    { headers: NOMINATIM_HEADERS },
-  )
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.length > 0) {
-        return {
-          latitude: parseFloat(data[0].lat),
-          longitude: parseFloat(data[0].lon),
-        };
-      }
-      return null;
-    })
-    .catch(() => null);
-}
+import { reverseGeocode, forwardGeocode } from "@/lib/geocoding";
 
 export default function ProfilePage() {
   const {

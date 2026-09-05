@@ -1,17 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Star, Users, FileText, MapPin } from "lucide-react";
+import { Star, ShoppingCart, Store } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  getBatches,
-  getSuppliers,
-  getBeneficiaries,
-  getComplaints,
-} from "@/lib/api";
+import { getSuppliers } from "@/lib/api";
 import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
 import { AdminStatsCard, AdminStatsGrid } from "@/components/ui/AdminStatsCard";
-import { BatchStatusBadge } from "@/components/features/batch/BatchStatusBadge";
 import "@aejkatappaja/phantom-ui";
 
 const getRatingLabel = (rating: number): string => {
@@ -22,172 +16,36 @@ const getRatingLabel = (rating: number): string => {
   return "Sangat Kurang";
 };
 
-// Fallback data dari isi database aktual (seed)
-const fallbackBatches = [
-  {
-    id: "BATCH-20260710-001",
-    date: "10 Juli 2026",
-    total: 387000,
-    status: "ACTIVE",
-  },
-];
-const fallbackSuppliers = [
-  { id: "s1", name: "UD. Sumber Rejeki" },
-  { id: "s2", name: "UD. Murah Jaya" },
-  { id: "s3", name: "Tani Segar Farm" },
-];
-const fallbackBeneficiaries = [
-  {
-    name: "SDN 1 Purwakarta",
-    school: "SDN 01",
-    distance: "1.2 km",
-    hasVendor: true,
-  },
-  {
-    name: "SDN 2 Purwakarta",
-    school: "SDN 02",
-    distance: "2.5 km",
-    hasVendor: true,
-  },
-  {
-    name: "SMPN 1 Purwakarta",
-    school: "SMPN 01",
-    distance: "3.8 km",
-    hasVendor: false,
-  },
-  {
-    name: "Panti Asuhan Harapan",
-    school: "Panti Asuhan",
-    distance: "4.5 km",
-    hasVendor: false,
-  },
-];
-const fallbackComplaints = [
-  { id: "c1", description: "Nasi terasa agak basi", status: "PENDING" },
-];
-
 export default function AdminDashboard() {
   const { token, user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     rating: 4.5,
-    porsiHariIni: 0,
-    laporanAktif: 0,
-    totalBiaya: 0,
+    totalSuppliers: 0,
   });
-  const [recentBatches, setRecentBatches] = useState(fallbackBatches);
-  const [schools, setSchools] = useState(fallbackBeneficiaries);
 
   useEffect(() => {
     async function fetchDashboard() {
       if (!token) {
-        // Tidak ada token → pakai fallback
-        setStats({
-          rating: 4.5,
-          porsiHariIni: 4,
-          laporanAktif: 1,
-          totalBiaya: 387000,
-        });
+        setStats({ rating: 4.5, totalSuppliers: 0 });
         setLoading(false);
         return;
       }
 
       try {
-        const [batchesRes, suppliersRes, beneficiariesRes, complaintsRes] =
-          await Promise.allSettled([
-            getBatches(token),
-            getSuppliers(token),
-            getBeneficiaries(token),
-            getComplaints(token),
-          ]);
-
-        const batches =
-          batchesRes.status === "fulfilled"
-            ? (batchesRes.value?.data as any)?.items || []
-            : [];
+        const suppliersRes = await getSuppliers(token).catch(() => null);
         const suppliers =
-          suppliersRes.status === "fulfilled"
-            ? (suppliersRes.value?.data as any)?.items || []
+          suppliersRes?.success && (suppliersRes.data as any)?.items
+            ? (suppliersRes.data as any).items
             : [];
-        const beneficiariesData =
-          beneficiariesRes.status === "fulfilled"
-            ? (beneficiariesRes.value?.data as any)?.items || []
-            : [];
-        const complaints =
-          complaintsRes.status === "fulfilled"
-            ? (complaintsRes.value?.data as any)?.items || []
-            : [];
-
-        // Kalau semua data kosong (API gagal), pakai fallback
-        if (
-          batches.length === 0 &&
-          suppliers.length === 0 &&
-          beneficiariesData.length === 0
-        ) {
-          setStats({
-            rating: 4.5,
-            porsiHariIni: 4,
-            laporanAktif: 1,
-            totalBiaya: 387000,
-          });
-          setRecentBatches(fallbackBatches);
-          setSchools(fallbackBeneficiaries);
-          return;
-        }
-
-        const totalBiaya = batches.reduce(
-          (sum: number, b: any) => sum + (b.totalCost || 0),
-          0,
-        );
-        const porsiHariIni = beneficiariesData.length || 4;
-        const laporanAktif = complaints.filter(
-          (c: any) => c.status === "PENDING",
-        ).length;
 
         setStats({
           rating: 4.5,
-          porsiHariIni,
-          laporanAktif,
-          totalBiaya,
+          totalSuppliers: suppliers.length,
         });
-
-        setRecentBatches(
-          batches.length > 0
-            ? batches.slice(0, 5).map((b: any) => ({
-                id: b.batchNumber || b.id,
-                date: new Date(b.date || b.createdAt).toLocaleDateString(
-                  "id-ID",
-                  {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  },
-                ),
-                total: b.totalCost || 0,
-                status: b.status || "ACTIVE",
-              }))
-            : fallbackBatches,
-        );
-
-        if (beneficiariesData.length > 0) {
-          const distances = ["1.2 km", "2.5 km", "3.8 km", "4.5 km"];
-          setSchools(
-            beneficiariesData.slice(0, 5).map((b: any, i: number) => ({
-              name: b.name,
-              school: b.school || b.name,
-              distance: distances[i] || `${(i + 1) * 1.5} km`,
-              hasVendor: i < 2,
-            })),
-          );
-        }
       } catch (err) {
         console.error("Failed to fetch dashboard:", err);
-        setStats({
-          rating: 4.5,
-          porsiHariIni: 4,
-          laporanAktif: 1,
-          totalBiaya: 387000,
-        });
+        setStats({ rating: 4.5, totalSuppliers: 0 });
       } finally {
         setLoading(false);
       }
@@ -203,31 +61,10 @@ export default function AdminDashboard() {
           <Skeleton className="h-8 w-64 mb-2" />
           <Skeleton className="h-4 w-80" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          {[1, 2, 3].map((i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          {[1, 2].map((i) => (
             <SkeletonCard key={i} />
           ))}
-        </div>
-        <Skeleton className="h-24 rounded-xl mb-8" />
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6">
-          <div className="p-5 border-b border-gray-100">
-            <Skeleton className="h-5 w-64" />
-          </div>
-          <div className="p-5 space-y-3">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-          <div className="p-5 border-b border-gray-100">
-            <Skeleton className="h-5 w-56" />
-          </div>
-          <div className="p-5 space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-16 w-full rounded-lg" />
-            ))}
-          </div>
         </div>
       </div>
     );
@@ -239,15 +76,15 @@ export default function AdminDashboard() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">
-            Selamat Datang, {user?.name || "Dapur Sehat"}!
+            Selamat Datang, {user?.name || "Admin SPPG"}!
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Berikut ringkasan operasional MBG hari ini.
+            Berikut ringkasan operasional marketplace hari ini.
           </p>
         </div>
 
         {/* Stats Cards */}
-        <AdminStatsGrid columns={3}>
+        <AdminStatsGrid columns={2}>
           {/* Reputasi Vendor */}
           <AdminStatsCard
             title="Reputasi Vendor"
@@ -278,97 +115,58 @@ export default function AdminDashboard() {
             }
           />
 
-          {/* Porsi Hari Ini */}
+          {/* Total Supplier */}
           <AdminStatsCard
-            title="Porsi Hari Ini"
-            value={stats.porsiHariIni}
-            unit="/ Siswa"
-            icon={<Users className="w-5 h-5" />}
-            color="green"
-          />
-
-          {/* Laporan Aktif */}
-          <AdminStatsCard
-            title="Laporan Aktif"
-            value={stats.laporanAktif}
-            icon={<FileText className="w-5 h-5" />}
-            color="orange"
-            subtitle={
-              stats.laporanAktif > 0 ? "Perlu ditinjau" : "Tidak ada laporan"
-            }
+            title="Total Supplier"
+            value={stats.totalSuppliers}
+            unit=" supplier"
+            icon={<Store className="w-5 h-5" />}
+            color="blue"
           />
         </AdminStatsGrid>
 
-        {/* Total Pengeluaran */}
-        <AdminStatsCard
-          title="Total Pengeluaran Seluruh Batch"
-          value={`Rp ${stats.totalBiaya.toLocaleString("id-ID")}`}
-          accent
-          color="primary"
-          className="mb-8"
-        />
-
-        {/* Riwayat Batch */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6">
-          <div className="p-5 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Riwayat Batch & Pengeluaran Terbaru
-            </h2>
-          </div>
-          <div className="p-5">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <th className="pb-3">ID Batch</th>
-                  <th className="pb-3">Tanggal</th>
-                  <th className="pb-3">Status</th>
-                  <th className="pb-3 text-right">Total Pengeluaran</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {recentBatches.map((batch) => (
-                  <tr key={batch.id} className="hover:bg-gray-50">
-                    <td className="py-3 text-sm font-medium text-gray-900">
-                      {batch.id}
-                    </td>
-                    <td className="py-3 text-sm text-gray-600">{batch.date}</td>
-                    <td className="py-3">
-                      <BatchStatusBadge status={batch.status as any} />
-                    </td>
-                    <td className="py-3 text-sm font-medium text-gray-900 text-right">
-                      Rp {batch.total.toLocaleString("id-ID")}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Sekolah Sekitar */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-          <div className="p-5 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Penerima Manfaat (Radius 5km)
-            </h2>
-          </div>
-          <div className="p-5 space-y-4">
-            {schools.map((school) => (
-              <div
-                key={school.name}
-                className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg"
-              >
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <MapPin className="w-5 h-5 text-[#1E40AF]" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">
-                    {school.name}
-                  </p>
-                  <p className="text-xs text-gray-500">{school.distance}</p>
-                </div>
+        {/* Quick Actions */}
+        <div className="mt-8 bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            Akses Cepat
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <a
+              href="/admin/market"
+              className="flex items-center gap-3 p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+            >
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <Store className="w-5 h-5 text-green-600" />
               </div>
-            ))}
+              <div>
+                <p className="text-sm font-medium text-gray-900">Pasar Bahan Baku</p>
+                <p className="text-xs text-gray-500">Cari & bandingkan harga</p>
+              </div>
+            </a>
+            <a
+              href="/admin/suppliers"
+              className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+            >
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <ShoppingCart className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900">Pesanan</p>
+                <p className="text-xs text-gray-500">Kelola pesanan ke supplier</p>
+              </div>
+            </a>
+            <a
+              href="/admin/reports"
+              className="flex items-center gap-3 p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
+            >
+              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                <Star className="w-5 h-5 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900">Laporan Keuangan</p>
+                <p className="text-xs text-gray-500">Pengeluaran operasional</p>
+              </div>
+            </a>
           </div>
         </div>
       </div>

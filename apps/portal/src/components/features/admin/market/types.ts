@@ -1,7 +1,12 @@
 export type LocationMode = "region" | "gps";
 
 export type MarketSortOption =
-  "default" | "price_desc" | "price_asc" | "distance_asc";
+  | "default"
+  | "price_desc"
+  | "price_asc"
+  | "distance_asc"
+  | "stock_desc"
+  | "freshness_desc";
 
 export interface MarketFilter {
   item: string;
@@ -19,6 +24,15 @@ export interface MarketPriceStatistics {
   median: number;
   mean: number;
   count: number;
+}
+
+export interface MarketPaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
 export interface MarketSupplierItem {
@@ -44,6 +58,16 @@ export interface MarketSupplierItem {
   isMarketSeller?: boolean;
   marketName?: string;
   isSimulation?: boolean;
+  stock?: number;
+  image?: string;
+  profileImage?: string;
+  commodityId?: string;
+  commodityName?: string;
+  categoryName?: string;
+  openStatus?: "OPEN" | "CLOSED" | "PRE_ORDER";
+  priceUpdatedAt?: string;
+  stockUpdatedAt?: string;
+  meta?: Record<string, unknown>;
 }
 
 export interface MarketPriceResponse {

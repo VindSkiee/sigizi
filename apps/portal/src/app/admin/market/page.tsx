@@ -54,6 +54,7 @@ export default function MarketPage() {
     error,
     radiusInfo,
     apiFilter,
+    paginationMeta,
     handleSearch: handleSearchFromHook,
     handleRefresh,
     dismissRadiusWarning,
@@ -170,6 +171,18 @@ export default function MarketPage() {
         return [...base].sort(
           (a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity),
         );
+      case "stock_desc":
+        return [...base].sort((a, b) => (b.stock ?? 0) - (a.stock ?? 0));
+      case "freshness_desc":
+        return [...base].sort((a, b) => {
+          const aTime = a.priceUpdatedAt
+            ? new Date(a.priceUpdatedAt).getTime()
+            : 0;
+          const bTime = b.priceUpdatedAt
+            ? new Date(b.priceUpdatedAt).getTime()
+            : 0;
+          return bTime - aTime;
+        });
       default:
         return base;
     }
@@ -397,7 +410,7 @@ export default function MarketPage() {
               <p className="text-sm text-gray-500">
                 Menampilkan {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
                 {Math.min(currentPage * ITEMS_PER_PAGE, filteredItems.length)}{" "}
-                dari {filteredItems.length} supplier
+                dari {paginationMeta?.total ?? filteredItems.length} supplier
               </p>
               <Pagination
                 currentPage={currentPage}

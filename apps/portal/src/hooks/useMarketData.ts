@@ -6,6 +6,7 @@ import {
   MarketFilter,
   MarketSupplierItem,
   MarketPriceStatistics,
+  MarketPaginationMeta,
 } from "@/components/features/admin/market/types";
 import { getMarketState, saveMarketState } from "@/lib/market-persist";
 import {
@@ -32,6 +33,7 @@ interface UseMarketDataReturn {
   error: string | null;
   radiusInfo: RadiusInfo | null;
   apiFilter: MarketLocationParams | null;
+  paginationMeta: MarketPaginationMeta | null;
   handleSearch: (filter: MarketFilter) => Promise<void>;
   handleRefresh: () => Promise<void>;
   dismissRadiusWarning: () => void;
@@ -57,6 +59,8 @@ export function useMarketData(): UseMarketDataReturn {
   const [apiFilter, setApiFilter] = useState<MarketLocationParams | null>(
     null,
   );
+  const [paginationMeta, setPaginationMeta] =
+    useState<MarketPaginationMeta | null>(null);
 
   const backgroundFetchRef = useRef<string | null>(null);
 
@@ -125,7 +129,10 @@ export function useMarketData(): UseMarketDataReturn {
         setApiFilter(locationFilter);
 
         const data = response.data as any;
-        const rawSuppliers = (data.suppliers || []) as any[];
+        // Handle both old flat shape and new { data, meta } wrapper
+        const marketData = data?.data || data;
+        const meta = data?.meta || null;
+        const rawSuppliers = (marketData?.suppliers || []) as any[];
 
         const uniqueSupplierIds = [
           ...new Set(rawSuppliers.map((s) => s.supplierId)),
@@ -181,12 +188,13 @@ export function useMarketData(): UseMarketDataReturn {
 
         return {
           items: mapped,
-          rawStats: (data.statistics?.raw ||
+          rawStats: (marketData?.statistics?.raw ||
             null) as MarketPriceStatistics | null,
-          cleanStats: (data.statistics?.clean ||
+          cleanStats: (marketData?.statistics?.clean ||
             null) as MarketPriceStatistics | null,
-          effectiveRadiusKm: (data.effectiveRadiusKm ?? null) as number | null,
-          sampleCount: (data.sampleCount ?? 0) as number,
+          effectiveRadiusKm: (marketData?.effectiveRadiusKm ?? null) as number | null,
+          sampleCount: (marketData?.sampleCount ?? 0) as number,
+          paginationMeta: meta as MarketPaginationMeta | null,
         };
       } catch (err) {
         console.error("Failed to fetch market prices:", err);
@@ -216,6 +224,7 @@ export function useMarketData(): UseMarketDataReturn {
         setRawStats(result.rawStats);
         setCleanStats(result.cleanStats);
         setSearchedItem(newFilter.item);
+        setPaginationMeta(result.paginationMeta ?? null);
 
         if (
           newFilter.locationMode === "gps" &&
@@ -310,6 +319,7 @@ export function useMarketData(): UseMarketDataReturn {
       setItems(result.items);
       setRawStats(result.rawStats);
       setCleanStats(result.cleanStats);
+      setPaginationMeta(result.paginationMeta ?? null);
 
       saveMarketState({
         filter,
@@ -339,6 +349,7 @@ export function useMarketData(): UseMarketDataReturn {
     error,
     radiusInfo,
     apiFilter,
+    paginationMeta,
     handleSearch,
     handleRefresh,
     dismissRadiusWarning,

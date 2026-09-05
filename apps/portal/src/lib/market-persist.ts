@@ -2,6 +2,7 @@ import {
   MarketFilter,
   MarketPriceStatistics,
   MarketSupplierItem,
+  MarketPaginationMeta,
 } from "@/components/features/admin/market/types";
 
 const MARKET_STATE_KEY = "sigizi_market_state";
@@ -16,6 +17,7 @@ export interface MarketPersistState {
   showExpanded: boolean;
   requestedRadius: number | null;
   error: string | null;
+  paginationMeta?: MarketPaginationMeta | null;
   timestamp: number;
 }
 

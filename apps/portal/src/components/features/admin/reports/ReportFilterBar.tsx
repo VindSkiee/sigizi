@@ -28,7 +28,7 @@ export function ReportFilterBar({ onFilter, isLoading }: ReportFilterBarProps) {
     onFilter(newFilter);
   };
 
-  const sources: ExpenseSource[] = ["CASH", "PRODUCTION", "ALL"];
+  const sources: ExpenseSource[] = ["ALL", "OPEX"];
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">

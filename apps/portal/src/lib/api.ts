@@ -153,14 +153,42 @@ export async function updateSupplier(token: string, id: string, data: any) {
   });
 }
 
-export async function updateSupplierProfile(token: string, data: any) {
-  return fetchApi("/api/suppliers/me/profile", {
+export async function updateSupplierProfile(
+  token: string,
+  data: Record<string, any>,
+  file?: File,
+) {
+  const formData = new FormData();
+  if (file) formData.append("file", file);
+  Object.entries(data).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      formData.append(key, String(value));
+    }
+  });
+
+  const url = `${API_URL}/api/suppliers/me/profile`;
+  const response = await fetch(url, {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(data),
+    body: formData,
   });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({
+      message: "Gagal menyimpan profil",
+    }));
+    const errInfo = body?.error ?? body;
+    const err = new Error(
+      errInfo?.message || body?.message || "Request failed",
+    ) as any;
+    err.code = errInfo?.code || "UNKNOWN_ERROR";
+    err.status = response.status;
+    throw err;
+  }
+
+  return response.json();
 }
 
 export async function deleteSupplier(token: string, id: string) {
@@ -185,14 +213,39 @@ export async function addSupplierItem(
   token: string,
   supplierId: string,
   data: any,
+  file?: File,
 ) {
-  return fetchApi(`/api/suppliers/${supplierId}/items`, {
+  const formData = new FormData();
+  if (file) formData.append("file", file);
+  Object.entries(data).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      formData.append(key, String(value));
+    }
+  });
+
+  const url = `${API_URL}/api/suppliers/${supplierId}/items`;
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(data),
+    body: formData,
   });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({
+      message: "Gagal menyimpan produk",
+    }));
+    const errInfo = body?.error ?? body;
+    const err = new Error(
+      errInfo?.message || body?.message || "Request failed",
+    ) as any;
+    err.code = errInfo?.code || "UNKNOWN_ERROR";
+    err.status = response.status;
+    throw err;
+  }
+
+  return response.json();
 }
 
 export async function removeSupplierItem(token: string, itemId: string) {
@@ -209,19 +262,43 @@ export async function updateSupplierItem(
   supplierId: string,
   itemId: string,
   data: any,
+  file?: File,
 ) {
-  return fetchApi(`/api/suppliers/${supplierId}/items/${itemId}`, {
+  const formData = new FormData();
+  if (file) formData.append("file", file);
+  Object.entries(data).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      formData.append(key, String(value));
+    }
+  });
+
+  const url = `${API_URL}/api/suppliers/${supplierId}/items/${itemId}`;
+  const response = await fetch(url, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
     },
-    body: JSON.stringify(data),
+    body: formData,
   });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({
+      message: "Gagal mengupdate produk",
+    }));
+    const errInfo = body?.error ?? body;
+    const err = new Error(
+      errInfo?.message || body?.message || "Request failed",
+    ) as any;
+    err.code = errInfo?.code || "UNKNOWN_ERROR";
+    err.status = response.status;
+    throw err;
+  }
+
+  return response.json();
 }
 
 // ============================================================================
-// Batch API
+// Batch API (kept for ShipmentChart and public batch verify)
 // ============================================================================
 export async function getBatches(
   token: string,
@@ -236,37 +313,6 @@ export async function getBatches(
     headers: {
       Authorization: `Bearer ${token}`,
     },
-  });
-}
-
-export async function createBatch(
-  token: string,
-  data: any,
-  sppgId: string,
-  userId: string,
-) {
-  return fetchApi(`/api/batches?sppgId=${sppgId}&userId=${userId}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  });
-}
-
-export async function updateBatchStatus(
-  token: string,
-  id: string,
-  status: string,
-  failedReason?: string,
-  failedEvidence?: string,
-) {
-  return fetchApi(`/api/batches/${id}/status`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ status, failedReason, failedEvidence }),
   });
 }
 
@@ -304,6 +350,9 @@ export interface CreateOrderItemRequest {
 
 export interface CreateOrderPayload {
   supplierId: string;
+  mouId?: string;
+  notes?: string;
+  expectedDeliveryDate?: string;
   items: CreateOrderItemRequest[];
   priceJustification?: string;
   marketFilter?: MarketLocationParams;
@@ -349,30 +398,8 @@ export async function confirmOrderPayment(token: string, orderId: string) {
 }
 
 // ============================================================================
-// Complaint API
+// Complaint API (kept for public batch verify page)
 // ============================================================================
-export async function getComplaints(
-  token: string,
-  options?: {
-    batchId?: string;
-    status?: string;
-    page?: number;
-    limit?: number;
-  },
-) {
-  const params = new URLSearchParams();
-  if (options?.batchId) params.append("batchId", options.batchId);
-  if (options?.status) params.append("status", options.status);
-  if (options?.page) params.append("page", String(options.page));
-  if (options?.limit) params.append("limit", String(options.limit));
-  const qs = params.toString() ? `?${params.toString()}` : "";
-  return fetchApi(`/api/complaints${qs}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-}
-
 export async function submitComplaint(data: {
   reportKey: string;
   description: string;
@@ -381,21 +408,6 @@ export async function submitComplaint(data: {
   return fetchApi("/api/complaints", {
     method: "POST",
     body: JSON.stringify(data),
-  });
-}
-
-export async function updateComplaintStatus(
-  token: string,
-  id: string,
-  status: string,
-  notes?: string,
-) {
-  return fetchApi(`/api/complaints/${id}/status`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ status, notes }),
   });
 }
 
@@ -624,57 +636,6 @@ export async function updateMoUStatus(
 }
 
 // ============================================================================
-// Beneficiary API
-// ============================================================================
-export async function getBeneficiaries(
-  token: string,
-  params?: { sppgId?: string; search?: string; page?: number; limit?: number },
-) {
-  const searchParams = new URLSearchParams();
-  if (params?.sppgId) searchParams.append("sppgId", params.sppgId);
-  if (params?.search) searchParams.append("search", params.search);
-  if (params?.page) searchParams.append("page", String(params.page));
-  if (params?.limit) searchParams.append("limit", String(params.limit));
-  const qs = searchParams.toString() ? `?${searchParams.toString()}` : "";
-  return fetchApi(`/api/beneficiaries${qs}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-}
-
-export async function getBeneficiaryById(token: string, id: string) {
-  return fetchApi(`/api/beneficiaries/${id}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-}
-
-export async function createBeneficiary(
-  token: string,
-  data: any,
-  sppgId: string,
-) {
-  return fetchApi(`/api/beneficiaries?sppgId=${sppgId}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  });
-}
-
-export async function deleteBeneficiary(token: string, id: string) {
-  return fetchApi(`/api/beneficiaries/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-}
-
-// ============================================================================
 // SPPG API
 // ============================================================================
 export async function getSppgs(token: string) {
@@ -794,97 +755,77 @@ export async function getMarketPrices(
 }
 
 // ============================================================================
-// Inventory API
+// Market Item Detail API (P3)
 // ============================================================================
-export async function getInventoryStocks(
+export async function getMarketItemDetail(token: string, itemId: string) {
+  return fetchApi(`/api/market/items/${itemId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+// ============================================================================
+// File Upload API (P0)
+// ============================================================================
+async function uploadToEndpoint(
   token: string,
-  params?: {
-    itemId?: string;
-    source?: string;
-    minRemaining?: number;
-    page?: number;
-    limit?: number;
-  },
-) {
-  const searchParams = new URLSearchParams();
-  if (params?.itemId) searchParams.append("itemId", params.itemId);
-  if (params?.source) searchParams.append("source", params.source);
-  if (params?.minRemaining !== undefined)
-    searchParams.append("minRemaining", String(params.minRemaining));
-  if (params?.page) searchParams.append("page", String(params.page));
-  if (params?.limit) searchParams.append("limit", String(params.limit));
-  const qs = searchParams.toString() ? `?${searchParams.toString()}` : "";
-  return fetchApi(`/api/inventory${qs}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-}
+  file: File,
+  endpoint: string,
+): Promise<{ success: boolean; data: { url: string } }> {
+  const formData = new FormData();
+  formData.append("file", file);
 
-export async function getInventoryBalance(token: string) {
-  return fetchApi("/api/inventory/balance", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-}
-
-export async function getInventoryValuation(token: string) {
-  return fetchApi("/api/inventory/valuation", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-}
-
-export async function getInventoryAlerts(token: string) {
-  return fetchApi("/api/inventory/alerts", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-}
-
-export async function createManualStock(
-  token: string,
-  data: {
-    itemName: string;
-    unit?: string;
-    purchasePrice: number;
-    quantity: number;
-    expiredAt?: string;
-    notes?: string;
-  },
-) {
-  return fetchApi("/api/inventory/manual", {
+  const url = `${API_URL}${endpoint}`;
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(data),
+    body: formData,
   });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({
+      message: "Upload gagal",
+    }));
+    const errInfo = body?.error ?? body;
+    const err = new Error(
+      errInfo?.message || body?.message || "Upload failed",
+    ) as any;
+    err.code = errInfo?.code || "UPLOAD_ERROR";
+    err.status = response.status;
+    throw err;
+  }
+
+  return response.json();
 }
 
-export async function adjustStock(
-  token: string,
-  stockId: string,
-  data: {
-    adjustmentQty: number;
-    reason: string;
-    description?: string;
-  },
-) {
-  return fetchApi(`/api/inventory/${stockId}/adjust`, {
-    method: "PATCH",
+export async function uploadItemImage(token: string, file: File) {
+  return uploadToEndpoint(token, file, "/api/upload/image");
+}
+
+export async function uploadProfileImage(token: string, file: File) {
+  return uploadToEndpoint(token, file, "/api/upload/profile");
+}
+
+// ============================================================================
+// Taxonomy API (P9)
+// ============================================================================
+export async function getItemCategories(token: string) {
+  return fetchApi("/api/categories", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(data),
   });
 }
 
-export async function getStockHistory(token: string, stockId: string) {
-  return fetchApi(`/api/inventory/${stockId}/history`, {
+export async function getItemCommodities(
+  token: string,
+  categoryId?: string,
+) {
+  const params = categoryId ? `?categoryId=${categoryId}` : "";
+  return fetchApi(`/api/commodities${params}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

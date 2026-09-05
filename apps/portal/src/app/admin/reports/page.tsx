@@ -6,86 +6,52 @@ import {
   ReportStats,
   InvoiceRow as InvoiceRowType,
   ExpenseSource,
-  FinancialSourceType,
-  OrderItemDetail,
   DEFAULT_FILTER,
+  OPEX_CATEGORIES,
 } from "@/components/features/admin/reports/types";
 import { ReportHeader } from "@/components/features/admin/reports/ReportHeader";
 import { ReportFilterBar } from "@/components/features/admin/reports/ReportFilterBar";
 import { ReportStatsCards } from "@/components/features/admin/reports/ReportStatsCards";
 import { InvoiceTable } from "@/components/features/admin/reports/InvoiceTable";
 import { ManualExpenseModal } from "@/components/features/admin/reports/ManualExpenseModal";
-import { BgnReportModal } from "@/components/features/admin/reports/BgnReportModal";
-import { generateBgnReport } from "@/components/features/admin/reports/generateBgnReport";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
-import { getExpenseBreakdown, createOperationalExpense } from "@/lib/api";
+import { listOperationalExpenses, createOperationalExpense } from "@/lib/api";
 
-interface FinancialLogEntry {
-  source: FinancialSourceType;
-  date: string;
-  referenceId: string;
-  title: string;
-  description?: string | null;
+interface OpExEntry {
+  id: string;
+  category: string;
   amount: number;
-  meta?: {
-    batchId?: string;
-    batchNumber?: string;
-    orderId?: string;
-    quantity?: number;
-    unit?: string;
-    beneficiaryCount?: number;
-    category?: string;
-    orderItems?: OrderItemDetail[];
+  expenseDate: string;
+  description: string;
+  notes?: string;
+  createdAt: string;
+}
+
+interface OpExListResponse {
+  items: OpExEntry[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
   };
 }
 
-interface ExpenseBreakdownResponse {
-  source: string;
-  sppgId: string;
-  startDate: string;
-  endDate: string;
-  items: FinancialLogEntry[];
-  summary: {
-    totalCogs: number;
-    totalProcured: number;
-    totalOpex: number;
-    grandTotal: number;
-  };
-}
-
-function filterItemsBySource(
-  items: FinancialLogEntry[],
-  source: ExpenseSource,
-): FinancialLogEntry[] {
-  if (source === "CASH") {
-    return items.filter(
-      (item) => item.source === "PROCUREMENT" || item.source === "OPEX",
-    );
-  }
-  if (source === "PRODUCTION") {
-    return items.filter((item) => item.source === "COGS");
-  }
-  return items;
-}
-
-function mapToInvoiceRows(items: FinancialLogEntry[]): InvoiceRowType[] {
+function mapToInvoiceRows(items: OpExEntry[]): InvoiceRowType[] {
   return items.map((item) => ({
-    id: item.referenceId,
-    date: item.date,
-    ref:
-      item.source === "PROCUREMENT"
-        ? `#ORD-${item.referenceId.slice(-6).toUpperCase()}`
-        : item.source === "COGS"
-          ? `#BATCH-${item.meta?.batchNumber || item.referenceId.slice(-6).toUpperCase()}`
-          : `#OPEX-${item.referenceId.slice(-6).toUpperCase()}`,
-    supplierName: item.source === "PROCUREMENT" ? item.title : undefined,
-    category: item.description || item.title,
+    id: item.id,
+    date: item.expenseDate,
+    ref: `#OPEX-${item.id.slice(-6).toUpperCase()}`,
+    category:
+      OPEX_CATEGORIES.find((c) => c.value === item.category)?.label ||
+      item.category,
+    description: item.description,
     nominal: item.amount,
     statusBukti: "Terekam Sistem",
-    isManual: item.source === "OPEX",
-    source: item.source,
-    meta: item.meta,
+    isManual: true,
+    source: "OPEX" as const,
+    meta: { category: item.category },
   }));
 }
 
@@ -94,33 +60,25 @@ export default function ReportsPage() {
   const [filter, setFilter] = useState<ReportFilter>(DEFAULT_FILTER);
   const [isLoading, setIsLoading] = useState(false);
   const [showManualModal, setShowManualModal] = useState(false);
-  const [showBgnModal, setShowBgnModal] = useState(false);
-  const [allItems, setAllItems] = useState<FinancialLogEntry[]>([]);
-  const [summary, setSummary] = useState({
-    totalCogs: 0,
-    totalProcured: 0,
-    totalOpex: 0,
-    grandTotal: 0,
-  });
+  const [allItems, setAllItems] = useState<OpExEntry[]>([]);
 
   const fetchData = useCallback(async () => {
     if (!token) return;
 
     setIsLoading(true);
     try {
-      const response = await getExpenseBreakdown(token, {
-        source: "ALL",
+      const response = await listOperationalExpenses(token, {
         startDate: filter.startDate,
         endDate: filter.endDate,
+        limit: 100,
       });
 
       if (response.success) {
-        const data = response.data as ExpenseBreakdownResponse;
-        setAllItems(data.items);
-        setSummary(data.summary);
+        const data = response.data as OpExListResponse;
+        setAllItems(data.items || []);
       }
     } catch (error) {
-      console.error("Failed to fetch expense breakdown:", error);
+      console.error("Failed to fetch operational expenses:", error);
     } finally {
       setIsLoading(false);
     }
@@ -130,36 +88,35 @@ export default function ReportsPage() {
     fetchData();
   }, [fetchData]);
 
-  const filteredItems = useMemo(
-    () => filterItemsBySource(allItems, filter.source),
-    [allItems, filter.source],
-  );
-
   const displayRows = useMemo(
     () =>
-      mapToInvoiceRows(filteredItems).sort((a, b) =>
+      mapToInvoiceRows(allItems).sort((a, b) =>
         a.date.localeCompare(b.date),
       ),
-    [filteredItems],
+    [allItems],
   );
 
   const stats: ReportStats = useMemo(() => {
-    const totalPortions = allItems
-      .filter((item) => item.source === "COGS")
-      .reduce((sum, item) => sum + (item.meta?.beneficiaryCount || 0), 0);
+    const totalOpex = allItems.reduce((sum, item) => sum + item.amount, 0);
+
+    // Find top category
+    const categoryCounts: Record<string, number> = {};
+    allItems.forEach((item) => {
+      const label =
+        OPEX_CATEGORIES.find((c) => c.value === item.category)?.label ||
+        item.category;
+      categoryCounts[label] = (categoryCounts[label] || 0) + item.amount;
+    });
+    const topCategory = Object.entries(categoryCounts).sort(
+      (a, b) => b[1] - a[1],
+    )[0]?.[0] || "";
 
     return {
-      totalPengeluaran: summary.totalProcured + summary.totalOpex,
-      invoiceCount: allItems.filter(
-        (item) => item.source === "PROCUREMENT" || item.source === "OPEX",
-      ).length,
-      totalPorsi: totalPortions,
-      totalTambahan: summary.totalOpex,
-      totalCogs: summary.totalCogs,
-      totalProcured: summary.totalProcured,
-      totalOpex: summary.totalOpex,
+      totalOpex,
+      opexCount: allItems.length,
+      topCategory,
     };
-  }, [allItems, summary]);
+  }, [allItems]);
 
   const handleFilter = useCallback((newFilter: ReportFilter) => {
     setFilter(newFilter);
@@ -181,27 +138,9 @@ export default function ReportsPage() {
     [token, fetchData],
   );
 
-  const handleGenerateBgn = useCallback(
-    (startDate: string, endDate: string) => {
-      const rangeRows = mapToInvoiceRows(filteredItems)
-        .filter((r) => r.date >= startDate && r.date <= endDate)
-        .sort((a, b) => a.date.localeCompare(b.date));
-
-      generateBgnReport(
-        rangeRows,
-        stats,
-        filter,
-        user?.sppg,
-        startDate,
-        endDate,
-      );
-    },
-    [filteredItems, stats, filter, user?.sppg],
-  );
-
   return (
     <div className="max-w-7xl mx-auto">
-      <ReportHeader onOpenBgnModal={() => setShowBgnModal(true)} />
+      <ReportHeader />
 
       <ReportFilterBar onFilter={handleFilter} isLoading={isLoading} />
 
@@ -215,7 +154,7 @@ export default function ReportsPage() {
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
               <div className="flex gap-4">
-                {[1, 2, 3, 4, 5].map((i) => (
+                {[1, 2, 3, 4].map((i) => (
                   <Skeleton key={i} className="h-3 flex-1" />
                 ))}
               </div>
@@ -224,7 +163,7 @@ export default function ReportsPage() {
               {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="px-4 py-4">
                   <div className="flex gap-4">
-                    {[1, 2, 3, 4, 5].map((j) => (
+                    {[1, 2, 3, 4].map((j) => (
                       <Skeleton key={j} className="h-4 flex-1" />
                     ))}
                   </div>
@@ -250,12 +189,6 @@ export default function ReportsPage() {
         isOpen={showManualModal}
         onClose={() => setShowManualModal(false)}
         onSave={handleSaveManual}
-      />
-
-      <BgnReportModal
-        isOpen={showBgnModal}
-        onClose={() => setShowBgnModal(false)}
-        onGenerate={handleGenerateBgn}
       />
     </div>
   );

@@ -1,15 +1,12 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Home,
-  Users,
-  Utensils,
   ShoppingCart,
   Store,
-  Package,
   FileText,
-  AlertTriangle,
   UserCircle,
   LayoutDashboard,
+  Package,
   Building2,
 } from "lucide-react";
 
@@ -41,13 +38,9 @@ export interface UserCard {
 
 export const adminNavigation: NavItem[] = [
   { name: "Beranda", href: "/admin", icon: Home },
-  { name: "Penerima Manfaat", href: "/admin/beneficiaries", icon: Users },
-  { name: "Batch Makanan", href: "/admin/batches", icon: Utensils },
   { name: "Keranjang Pesanan", href: "/admin/suppliers", icon: ShoppingCart },
   { name: "Pasar Bahan Baku", href: "/admin/market", icon: Store },
-  { name: "Inventaris", href: "/admin/inventory", icon: Package },
   { name: "Laporan Keuangan", href: "/admin/reports", icon: FileText },
-  { name: "Komplain", href: "/admin/complaints", icon: AlertTriangle },
   { name: "Profil", href: "/admin/profile", icon: UserCircle },
 ];
 
@@ -65,14 +58,14 @@ const allSupplierNavigation: NavItem[] = [
   { name: "Dashboard", href: "/supplier", icon: LayoutDashboard },
   { name: "Katalog Produk", href: "/supplier/katalog", icon: Package },
   { name: "Pesanan Masuk", href: "/supplier/pesanan", icon: ShoppingCart },
-  { name: "MoU & Kontrak", href: "/supplier/mou", icon: FileText, devOnly: false },
+  { name: "MoU & Kontrak", href: "/supplier/mou", icon: FileText, devOnly: true },
   { name: "Profil", href: "/supplier/profil", icon: Building2 },
 ];
 
 // Preserve existing (dev) filtering behavior from SupplierLayout.
 export const supplierNavigation: NavItem[] =
   process.env.NODE_ENV === "development"
-    ? allSupplierNavigation.filter((item) => item.devOnly !== false)
+    ? allSupplierNavigation.filter((item) => item.devOnly !== true)
     : allSupplierNavigation;
 
 export const supplierTheme: SidebarTheme = {

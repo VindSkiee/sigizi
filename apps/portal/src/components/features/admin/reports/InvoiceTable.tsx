@@ -4,8 +4,9 @@ import {
   InvoiceRow as InvoiceRowType,
   ExpenseSource,
   SOURCE_LABELS,
+  FINANCIAL_SOURCE_CONFIG,
 } from "./types";
-import { InvoiceRow } from "./InvoiceRow";
+import { formatCurrency } from "@/lib/utils";
 
 interface InvoiceTableProps {
   rows: InvoiceRowType[];
@@ -13,41 +14,23 @@ interface InvoiceTableProps {
   activeSource: ExpenseSource;
 }
 
-const TABLE_HEADERS: Record<
-  ExpenseSource,
-  { title: string; subtitle: string }
-> = {
-  CASH: {
-    title: "Pengeluaran Kas",
-    subtitle: "Pembayaran pesanan + biaya operasional",
-  },
-  PRODUCTION: {
-    title: "Biaya Produksi Batch",
-    subtitle: "Nilai bahan yang dikonsumsi dalam produksi batch",
-  },
-  ALL: {
-    title: "Semua Transaksi",
-    subtitle: "Seluruh transaksi keuangan (pesanan, batch, operasional)",
-  },
-};
-
 export function InvoiceTable({
   rows,
   onInputManual,
   activeSource,
 }: InvoiceTableProps) {
-  const header = TABLE_HEADERS[activeSource];
-
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-bold text-blue-800">{header.title}</h2>
-          <p className="text-xs text-gray-500 mt-0.5">{header.subtitle}</p>
+          <h2 className="text-sm font-bold text-gray-900">Daftar Pengeluaran</h2>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Pengeluaran operasional yang sudah tercatat
+          </p>
         </div>
         <button
           onClick={onInputManual}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
         >
           <svg
             className="w-4 h-4"
@@ -59,10 +42,10 @@ export function InvoiceTable({
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              d="M12 4v16m8-8H4"
             />
           </svg>
-          Input Pengeluaran Tambahan
+          Input Pengeluaran
         </button>
       </div>
 
@@ -82,39 +65,62 @@ export function InvoiceTable({
             />
           </svg>
           <p className="text-gray-500 text-sm">
-            Tidak ada data transaksi untuk periode ini
+            Belum ada pengeluaran tercatat
           </p>
           <p className="text-gray-400 text-xs mt-1">
-            Coba ubah rentang tanggal atau jenis pengeluaran
+            Klik &quot;Input Pengeluaran&quot; untuk menambah data
           </p>
         </div>
       ) : (
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Tgl Transaksi
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Referensi
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Deskripsi
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Nominal
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Sumber & Status
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <InvoiceRow key={row.id} row={row} />
-            ))}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Tanggal
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Kategori
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Deskripsi
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Nominal
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {rows.map((row) => {
+                const config = FINANCIAL_SOURCE_CONFIG[row.source];
+                return (
+                  <tr key={row.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm text-gray-600">
+                      {new Date(row.date).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config?.bgColor || "bg-gray-100"} ${config?.color || "text-gray-700"}`}
+                      >
+                        {row.category}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
+                      {row.description}
+                    </td>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900 text-right">
+                      {formatCurrency(row.nominal)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

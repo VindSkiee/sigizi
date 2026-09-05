@@ -5,64 +5,19 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getSupplierById, updateSupplierProfile } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Building2, ArrowLeft, Save, Navigation, Loader2 } from "lucide-react";
+import { FileUpload } from "@/components/ui/FileUpload";
+import {
+  Building2,
+  ArrowLeft,
+  Save,
+  Navigation,
+  Loader2,
+  Store,
+  Image as ImageIcon,
+} from "lucide-react";
 import Link from "next/link";
 
-const NOMINATIM_HEADERS = { "User-Agent": "SIGIZI-App/1.0" };
-
-function reverseGeocode(
-  lat: number,
-  lng: number,
-): Promise<{
-  province: string;
-  regency: string;
-  district: string;
-  village: string;
-  postalCode: string;
-}> {
-  return fetch(
-    `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=id&addressdetails=1`,
-    { headers: NOMINATIM_HEADERS },
-  )
-    .then((res) => res.json())
-    .then((data) => {
-      const addr = data.address || {};
-      return {
-        province: addr.state || addr.region || "",
-        regency: addr.city || addr.county || addr.state_district || "",
-        district: addr.suburb || addr.village || addr.neighbourhood || "",
-        village: addr.village || addr.hamlet || "",
-        postalCode: addr.postcode || "",
-      };
-    })
-    .catch(() => ({
-      province: "",
-      regency: "",
-      district: "",
-      village: "",
-      postalCode: "",
-    }));
-}
-
-function forwardGeocode(
-  query: string,
-): Promise<{ latitude: number; longitude: number } | null> {
-  return fetch(
-    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&accept-language=id`,
-    { headers: NOMINATIM_HEADERS },
-  )
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.length > 0) {
-        return {
-          latitude: parseFloat(data[0].lat),
-          longitude: parseFloat(data[0].lon),
-        };
-      }
-      return null;
-    })
-    .catch(() => null);
-}
+import { reverseGeocode, forwardGeocode } from "@/lib/geocoding";
 
 function SkeletonLine({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse bg-gray-200 rounded ${className}`} />;
@@ -88,6 +43,9 @@ export default function ProfilPage() {
   const [postalCode, setPostalCode] = useState("");
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
+  const [openStatus, setOpenStatus] = useState(true);
+  const [existingProfileImage, setExistingProfileImage] = useState("");
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -114,6 +72,8 @@ export default function ProfilPage() {
           setPostalCode(data.postalCode || "");
           setLatitude(data.latitude ?? null);
           setLongitude(data.longitude ?? null);
+          setOpenStatus(data.openStatus ?? true);
+          setExistingProfileImage(data.profileImage || "");
         }
       } catch (err) {
         console.error("Failed to fetch profile:", err);
@@ -221,18 +181,23 @@ export default function ProfilPage() {
     setSuccess("");
 
     try {
-      const response = await updateSupplierProfile(token!, {
-        name: name.trim(),
-        phone: phone.trim() || undefined,
-        address: address.trim() || undefined,
-        province: province.trim(),
-        regency: regency.trim(),
-        district: district.trim(),
-        village: village.trim() || undefined,
-        postalCode: postalCode.trim() || undefined,
-        latitude: latitude ?? undefined,
-        longitude: longitude ?? undefined,
-      });
+      const response = await updateSupplierProfile(
+        token!,
+        {
+          name: name.trim(),
+          phone: phone.trim() || undefined,
+          address: address.trim() || undefined,
+          province: province.trim(),
+          regency: regency.trim(),
+          district: district.trim(),
+          village: village.trim() || undefined,
+          postalCode: postalCode.trim() || undefined,
+          latitude: latitude ?? undefined,
+          longitude: longitude ?? undefined,
+          openStatus,
+        },
+        profileImageFile || undefined,
+      );
 
       if (!response.success) {
         throw new Error("Gagal menyimpan profil");
@@ -356,6 +321,50 @@ export default function ProfilPage() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
+            <div className="flex items-center justify-between py-3 border-t border-gray-100 mt-2">
+              <div>
+                <p className="text-sm font-medium text-gray-700">
+                  Status Toko
+                </p>
+                <p className="text-xs text-gray-500">
+                  {openStatus
+                    ? "Toko terlihat oleh pembeli"
+                    : "Sembunyikan dari pencarian"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpenStatus(!openStatus)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  openStatus ? "bg-green-600" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    openStatus ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+            <div className="border-t border-gray-100 pt-4 mt-2">
+              {existingProfileImage && !profileImageFile && (
+                <div className="mb-3">
+                  <p className="text-xs text-gray-500 mb-1.5">Gambar saat ini</p>
+                  <img
+                    src={existingProfileImage}
+                    alt="Profil"
+                    className="w-20 h-20 rounded-full object-cover border border-gray-200"
+                  />
+                </div>
+              )}
+              <FileUpload
+                accept=".jpg,.jpeg,.png,.webp"
+                maxSize={5}
+                onFileSelect={(file) => setProfileImageFile(file)}
+                label="Foto Profil"
+                helperText="Upload foto profil toko (opsional)"
+              />
+            </div>
           </div>
         </div>
 

@@ -6,7 +6,7 @@ import { createOrder } from "@/lib/api";
 import { clearDraft } from "@/lib/draft";
 import { DraftItem } from "@/components/features/admin/create-order/types";
 import { formatCurrency } from "@/lib/utils";
-import { AlertTriangle, Package, Trash2 } from "lucide-react";
+import { AlertTriangle, Calendar, Package, StickyNote, Trash2 } from "lucide-react";
 import type { MarketLocationParams } from "@/lib/api";
 
 interface DraftOrderModalProps {
@@ -31,6 +31,8 @@ export function DraftOrderModal({
   const { token, user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [priceJustification, setPriceJustification] = useState("");
+  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState("");
+  const [notes, setNotes] = useState("");
   const [warningInfo, setWarningInfo] = useState<{
     supplierName: string;
     items: Array<{
@@ -51,6 +53,8 @@ export function DraftOrderModal({
       processedRef.current.clear();
       setWarningInfo(null);
       setPriceJustification("");
+      setExpectedDeliveryDate("");
+      setNotes("");
     }
   }, [isOpen]);
 
@@ -84,6 +88,8 @@ export function DraftOrderModal({
           items: { itemId: string; quantity: number }[];
           priceJustification?: string;
           marketFilter?: MarketLocationParams;
+          expectedDeliveryDate?: string;
+          notes?: string;
         } = {
           supplierId: supplierItems[0].supplierId,
           items: supplierItems.map((item) => ({
@@ -92,6 +98,8 @@ export function DraftOrderModal({
           })),
         };
         if (justification) body.priceJustification = justification;
+        if (expectedDeliveryDate.trim()) body.expectedDeliveryDate = expectedDeliveryDate;
+        if (notes.trim()) body.notes = notes.trim();
         // Sertakan scope pasar yg dilihat admin agar validasi harga konsisten
         // dgn persentase yg ditampilkan di MarketCard
         if (marketFilter) body.marketFilter = marketFilter;
@@ -380,6 +388,37 @@ export function DraftOrderModal({
               <p className="text-xl font-bold text-gray-900">
                 {formatCurrency(total)}
               </p>
+            </div>
+
+            {/* Additional Fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-1">
+                  <Calendar className="w-3.5 h-3.5" />
+                  Tanggal Pengiriman yang Diharapkan
+                </label>
+                <input
+                  type="date"
+                  value={expectedDeliveryDate}
+                  onChange={(e) => setExpectedDeliveryDate(e.target.value)}
+                  min={new Date().toISOString().slice(0, 10)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-1">
+                  <StickyNote className="w-3.5 h-3.5" />
+                  Catatan (Opsional)
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={2}
+                  maxLength={500}
+                  placeholder="Contoh: Mohon kirim sebelum jam 10 pagi"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                />
+              </div>
             </div>
 
             {/* Actions */}

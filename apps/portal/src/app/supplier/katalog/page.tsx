@@ -25,6 +25,10 @@ interface Product {
   minOrderQty?: number;
   orderStep?: number;
   isAvailable: boolean;
+  stock?: number;
+  image?: string;
+  commodityId?: string;
+  commodityName?: string;
 }
 
 export default function KatalogPage() {
@@ -71,7 +75,8 @@ export default function KatalogPage() {
   }, [fetchProducts]);
 
   const handleCreateProduct = async (data: any) => {
-    const response = await addSupplierItem(token!, user!.supplierId!, data);
+    const { imageFile, ...rest } = data;
+    const response = await addSupplierItem(token!, user!.supplierId!, rest, imageFile);
     if (!response.success) {
       throw new Error("Gagal menyimpan produk");
     }
@@ -80,11 +85,13 @@ export default function KatalogPage() {
 
   const handleEditProduct = async (data: any) => {
     if (!editingProduct) return;
+    const { imageFile, ...rest } = data;
     const response = await updateSupplierItem(
       token!,
       user!.supplierId!,
       editingProduct.id,
-      data,
+      rest,
+      imageFile,
     );
     if (!response.success) {
       throw new Error("Gagal mengupdate produk");
@@ -127,6 +134,9 @@ export default function KatalogPage() {
       minOrderQty: product.minOrderQty,
       orderStep: product.orderStep,
       isAvailable: product.isAvailable,
+      stock: product.stock,
+      image: product.image,
+      commodityId: product.commodityId,
     });
     setShowEditModal(true);
   };
@@ -201,10 +211,16 @@ export default function KatalogPage() {
                   Produk
                 </th>
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">
+                  Komoditas
+                </th>
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">
                   Satuan
                 </th>
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">
                   Harga
+                </th>
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">
+                  Stok
                 </th>
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">
                   Min. Order
@@ -222,15 +238,23 @@ export default function KatalogPage() {
                 <tr key={product.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <Package className="w-5 h-5 text-blue-600" />
-                      </div>
+                      {product.image ? (
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="w-10 h-10 rounded-lg object-cover border border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <Package className="w-5 h-5 text-blue-600" />
+                        </div>
+                      )}
                       <div>
                         <span className="text-sm font-medium text-gray-700 block">
                           {product.name}
                         </span>
                         {product.description && (
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-gray-400 line-clamp-1">
                             {product.description}
                           </span>
                         )}
@@ -238,11 +262,33 @@ export default function KatalogPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
+                    {product.commodityName || (
+                      <span className="text-gray-300">-</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
                     {product.unit}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-700">
                     Rp {product.basePrice.toLocaleString("id-ID")}/
                     {product.unit}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {product.stock != null ? (
+                      <span
+                        className={
+                          product.stock <= 0
+                            ? "text-red-600 font-medium"
+                            : product.stock <= 10
+                              ? "text-amber-600"
+                              : "text-gray-600"
+                        }
+                      >
+                        {product.stock}
+                      </span>
+                    ) : (
+                      <span className="text-gray-300">-</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {product.minOrderQty || 1} {product.unit}

@@ -2,15 +2,18 @@
 
 import { MarketSupplierItem } from "./types";
 import { formatCurrency } from "@/lib/utils";
+import Link from "next/link";
 import {
   AlertTriangle,
   CheckCircle,
+  Clock,
   MapPin,
   Navigation,
   Package,
   ShoppingCart,
   Store,
   FlaskConical,
+  Box,
 } from "lucide-react";
 
 interface MarketCardProps {
@@ -21,6 +24,48 @@ interface MarketCardProps {
   draftQuantity?: number;
   onViewDraft: () => void;
   isRefetching?: boolean;
+}
+
+function timeAgo(dateStr?: string): string | null {
+  if (!dateStr) return null;
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "baru saja";
+  if (mins < 60) return `${mins} mnt lalu`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} jam lalu`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} hari lalu`;
+  return `${Math.floor(days / 30)} bln lalu`;
+}
+
+function StockBadge({ stock, unit }: { stock?: number; unit?: string }) {
+  if (stock == null) return null;
+  const color =
+    stock === 0
+      ? "bg-red-50 text-red-600"
+      : stock < 10
+        ? "bg-amber-50 text-amber-600"
+        : "bg-green-50 text-green-600";
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${color}`}>
+      <Box className="w-3 h-3" />
+      {stock === 0 ? "Stok Habis" : `Stok: ${stock} ${unit || ""}`}
+    </span>
+  );
+}
+
+function OpenStatusBadge({ status }: { status?: string }) {
+  if (!status || status === "OPEN") return null;
+  const config =
+    status === "CLOSED"
+      ? { label: "Tutup", bg: "bg-red-50", text: "text-red-600" }
+      : { label: "Pre-Order", bg: "bg-amber-50", text: "text-amber-600" };
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${config.bg} ${config.text}`}>
+      {status === "CLOSED" ? "🔴" : "🟡"} {config.label}
+    </span>
+  );
 }
 
 export function MarketCard({
@@ -47,13 +92,44 @@ export function MarketCard({
 
   const locationParts = [item.district, item.regency].filter(Boolean);
 
-  return (
+  const detailHref = item.itemId
+    ? `/admin/market/${item.itemId}`
+    : undefined;
+
+  const cardContent = (
     <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow flex flex-col">
+      {item.image ? (
+        <img
+          src={item.image}
+          alt={item.itemName || ""}
+          className="w-full h-36 object-cover rounded-lg mb-3"
+        />
+      ) : (
+        <div className="w-full h-36 bg-gray-50 rounded-lg mb-3 flex items-center justify-center">
+          <Package className="w-10 h-10 text-gray-300" />
+        </div>
+      )}
+
       <div className="flex items-start justify-between mb-2">
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-gray-900 truncate">
-            {item.supplierName}
-          </h3>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {item.profileImage ? (
+            <img
+              src={item.profileImage}
+              alt={item.supplierName}
+              className="w-7 h-7 rounded-full object-cover border border-gray-200 flex-shrink-0"
+            />
+          ) : (
+            <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+              <Store className="w-3.5 h-3.5 text-gray-400" />
+            </div>
+          )}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-sm font-semibold text-gray-900 truncate">
+                {item.supplierName}
+              </h3>
+              <OpenStatusBadge status={item.openStatus} />
+            </div>
           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
             {item.isMarketSeller && item.marketName && (
               <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
@@ -67,6 +143,12 @@ export function MarketCard({
                 Data Simulasi
               </span>
             )}
+            {item.categoryName && (
+              <span className="inline-flex items-center text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                {item.categoryName}
+              </span>
+            )}
+          </div>
           </div>
           {item.mou && (
             <span className="inline-flex items-center gap-1 text-xs text-primary-600 mt-0.5">
@@ -136,11 +218,22 @@ export function MarketCard({
           <p className="text-lg font-bold text-primary-600">
             {formatCurrency(item.price)}
           </p>
-          {item.minOrderQty != null && item.minOrderQty > 0 && (
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            {item.minOrderQty != null && item.minOrderQty > 0 && (
+              <div className="flex items-center gap-1">
+                <Package className="w-3 h-3 text-gray-400" />
+                <p className="text-xs text-gray-500">
+                  Min. beli: {item.minOrderQty} {item.unit}
+                </p>
+              </div>
+            )}
+            <StockBadge stock={item.stock} unit={item.unit} />
+          </div>
+          {item.priceUpdatedAt && (
             <div className="flex items-center gap-1 mt-1">
-              <Package className="w-3 h-3 text-gray-400" />
-              <p className="text-xs text-gray-500">
-                Min. beli: {item.minOrderQty} {item.unit}
+              <Clock className="w-3 h-3 text-gray-400" />
+              <p className="text-xs text-gray-400">
+                Update: {timeAgo(item.priceUpdatedAt)}
               </p>
             </div>
           )}
@@ -176,122 +269,100 @@ export function MarketCard({
         </p>
       )}
 
-      {draftQuantity != null && draftQuantity > 0 ? (
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
-            <CheckCircle className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
-            <p className="text-xs font-medium text-green-700">
-              Dalam keranjang: {draftQuantity} {item.unit}
-            </p>
+      <div className="flex gap-2">
+        {detailHref && (
+          <Link
+            href={detailHref}
+            className="flex-1 text-center px-4 py-2.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Detail
+          </Link>
+        )}
+        {draftQuantity != null && draftQuantity > 0 ? (
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
+              <CheckCircle className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
+              <p className="text-xs font-medium text-green-700">
+                Dalam keranjang: {draftQuantity} {item.unit}
+              </p>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewDraft();
+              }}
+              disabled={isRefetching}
+              className="block w-full text-center px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              {isRefetching ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Memperbarui...
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5">
+                  <ShoppingCart className="w-4 h-4" />
+                  Lihat Keranjang
+                </span>
+              )}
+            </button>
           </div>
+        ) : (
           <button
-            onClick={onViewDraft}
-            disabled={isRefetching}
-            className="block w-full text-center px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOrderClick(item);
+            }}
+            disabled={item.isAnomaly || isRefetching || item.stock === 0}
+            className="flex-1 block w-full text-center px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             {isRefetching ? (
               <span className="inline-flex items-center gap-1.5">
-                <svg
-                  className="animate-spin h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
+                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
                 Memperbarui...
               </span>
+            ) : item.isAnomaly ? (
+              "Harga Anomali"
+            ) : item.stock === 0 ? (
+              "Stok Habis"
             ) : (
-              <span className="inline-flex items-center gap-1.5">
-                <ShoppingCart className="w-4 h-4" />
-                Lihat Keranjang
-              </span>
+              "Pesan Bahan"
             )}
           </button>
-        </div>
-      ) : (
-        <button
-          onClick={() => onOrderClick(item)}
-          disabled={item.isAnomaly || isRefetching}
-          className="block w-full text-center px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-        >
-          {isRefetching ? (
-            <span className="inline-flex items-center gap-1.5">
-              <svg
-                className="animate-spin h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                />
-              </svg>
-              Memperbarui...
-            </span>
-          ) : item.isAnomaly ? (
-            "Harga Anomali"
-          ) : (
-            "Pesan Bahan"
-          )}
-        </button>
-      )}
+        )}
+      </div>
     </div>
   );
+
+  if (detailHref) {
+    return (
+      <Link href={detailHref} className="block">
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return cardContent;
 }
 
 function TrendingDown(props: { className?: string }) {
   return (
-    <svg
-      className={props.className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"
-      />
+    <svg className={props.className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
     </svg>
   );
 }
 
 function TrendingUp(props: { className?: string }) {
   return (
-    <svg
-      className={props.className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-      />
+    <svg className={props.className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
     </svg>
   );
 }
