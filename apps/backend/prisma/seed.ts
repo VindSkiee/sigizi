@@ -768,27 +768,27 @@ async function main() {
     "Sayur Sawi": "com_sawi",
   };
 
-  // Default stock per item (realistic kg/liter values)
+  // Default stock per item (realistic kg/liter values — bulk supplier quantities)
   const DEFAULT_STOCKS: Record<string, number> = {
-    "Beras Premium": 120,
-    "Daging Ayam": 35,
-    "Telur Ayam": 50,
-    "Tahu Putih": 30,
-    Tempe: 30,
-    "Sayur Bayam": 15,
-    Wortel: 25,
-    "Minyak Goreng": 60,
-    Kentang: 40,
-    "Sayur Kangkung": 10,
-    "Ikan Tongkol": 20,
-    "Ikan Lele": 25,
-    "Tepung Terigu": 80,
-    "Daging Sapi": 15,
-    "Bawang Merah": 35,
-    "Cabai Merah": 25,
-    "Gula Pasir": 70,
-    Garam: 50,
-    "Sayur Sawi": 12,
+    "Beras Premium": 2500,
+    "Daging Ayam": 800,
+    "Telur Ayam": 1200,
+    "Tahu Putih": 600,
+    Tempe: 600,
+    "Sayur Bayam": 300,
+    Wortel: 500,
+    "Minyak Goreng": 1500,
+    Kentang: 800,
+    "Sayur Kangkung": 200,
+    "Ikan Tongkol": 500,
+    "Ikan Lele": 600,
+    "Tepung Terigu": 2000,
+    "Daging Sapi": 300,
+    "Bawang Merah": 700,
+    "Cabai Merah": 500,
+    "Gula Pasir": 1800,
+    Garam: 1000,
+    "Sayur Sawi": 250,
   };
 
   const items: Array<{
