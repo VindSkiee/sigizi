@@ -2,6 +2,7 @@
 node_modules/
 .pnpm-store/
 
+Plan UI Design/*
 # Build outputs
 dist/
 build/

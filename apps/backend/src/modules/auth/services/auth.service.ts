@@ -78,7 +78,9 @@ export class AuthService {
     }
 
     const validRole =
-      role === "SPPG_ADMIN" || role === "SUPPLIER" ? role : "SPPG_ADMIN";
+      role === "SPPG_ADMIN" || role === "SUPPLIER" || role === "BGN"
+        ? role
+        : "SPPG_ADMIN";
 
     return this.prisma.user.findMany({
       where: { role: validRole },
@@ -103,7 +105,9 @@ export class AuthService {
     }
 
     const validRole =
-      role === "SPPG_ADMIN" || role === "SUPPLIER" ? role : "SPPG_ADMIN";
+      role === "SPPG_ADMIN" || role === "SUPPLIER" || role === "BGN"
+        ? role
+        : "SPPG_ADMIN";
 
     let user;
     if (userId) {

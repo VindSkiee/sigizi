@@ -108,6 +108,23 @@ async function main() {
   console.log("✅ Admin users upserted:", 3);
 
   // ============================================================================
+  // 2B. Create BGN Admin User
+  // ============================================================================
+
+  const bgnAdmin = await prisma.user.upsert({
+    where: { email: "bgn-admin@sigizi.go.id" },
+    update: {},
+    create: {
+      email: "bgn-admin@sigizi.go.id",
+      name: "BGN Administrator",
+      role: "BGN",
+      password: DEFAULT_PASSWORD,
+    },
+  });
+
+  console.log("✅ BGN admin user upserted:", 1);
+
+  // ============================================================================
   // 3. Create Suppliers (18: 9 market sellers + 9 non-market sellers)
   // ============================================================================
 
@@ -1497,7 +1514,7 @@ async function main() {
   console.log("\n📊 Summary:");
   console.log("   - 3 SPPG (Cirebon Utara, Selatan, Barat)");
   console.log(
-    `   - ${3 + 18 + newSuppliers.length} Users (3 admin + ${18 + newSuppliers.length} supplier)`,
+    `   - ${3 + 1 + 18 + newSuppliers.length} Users (3 admin + 1 BGN + ${18 + newSuppliers.length} supplier)`,
   );
   console.log(
     `   - ${18 + newSuppliers.length} Suppliers (9 original market + 9 non-market + ${newSuppliers.length} new market sellers)`,
@@ -1515,6 +1532,8 @@ async function main() {
   console.log("     - admin-cirebon-utara@sigizi.go.id / password123");
   console.log("     - admin-cirebon-selatan@sigizi.go.id / password123");
   console.log("     - admin-cirebon-barat@sigizi.go.id / password123");
+  console.log("   BGN:");
+  console.log("     - bgn-admin@sigizi.go.id / password123");
   console.log("   Original Suppliers:");
   console.log(
     "     - supplier-01@sigizi.go.id / password123 (Toko Berkah - Market)",
