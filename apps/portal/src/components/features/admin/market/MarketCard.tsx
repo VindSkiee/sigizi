@@ -55,15 +55,11 @@ function StockBadge({ stock, unit }: { stock?: number; unit?: string }) {
   );
 }
 
-function OpenStatusBadge({ status }: { status?: string }) {
-  if (!status || status === "OPEN") return null;
-  const config =
-    status === "CLOSED"
-      ? { label: "Tutup", bg: "bg-red-50", text: "text-red-600" }
-      : { label: "Pre-Order", bg: "bg-amber-50", text: "text-amber-600" };
+function OpenStatusBadge({ status }: { status?: boolean }) {
+  if (status === undefined || status === true) return null;
   return (
-    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${config.bg} ${config.text}`}>
-      {status === "CLOSED" ? "🔴" : "🟡"} {config.label}
+    <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-600">
+      🔴 Tutup
     </span>
   );
 }
@@ -148,6 +144,11 @@ export function MarketCard({
                 {item.categoryName}
               </span>
             )}
+            {item.commodityName && (
+              <span className="inline-flex items-center text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                {item.commodityName}
+              </span>
+            )}
           </div>
           </div>
           {item.mou && (
@@ -212,7 +213,7 @@ export function MarketCard({
         )}
       </div>
 
-      <div className="flex items-end justify-between mb-3 mt-auto">
+      <div className="flex items-end justify-between mb-3">
         <div>
           <p className="text-xs text-gray-500 mb-0.5">Harga per {item.unit}</p>
           <p className="text-lg font-bold text-primary-600">
@@ -269,30 +270,33 @@ export function MarketCard({
         </p>
       )}
 
-      <div className="flex gap-2">
-        {detailHref && (
-          <Link
-            href={detailHref}
-            className="flex-1 text-center px-4 py-2.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Detail
-          </Link>
+      <div className="flex flex-col gap-2 mt-auto">
+        {draftQuantity != null && draftQuantity > 0 && (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
+            <CheckCircle className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
+            <p className="text-xs font-medium text-green-700 whitespace-nowrap">
+              Dalam keranjang: {draftQuantity} {item.unit}
+            </p>
+          </div>
         )}
-        {draftQuantity != null && draftQuantity > 0 ? (
-          <div className="flex-1 space-y-2">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
-              <CheckCircle className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
-              <p className="text-xs font-medium text-green-700">
-                Dalam keranjang: {draftQuantity} {item.unit}
-              </p>
-            </div>
+        <div className="flex gap-2">
+          {detailHref && (
+            <Link
+              href={detailHref}
+              className="flex-1 flex items-center justify-center px-4 py-2.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Detail
+            </Link>
+          )}
+          {draftQuantity != null && draftQuantity > 0 ? (
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 onViewDraft();
               }}
               disabled={isRefetching}
-              className="block w-full text-center px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap"
             >
               {isRefetching ? (
                 <span className="inline-flex items-center gap-1.5">
@@ -303,39 +307,40 @@ export function MarketCard({
                   Memperbarui...
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                   <ShoppingCart className="w-4 h-4" />
                   Lihat Keranjang
                 </span>
               )}
             </button>
-          </div>
-        ) : (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onOrderClick(item);
-            }}
-            disabled={item.isAnomaly || isRefetching || item.stock === 0}
-            className="flex-1 block w-full text-center px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            {isRefetching ? (
-              <span className="inline-flex items-center gap-1.5">
-                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Memperbarui...
-              </span>
-            ) : item.isAnomaly ? (
-              "Harga Anomali"
-            ) : item.stock === 0 ? (
-              "Stok Habis"
-            ) : (
-              "Pesan Bahan"
-            )}
-          </button>
-        )}
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onOrderClick(item);
+              }}
+              disabled={item.isAnomaly || isRefetching || item.stock === 0}
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              {isRefetching ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Memperbarui...
+                </span>
+              ) : item.isAnomaly ? (
+                "Harga Anomali"
+              ) : item.stock === 0 ? (
+                "Stok Habis"
+              ) : (
+                "Pesan Bahan"
+              )}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

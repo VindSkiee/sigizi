@@ -4,7 +4,11 @@ import { useState, useEffect } from "react";
 import { X, Package, Loader2 } from "lucide-react";
 import { UNIT_OPTIONS } from "@sigizi/shared";
 import { useAuth } from "@/contexts/AuthContext";
-import { getItemCategories, getItemCommodities } from "@/lib/api";
+import {
+  getSupplierTaxonomy,
+  TaxonomyCategory,
+  TaxonomyCommodity,
+} from "@/lib/api";
 import { FileUpload } from "@/components/ui/FileUpload";
 
 export interface ProductData {
@@ -19,6 +23,8 @@ export interface ProductData {
   stock?: number;
   image?: string;
   commodityId?: string;
+  categoryId?: string;
+  categoryName?: string;
 }
 
 interface ProductEditModalProps {
@@ -41,16 +47,6 @@ export interface EditProductData {
   commodityId?: string;
 }
 
-interface Category {
-  id: string;
-  name: string;
-}
-
-interface Commodity {
-  id: string;
-  name: string;
-}
-
 export function ProductEditModal({
   isOpen,
   onClose,
@@ -70,8 +66,7 @@ export function ProductEditModal({
   const [existingImageUrl, setExistingImageUrl] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [commodityId, setCommodityId] = useState("");
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [commodities, setCommodities] = useState<Commodity[]>([]);
+  const [categories, setCategories] = useState<TaxonomyCategory[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -88,26 +83,24 @@ export function ProductEditModal({
       setImageFile(null);
       setExistingImageUrl(product.image || "");
       setCommodityId(product.commodityId || "");
+      setCategoryId(product.categoryId || "");
       setError("");
     }
   }, [isOpen, product]);
 
   useEffect(() => {
     if (!token || !isOpen) return;
-    getItemCategories(token).then((res) => {
-      if (res.success) setCategories((res.data as any) || []);
+    getSupplierTaxonomy(token).then((res) => {
+      if (res.success) setCategories(res.data?.categories || []);
     }).catch(() => {});
   }, [token, isOpen]);
 
-  useEffect(() => {
-    if (!token || !categoryId) {
-      setCommodities([]);
-      return;
-    }
-    getItemCommodities(token, categoryId).then((res) => {
-      if (res.success) setCommodities((res.data as any) || []);
-    }).catch(() => {});
-  }, [token, categoryId]);
+  const commodities: TaxonomyCommodity[] = (() => {
+    const cat = categories.find((c) => c.id === categoryId);
+    return cat?.commodities || [];
+  })();
+
+  const selectedCommodity = commodities.find((c) => c.id === commodityId);
 
   useEffect(() => {
     if (!categoryId || !commodityId) return;
@@ -299,6 +292,16 @@ export function ProductEditModal({
               </div>
             </div>
           </div>
+
+          {selectedCommodity && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg text-sm text-blue-700">
+              <span>Harga Acuan Nasional:</span>
+              <span className="font-semibold">
+                Rp {selectedCommodity.referencePrice.toLocaleString("id-ID")}
+              </span>
+              <span className="text-blue-500">/ satuan</span>
+            </div>
+          )}
 
           {/* Stock */}
           <div>

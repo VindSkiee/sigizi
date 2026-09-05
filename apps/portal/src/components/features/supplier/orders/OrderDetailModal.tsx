@@ -104,19 +104,31 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="space-y-3">
                 {order.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex justify-between items-center"
-                  >
-                    <div>
-                      <p className="font-medium text-gray-800">
-                        {item.name}: {item.quantity} {item.unit}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {item.quantity} {item.unit} ×{" "}
-                        {formatCurrency(item.unitPrice)}
-                      </p>
-                    </div>
+                    <div
+                      key={item.id}
+                      className="flex justify-between items-center"
+                    >
+                      <div>
+                        <p className="font-medium text-gray-800">
+                          {item.name}: {item.quantity} {item.unit}
+                        </p>
+                        {(item as any).commodityName && (
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700">
+                              {(item as any).commodityName}
+                            </span>
+                            {(item as any).categoryName && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
+                                {(item as any).categoryName}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        <p className="text-sm text-gray-500">
+                          {item.quantity} {item.unit} ×{" "}
+                          {formatCurrency(item.unitPrice)}
+                        </p>
+                      </div>
                     <p className="font-semibold text-gray-800">
                       {formatCurrency(item.subtotal)}
                     </p>
@@ -149,15 +161,8 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
                   <div className="w-2 h-2 bg-blue-500 rounded-full" />
                   <div>
                     <p className="text-sm text-gray-700">
-                      {order.paidAt
-                        ? "Pesanan sudah dibayar. Menunggu pengiriman."
-                        : "Pesanan dikonfirmasi. Menunggu pembayaran."}
+                      Pesanan dikonfirmasi. Menunggu pengiriman.
                     </p>
-                    {order.paidAt && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Dibayar: {formatDateTime(order.paidAt)}
-                      </p>
-                    )}
                   </div>
                 </>
               )}
@@ -165,7 +170,7 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
                 <>
                   <div className="w-2 h-2 bg-purple-500 rounded-full" />
                   <p className="text-sm text-gray-700">
-                    Barang sudah dikirim ke SPPG.
+                    Barang sudah dikirim ke SPPG. Menunggu konfirmasi pembayaran dan selesai.
                   </p>
                 </>
               )}

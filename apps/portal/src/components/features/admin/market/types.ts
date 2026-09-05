@@ -10,6 +10,8 @@ export type MarketSortOption =
 
 export interface MarketFilter {
   item: string;
+  categoryId: string;
+  commodityId: string;
   locationMode: LocationMode;
   province: string;
   regency: string;
@@ -64,7 +66,7 @@ export interface MarketSupplierItem {
   commodityId?: string;
   commodityName?: string;
   categoryName?: string;
-  openStatus?: "OPEN" | "CLOSED" | "PRE_ORDER";
+  openStatus?: boolean;
   priceUpdatedAt?: string;
   stockUpdatedAt?: string;
   meta?: Record<string, unknown>;
@@ -100,24 +102,10 @@ export interface HETReference {
   createdAt: number;
 }
 
-export const POPULAR_ITEMS = [
-  "Beras",
-  "Daging Ayam",
-  "Daging Sapi",
-  "Ikan Lele",
-  "Ikan Tongkol",
-  "Telur Ayam",
-  "Minyak Goreng",
-  "Gula Pasir",
-  "Tepung Terigu",
-  "Sayur Bayam",
-  "Sayur Kangkung",
-  "Tempe",
-  "Tahu",
-];
-
 export const DEFAULT_FILTER: MarketFilter = {
   item: "",
+  categoryId: "",
+  commodityId: "",
   locationMode: "region",
   province: "",
   regency: "",

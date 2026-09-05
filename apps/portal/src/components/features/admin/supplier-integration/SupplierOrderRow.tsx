@@ -1,6 +1,8 @@
 "use client";
 
-import { SupplierOrder, ORDER_STATUS_CONFIG } from "./types";
+import { Check } from "lucide-react";
+import { SupplierOrder, ORDER_STATUS_CONFIG, getDisplayStatus } from "./types";
+import { formatCurrency } from "@/lib/utils";
 
 interface SupplierOrderRowProps {
   order: SupplierOrder;
@@ -13,10 +15,8 @@ export function SupplierOrderRow({
   onViewDetail,
   onUpdateStatus,
 }: SupplierOrderRowProps) {
-  const showEstimasiTiba = process.env.NEXT_PUBLIC_DEMO_MODE !== "true";
-  const showMoUBadge = process.env.NEXT_PUBLIC_DEMO_MODE !== "true";
-
-  const statusConfig = ORDER_STATUS_CONFIG[order.status] || {
+  const displayStatus = getDisplayStatus(order.status, order.paidAt);
+  const statusConfig = ORDER_STATUS_CONFIG[displayStatus] || {
     label: order.status || "Unknown",
     color: "bg-gray-100 text-gray-800",
   };
@@ -59,18 +59,6 @@ export function SupplierOrderRow({
           <p className="text-sm font-medium text-gray-900">
             {order.supplier?.name || "Unknown Supplier"}
           </p>
-          {showMoUBadge && order.mou && (
-            <span className="inline-flex items-center gap-1 text-xs text-green-600 mt-0.5">
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Mitra Resmi (MoU)
-            </span>
-          )}
         </div>
       </td>
 
@@ -102,27 +90,12 @@ export function SupplierOrderRow({
         </div>
       </td>
 
-      {/* 4. Estimasi Tiba (Hanya muncul di Development dan Production) */}
-      {showEstimasiTiba && (
-        <td className="px-4 py-4">
-          <div>
-            <p className="text-sm text-gray-700">
-              {order.estimatedArrival
-                ? new Date(order.estimatedArrival).toLocaleDateString("id-ID", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  }) +
-                  ", " +
-                  new Date(order.estimatedArrival).toLocaleTimeString("id-ID", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : "-"}
-            </p>
-          </div>
-        </td>
-      )}
+      {/* 4. Jumlah Item */}
+      <td className="px-4 py-4">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+          {order.items?.length || 0} item
+        </span>
+      </td>
 
       {/* 5. Status */}
       <td className="px-4 py-4">
@@ -133,7 +106,14 @@ export function SupplierOrderRow({
         </span>
       </td>
 
-      {/* 6. Aksi */}
+      {/* 6. Total */}
+      <td className="px-4 py-4">
+        <p className="text-sm font-semibold text-gray-900 text-right">
+          {formatCurrency(order.total)}
+        </p>
+      </td>
+
+      {/* 7. Aksi */}
       <td className="px-4 py-4">
         <div className="flex items-center gap-4">
           <button
@@ -162,14 +142,26 @@ export function SupplierOrderRow({
             Detail
           </button>
 
-          {statusConfig?.nextAction &&
-            order.status !== "PENDING" &&
-            !(order.status === "CONFIRMED" && order.paidAt) && (
+          {statusConfig?.nextAction && (
               <button
                 onClick={() =>
                   onUpdateStatus(order.id, statusConfig.nextStatus!)
                 }
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors shadow-sm whitespace-nowrap"
+              >
+                {statusConfig.nextStatus !== "PAY" && (
+                  <Check className="w-4 h-4" />
+                )}
+                {statusConfig.nextAction}
+              </button>
+            )}
+
+          {statusConfig?.cancelAction && (
+              <button
+                onClick={() =>
+                  onUpdateStatus(order.id, statusConfig.cancelStatus!)
+                }
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
               >
                 <svg
                   className="w-3.5 h-3.5"
@@ -181,10 +173,10 @@ export function SupplierOrderRow({
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M5 13l4 4L19 7"
+                    d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
-                {statusConfig.nextAction}
+                {statusConfig.cancelAction}
               </button>
             )}
         </div>

@@ -20,12 +20,11 @@ const ITEMS_PER_PAGE = 5;
 
 function getSortPriority(order: OrderViewModel): number {
   if (order.status === "PENDING") return 1;
-  if (order.status === "CONFIRMED" && order.paidAt) return 2;
+  if (order.status === "CONFIRMED") return 2;
   if (order.status === "DELIVERED") return 3;
-  if (order.status === "CONFIRMED" && !order.paidAt) return 4;
-  if (order.status === "COMPLETED") return 5;
-  if (order.status === "CANCELLED") return 6;
-  return 7;
+  if (order.status === "COMPLETED") return 4;
+  if (order.status === "CANCELLED") return 5;
+  return 6;
 }
 
 function formatProvince(raw: string): string {
@@ -65,6 +64,8 @@ function mapOrderFromBackend(raw: Order): OrderViewModel {
       unit: i.item?.unit || "",
       unitPrice: i.unitPrice,
       subtotal: i.subtotal,
+      commodityName: i.item?.commodity?.name || undefined,
+      categoryName: i.item?.commodity?.category?.name || undefined,
     })),
     total: raw.total,
     status: raw.status,

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   CheckCircle2,
+  X,
   XCircle,
   AlertTriangle,
   Info,
@@ -20,7 +21,9 @@ interface ConfirmModalProps {
   cancelLabel?: string;
   variant?: ConfirmVariant;
   isLoading?: boolean;
+  requireReason?: boolean;
   onConfirm: () => void;
+  onConfirmWithReason?: (reason: string) => void;
   onClose: () => void;
 }
 
@@ -72,10 +75,19 @@ export function ConfirmModal({
   cancelLabel = "Batal",
   variant = "success",
   isLoading = false,
+  requireReason = false,
   onConfirm,
+  onConfirmWithReason,
   onClose,
 }: ConfirmModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const [reason, setReason] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) {
+      setReason("");
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -116,6 +128,15 @@ export function ConfirmModal({
         {/* Body */}
         <div className="px-5 pb-5">
           <p className="text-sm text-gray-600 leading-relaxed">{message}</p>
+          {requireReason && (
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Masukkan alasan..."
+              rows={3}
+              className="mt-3 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+            />
+          )}
         </div>
 
         {/* Footer */}
@@ -128,14 +149,25 @@ export function ConfirmModal({
             {cancelLabel}
           </button>
           <button
-            onClick={onConfirm}
-            disabled={isLoading}
+            onClick={() => {
+              if (requireReason && onConfirmWithReason) {
+                onConfirmWithReason(reason);
+              } else {
+                onConfirm();
+              }
+            }}
+            disabled={isLoading || (requireReason && !reason.trim())}
             className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 ${config.confirmBg} text-white text-sm font-medium rounded-lg ${config.confirmHover} transition-colors disabled:opacity-50`}
           >
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Memproses...
+              </>
+            ) : variant === "danger" ? (
+              <>
+                <X className="w-4 h-4" strokeWidth={2.5} />
+                {confirmLabel}
               </>
             ) : (
               confirmLabel

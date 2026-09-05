@@ -45,6 +45,7 @@ export function DraftOrderModal({
       marketMedianSnapshot: number;
     }>;
   } | null>(null);
+  const [stockError, setStockError] = useState<string | null>(null);
   // supplierId yang sudah berhasil diproses (cegah order duplikat saat retry)
   const processedRef = useRef<Set<string>>(new Set());
 
@@ -52,6 +53,7 @@ export function DraftOrderModal({
     if (isOpen) {
       processedRef.current.clear();
       setWarningInfo(null);
+      setStockError(null);
       setPriceJustification("");
       setExpectedDeliveryDate("");
       setNotes("");
@@ -61,6 +63,10 @@ export function DraftOrderModal({
   const total = items.reduce(
     (sum, item) => sum + item.unitPrice * item.quantity,
     0,
+  );
+
+  const hasStockIssue = items.some(
+    (item) => item.stock != null && item.quantity > item.stock,
   );
 
   const handleSubmit = async (justification?: string) => {
@@ -130,11 +136,15 @@ export function DraftOrderModal({
     } catch (err: any) {
       const message =
         err?.message || err?.error?.message || "Gagal membuat pesanan. Silakan coba lagi.";
-      // Jika ada detail item bermasalah (mis. status INVALID), tampilkan namanya
-      const detailNames = Array.isArray(err?.details)
-        ? err.details.map((d: any) => d?.itemName).filter(Boolean).join(", ")
-        : "";
-      alert(detailNames ? `${message}\n\nItem: ${detailNames}` : message);
+      const isStockError = /stok|stock|melebihi/i.test(message);
+      if (isStockError) {
+        setStockError(message);
+      } else {
+        const detailNames = Array.isArray(err?.details)
+          ? err.details.map((d: any) => d?.itemName).filter(Boolean).join(", ")
+          : "";
+        alert(detailNames ? `${message}\n\nItem: ${detailNames}` : message);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -247,7 +257,17 @@ export function DraftOrderModal({
                             Min: {minQty} {item.unit}
                           </span>
                         )}
+                        {item.stock != null && (
+                          <span className={`inline-flex items-center gap-1 text-xs ${item.stock <= 0 ? 'text-red-500' : item.stock < 10 ? 'text-amber-500' : 'text-gray-400'}`}>
+                            Stok: {item.stock} {item.unit}
+                          </span>
+                        )}
                       </div>
+                      {item.stock != null && item.quantity > item.stock && (
+                        <p className="text-xs text-red-500 mt-1">
+                          Melebihi stok tersedia
+                        </p>
+                      )}
                     </div>
 
                     {/* Harga */}
@@ -264,6 +284,7 @@ export function DraftOrderModal({
                         <input
                           type="number"
                           min={minQty}
+                          max={item.stock}
                           step={step}
                           value={item.quantity}
                           onChange={(e) => {
@@ -310,6 +331,45 @@ export function DraftOrderModal({
         {/* Footer */}
         {items.length > 0 && (
           <div className="border-t border-gray-200 px-6 py-4">
+            {/* Panel Error Stock */}
+            {stockError && (
+              <div className="mb-4 rounded-xl border border-red-300 bg-red-50 p-4">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-red-800">
+                      Gagal membuat pesanan
+                    </p>
+                    <p className="text-xs text-red-700 mt-1">{stockError}</p>
+                    <button
+                      onClick={() => setStockError(null)}
+                      className="text-xs text-red-600 underline mt-2 hover:text-red-800"
+                    >
+                      Tutup
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Panel Peringatan Stok */}
+            {hasStockIssue && !stockError && (
+              <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-amber-800">
+                      Stok tidak mencukupi
+                    </p>
+                    <p className="text-xs text-amber-700 mt-1">
+                      Beberapa item memiliki jumlah pesanan melebihi stok yang tersedia.
+                      Silakan kurangi jumlah atau hapus item.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Panel Peringatan Harga WARNING */}
             {warningInfo && (
               <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
@@ -437,6 +497,7 @@ export function DraftOrderModal({
                 }
                 disabled={
                   isSubmitting ||
+                  hasStockIssue ||
                   (warningInfo ? priceJustification.trim() === "" : false)
                 }
                 className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:bg-primary-300 disabled:cursor-not-allowed transition-colors"

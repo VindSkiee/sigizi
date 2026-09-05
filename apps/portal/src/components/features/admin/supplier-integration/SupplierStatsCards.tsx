@@ -32,11 +32,11 @@ export function SupplierStatsCards({ stats }: SupplierStatsCardsProps) {
         subtitle={stats.deliveredCount > 0 ? "Dalam pengiriman" : undefined}
       />
       <AdminStatsCard
-        title="Total Nilai Aktif"
+        title="Dalam Proses"
         value={`Rp ${stats.totalActiveValue.toLocaleString("id-ID")}`}
         color="primary"
         accent
-        subtitle={`${stats.completedCount} pesanan selesai`}
+        subtitle={`${stats.pendingCount + stats.confirmedCount + stats.deliveredCount} pesanan belum selesai`}
       />
     </AdminStatsGrid>
   );

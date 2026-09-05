@@ -114,6 +114,8 @@ export function useMarketData(): UseMarketDataReturn {
 
         const response = await getMarketPrices(token, {
           item: filter.item,
+          categoryId: filter.categoryId || undefined,
+          commodityId: filter.commodityId || undefined,
           ...locationFilter,
         });
 
@@ -183,6 +185,15 @@ export function useMarketData(): UseMarketDataReturn {
             isMarketSeller: s.isMarketSeller ?? false,
             marketName: s.marketName ?? undefined,
             isSimulation: s.isSimulation ?? false,
+            stock: s.stock ?? matchedItem?.stock ?? undefined,
+            image: matchedItem?.image ?? undefined,
+            profileImage: s.profileImage ?? undefined,
+            commodityId: s.commodityId ?? matchedItem?.commodityId ?? undefined,
+            commodityName: s.commodity?.name ?? matchedItem?.commodity?.name ?? undefined,
+            categoryName: s.commodity?.category?.name ?? matchedItem?.commodity?.category?.name ?? undefined,
+            openStatus: s.openStatus ?? undefined,
+            priceUpdatedAt: s.priceUpdatedAt ?? undefined,
+            stockUpdatedAt: s.stockUpdatedAt ?? undefined,
           };
         });
 

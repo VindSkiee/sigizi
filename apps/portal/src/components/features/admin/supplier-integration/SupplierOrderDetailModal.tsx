@@ -1,7 +1,7 @@
 "use client";
 
 import { X, ShieldCheck, Check, Info } from "lucide-react";
-import { SupplierOrder, ORDER_STATUS_CONFIG } from "./types";
+import { SupplierOrder, ORDER_STATUS_CONFIG, getDisplayStatus } from "./types";
 
 interface SupplierOrderDetailModalProps {
   order: SupplierOrder | null;
@@ -16,7 +16,8 @@ export function SupplierOrderDetailModal({
 }: SupplierOrderDetailModalProps) {
   if (!order) return null;
 
-  const statusConfig = ORDER_STATUS_CONFIG[order.status];
+  const displayStatus = getDisplayStatus(order.status, order.paidAt);
+  const statusConfig = ORDER_STATUS_CONFIG[displayStatus];
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("id-ID", {
@@ -116,6 +117,18 @@ export function SupplierOrderDetailModal({
                     <tr key={item.id} className="group">
                       <td className="py-4 pr-4">
                         <p className="font-medium text-gray-900">{item.name}</p>
+                        {(item as any).commodityName && (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700">
+                              {(item as any).commodityName}
+                            </span>
+                            {(item as any).categoryName && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
+                                {(item as any).categoryName}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td className="py-4 text-right text-gray-600 tabular-nums">
                         {item.quantity}{" "}
@@ -170,15 +183,30 @@ export function SupplierOrderDetailModal({
             Tutup
           </button>
 
-          {statusConfig.nextAction && order.status !== "PENDING" && (
+          {statusConfig.cancelAction && (
+            <button
+              onClick={() => {
+                onUpdateStatus(order.id, statusConfig.cancelStatus!);
+                onClose();
+              }}
+              className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 transition-all focus:outline-none focus:ring-4 focus:ring-red-20"
+            >
+              <X className="w-4 h-4" strokeWidth={2.5} />
+              {statusConfig.cancelAction}
+            </button>
+          )}
+
+          {statusConfig.nextAction && (
             <button
               onClick={() => {
                 onUpdateStatus(order.id, statusConfig.nextStatus!);
                 onClose();
               }}
-              className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-green-600 rounded-xl hover:bg-green-700 transition-all focus:outline-none focus:ring-4 focus:ring-green-20 shadow-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors shadow-sm whitespace-nowrap"
             >
-              <Check className="w-4 h-4" strokeWidth={2.5} />
+              {statusConfig.nextStatus !== "PAY" && (
+                <Check className="w-4 h-4" />
+              )}
               {statusConfig.nextAction}
             </button>
           )}

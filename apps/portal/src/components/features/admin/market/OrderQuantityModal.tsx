@@ -46,6 +46,10 @@ export function OrderQuantityModal({
         setError(`Minimum pemesanan adalah ${minQty} ${item?.unit ?? ""}`);
         return false;
       }
+      if (item?.stock != null && value > item.stock) {
+        setError(`Stok tersedia hanya ${item.stock} ${item?.unit ?? ""}`);
+        return false;
+      }
       if (step > 0) {
         const remainder = Math.round(((value - minQty) % step) * 100) / 100;
         if (remainder !== 0) {
@@ -58,7 +62,7 @@ export function OrderQuantityModal({
       setError("");
       return true;
     },
-    [minQty, step, item?.unit],
+    [minQty, step, item?.unit, item?.stock],
   );
 
   const handleDecrease = () => {
@@ -180,6 +184,12 @@ export function OrderQuantityModal({
                     {item.unit}
                   </p>
                 )}
+                {item?.stock != null && (
+                  <p>
+                    <span className="font-semibold">Stok tersedia:</span> {item.stock}{" "}
+                    {item.unit}
+                  </p>
+                )}
                 <p className="text-blue-600">
                   Contoh: {examples.join(", ")} {item.unit}
                 </p>
@@ -204,6 +214,7 @@ export function OrderQuantityModal({
               <input
                 type="number"
                 min={minQty}
+                max={item?.stock}
                 step={step > 0 ? step : undefined}
                 value={quantity}
                 onChange={(e) => handleInputChange(e.target.value)}
@@ -212,7 +223,8 @@ export function OrderQuantityModal({
               <button
                 type="button"
                 onClick={handleIncrease}
-                className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
+                disabled={item?.stock != null && quantity >= item.stock}
+                className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Plus className="w-4 h-4" />
               </button>
