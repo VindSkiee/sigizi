@@ -40,7 +40,7 @@ export class OrderService {
     [OS.PENDING]: [OS.CONFIRMED, OS.CANCELLED],
     [OS.CONFIRMED]: [OS.DELIVERED, OS.CANCELLED],
     [OS.DELIVERED]: [OS.COMPLETED, OS.CANCELLED],
-    [OS.COMPLETED]: [OS.CANCELLED],
+    [OS.COMPLETED]: [],
     [OS.CANCELLED]: [],
   };
 
@@ -51,7 +51,6 @@ export class OrderService {
     [`${OS.PENDING}→${OS.CANCELLED}`]: [Role.SPPG_ADMIN, Role.SUPPLIER],
     [`${OS.CONFIRMED}→${OS.CANCELLED}`]: [Role.SPPG_ADMIN, Role.SUPPLIER],
     [`${OS.DELIVERED}→${OS.CANCELLED}`]: [Role.SPPG_ADMIN],
-    [`${OS.COMPLETED}→${OS.CANCELLED}`]: [Role.SPPG_ADMIN],
   };
 
   async findAll(
@@ -515,10 +514,6 @@ export class OrderService {
       );
     }
 
-    if (newStatus === OS.CANCELLED && currentStatus === OS.COMPLETED) {
-      await this.validateStockRollback(id);
-    }
-
     if (newStatus === OS.COMPLETED && currentStatus === OS.DELIVERED) {
       if (!order.paidAt) {
         throw new BadRequestException(
@@ -952,24 +947,6 @@ export class OrderService {
           stockUpdatedAt: new Date(),
         },
       });
-    }
-  }
-
-  private async validateStockRollback(orderId: string) {
-    const stocks = await this.prisma.inventoryStock.findMany({
-      where: {
-        orderItem: { orderId },
-      },
-    });
-
-    for (const stock of stocks) {
-      if (stock.remainingQty < stock.initialQty) {
-        throw new BadRequestException(
-          `Tidak dapat membatalkan order karena stok barang dengan ID ${stock.itemId} sudah terpakai ` +
-            `(tersisa ${stock.remainingQty} dari ${stock.initialQty} unit). ` +
-            `Silakan hubungi administrator untuk proses retur secara manual.`,
-        );
-      }
     }
   }
 }
