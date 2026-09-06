@@ -7,7 +7,7 @@
  * IMPORTANT: All region values (province, regency, district) MUST be
  * written in consistent format before querying the database.
  * Use this function to normalize any region input.
- *
+ 
  * Supported input formats:
  * - "Jawa Barat" / "jawa barat" / "JAWA BARAT" → "JAWA_BARAT"
  * - "Kab. Purwakarta" / "Kota Bandung" → "PURWAKARTA" / "BANDUNG"
