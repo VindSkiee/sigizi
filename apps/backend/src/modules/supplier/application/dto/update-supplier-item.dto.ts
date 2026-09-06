@@ -7,6 +7,7 @@ import {
   MinLength,
   MaxLength,
 } from "class-validator";
+import { Type } from "class-transformer";
 import { ApiPropertyOptional } from "@nestjs/swagger";
 
 export class UpdateSupplierItemDto {
@@ -24,6 +25,7 @@ export class UpdateSupplierItemDto {
 
   @ApiPropertyOptional({ example: 12000 })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   basePrice?: number;
@@ -35,12 +37,14 @@ export class UpdateSupplierItemDto {
 
   @ApiPropertyOptional({ example: 10 })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(1)
   minOrderQty?: number;
 
   @ApiPropertyOptional({ example: 5 })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0.5)
   orderStep?: number;
@@ -60,6 +64,7 @@ export class UpdateSupplierItemDto {
 
   @ApiPropertyOptional({ example: 100, description: "Stok saat ini" })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   stock?: number;

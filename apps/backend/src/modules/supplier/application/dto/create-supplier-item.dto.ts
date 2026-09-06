@@ -6,6 +6,7 @@ import {
   IsBoolean,
   Min,
 } from "class-validator";
+import { Type } from "class-transformer";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class CreateSupplierItemDto {
@@ -20,6 +21,7 @@ export class CreateSupplierItemDto {
   unit!: string;
 
   @ApiProperty({ example: 12000 })
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   basePrice!: number;
@@ -31,12 +33,14 @@ export class CreateSupplierItemDto {
 
   @ApiPropertyOptional({ example: 1 })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(1)
   minOrderQty?: number;
 
   @ApiPropertyOptional({ example: 1 })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0.5)
   orderStep?: number;
@@ -56,6 +60,7 @@ export class CreateSupplierItemDto {
 
   @ApiPropertyOptional({ example: 100, description: "Stok saat ini" })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   stock?: number;
