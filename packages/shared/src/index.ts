@@ -5,6 +5,7 @@
 export enum Role {
   SPPG_ADMIN = "SPPG_ADMIN",
   SUPPLIER = "SUPPLIER",
+  BGN = "BGN",
 }
 
 export enum BatchStatus {
@@ -901,6 +902,14 @@ export const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "order:read:own",
     "order:write:own",
     "mou:read:own",
+  ],
+  [Role.BGN]: [
+    "dashboard:read",
+    "transaction:read",
+    "sppg:read",
+    "supplier:read",
+    "commodity:read",
+    "anomaly:read",
   ],
 };
 

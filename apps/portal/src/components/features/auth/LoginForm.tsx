@@ -39,8 +39,12 @@ export function LoginForm({ prefillEmail, prefillPassword }: LoginFormProps) {
         const data = response.data as { token: string; user: any };
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
-        window.location.href =
-          data.user.role === "SUPPLIER" ? "/supplier" : "/admin";
+        const roleRedirect: Record<string, string> = {
+          SPPG_ADMIN: "/admin",
+          SUPPLIER: "/supplier",
+          BGN: "/bgn",
+        };
+        window.location.href = roleRedirect[data.user.role] || "/admin";
         return;
       }
     } catch (err: any) {

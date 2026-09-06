@@ -20,8 +20,12 @@ function SsoRedirectContent() {
         const data = response.data as { token: string; user: any };
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
-        window.location.href =
-          data.user.role === "SUPPLIER" ? "/supplier" : "/admin";
+        const roleRedirect: Record<string, string> = {
+          SPPG_ADMIN: "/admin",
+          SUPPLIER: "/supplier",
+          BGN: "/bgn",
+        };
+        window.location.href = roleRedirect[data.user.role] || "/admin";
       } else {
         setStatus("error");
         setErrorMessage("Gagal melakukan autentikasi. Silakan coba lagi.");
@@ -80,9 +84,7 @@ function SsoRedirectContent() {
             <div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-700 font-bold text-lg">
-                    SS
-                  </span>
+                  <span className="text-blue-700 font-bold text-lg">SS</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-800 truncate">

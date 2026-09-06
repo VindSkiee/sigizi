@@ -28,7 +28,7 @@ interface User {
   id: string;
   email: string;
   name: string;
-  role: "SPPG_ADMIN" | "SUPPLIER" | "PUBLIC";
+  role: "SPPG_ADMIN" | "SUPPLIER" | "BGN" | "PUBLIC";
   supplierId?: string;
   sppgId?: string;
   sppg?: SppgData;
@@ -41,6 +41,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isSupplier: boolean;
   isAdmin: boolean;
+  isBgn: boolean;
   hasLocation: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -82,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = !!token && !!user;
   const isSupplier = user?.role === "SUPPLIER";
   const isAdmin = user?.role === "SPPG_ADMIN";
+  const isBgn = user?.role === "BGN";
   const hasLocation =
     user?.sppg?.latitude != null && user?.sppg?.longitude != null;
 
@@ -155,6 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated,
         isSupplier,
         isAdmin,
+        isBgn,
         hasLocation,
         login,
         logout,

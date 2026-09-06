@@ -1,3 +1,6 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap");
 @import "leaflet/dist/leaflet.css";
 
 @tailwind base;
@@ -8,6 +11,58 @@
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 255, 255, 255;
   --background-end-rgb: 255, 255, 255;
+}
+
+/* BGN Design Tokens */
+.bgn-root {
+  --bg: #f0f2f5;
+  --sidebar: #0f1923;
+  --sidebar-hover: #1a2a38;
+  --sidebar-active: #1b4fbe;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --text-primary: #0f1923;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --accent: #1b4fbe;
+  --accent-light: #eff4ff;
+  --green: #16a34a;
+  --green-light: #f0fdf4;
+  --amber: #d97706;
+  --amber-light: #fffbeb;
+  --red: #dc2626;
+  --red-light: #fef2f2;
+  --blue: #2563eb;
+  --blue-light: #eff6ff;
+  --font-display: "DM Sans", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+}
+
+.bgn-root body {
+  font-family: var(--font-body);
+  background-color: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+.bgn-root * {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.bgn-root *::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.bgn-root *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.bgn-root *::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 99px;
 }
 
 body {

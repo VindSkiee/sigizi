@@ -15,6 +15,8 @@ export interface NavItem {
   href: string;
   icon: LucideIcon;
   devOnly?: boolean;
+  /** When true, match any sub-path under href (e.g. /bgn/transactions/ORD-123) */
+  matchPrefix?: boolean;
 }
 
 export interface SidebarTheme {
@@ -58,7 +60,12 @@ const allSupplierNavigation: NavItem[] = [
   { name: "Dashboard", href: "/supplier", icon: LayoutDashboard },
   { name: "Katalog Produk", href: "/supplier/katalog", icon: Package },
   { name: "Pesanan Masuk", href: "/supplier/pesanan", icon: ShoppingCart },
-  { name: "MoU & Kontrak", href: "/supplier/mou", icon: FileText, devOnly: true },
+  {
+    name: "MoU & Kontrak",
+    href: "/supplier/mou",
+    icon: FileText,
+    devOnly: true,
+  },
   { name: "Profil", href: "/supplier/profil", icon: Building2 },
 ];
 
@@ -72,6 +79,40 @@ export const supplierTheme: SidebarTheme = {
   activeItem: "bg-green-50 text-green-700",
   activeIcon: "text-green-600",
   cardGradient: "from-green-500 to-green-600",
+};
+
+// ============================================================================
+// BGN (Badan Gizi Nasional) navigation + theme
+// ============================================================================
+
+export const bgnNavigation: NavItem[] = [
+  { name: "Overview", href: "/bgn", icon: LayoutDashboard },
+  {
+    name: "Transaksi",
+    href: "/bgn/transactions",
+    icon: ShoppingCart,
+    matchPrefix: true,
+  },
+  { name: "SPPG", href: "/bgn/sppg", icon: Building2, matchPrefix: true },
+  { name: "Supplier", href: "/bgn/suppliers", icon: Store, matchPrefix: true },
+  {
+    name: "Komoditas & Harga",
+    href: "/bgn/commodities",
+    icon: Package,
+    matchPrefix: true,
+  },
+  {
+    name: "Perhatian & Anomali",
+    href: "/bgn/alerts",
+    icon: FileText,
+    matchPrefix: true,
+  },
+];
+
+export const bgnTheme: SidebarTheme = {
+  activeItem: "bg-indigo-50 text-indigo-700",
+  activeIcon: "text-[#1B4FBE]",
+  cardGradient: "from-[#1B4FBE] to-[#2563EB]",
 };
 
 // ============================================================================

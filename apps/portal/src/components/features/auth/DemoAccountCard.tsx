@@ -59,6 +59,14 @@ const supplierAccounts: DemoAccount[] = [
   },
 ];
 
+const bgnAccounts: DemoAccount[] = [
+  {
+    name: "BGN Administrator",
+    email: "bgn-admin@sigizi.go.id",
+    password: PASSWORD,
+  },
+];
+
 function AccountItem({
   account,
   onSelect,
@@ -174,6 +182,23 @@ export function DemoAccountCard({ onSelectAccount }: DemoAccountCardProps) {
                   </div>
                   <div className="space-y-0.5 mb-1">
                     {supplierAccounts.map((acc) => (
+                      <AccountItem
+                        key={acc.email}
+                        account={acc}
+                        onSelect={handleSelect}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-50 pt-2 mt-1">
+                  <div className="px-3 mb-1">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-600">
+                      BGN
+                    </p>
+                  </div>
+                  <div className="space-y-0.5 mb-1">
+                    {bgnAccounts.map((acc) => (
                       <AccountItem
                         key={acc.email}
                         account={acc}
