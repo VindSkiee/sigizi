@@ -18,6 +18,7 @@ export interface DraftItem {
   quantity: number;
   minOrderQty?: number;
   orderStep?: number;
+  stock?: number;
 }
 
 export interface MarketPricesResponse {

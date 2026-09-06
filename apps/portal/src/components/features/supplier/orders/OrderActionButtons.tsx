@@ -1,5 +1,5 @@
 import { OrderStatusWithCancel, OrderViewModel } from "./types";
-import { CheckCircle, XCircle, Truck } from "lucide-react";
+import { CheckCircle, X, Truck } from "lucide-react";
 
 interface OrderActionButtonsProps {
   order: OrderViewModel;
@@ -32,7 +32,7 @@ export function OrderActionButtons({
           onClick={() => onReject(order.id)}
           className="px-4 py-2 bg-white border border-red-300 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors flex items-center gap-2 w-full md:w-auto justify-center"
         >
-          <XCircle size={16} />
+          <X size={16} strokeWidth={2.5} />
           Tolak
         </button>
         <button
@@ -46,22 +46,15 @@ export function OrderActionButtons({
   }
 
   if (status === "CONFIRMED") {
-    const isPaid = !!order.paidAt;
     return (
       <div className="flex flex-wrap gap-2 md:items-end">
-        {isPaid ? (
-          <button
-            onClick={() => onMarkDelivered(order.id)}
-            className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 w-full md:w-auto justify-center"
-          >
-            <Truck size={16} />
-            Kirim
-          </button>
-        ) : (
-          <span className="px-4 py-2 bg-gray-100 text-gray-500 text-sm font-medium rounded-lg flex items-center gap-2 w-full md:w-auto justify-center">
-            Menunggu Pembayaran
-          </span>
-        )}
+        <button
+          onClick={() => onMarkDelivered(order.id)}
+          className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 w-full md:w-auto justify-center"
+        >
+          <Truck size={16} />
+          Kirim
+        </button>
         <button
           onClick={() => onViewDetail(order)}
           className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors w-full md:w-auto"

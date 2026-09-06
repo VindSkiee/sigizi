@@ -159,7 +159,7 @@ export default function ItemDetailPage() {
       isMarketSeller: data.supplier.isMarketSeller,
       marketName: data.supplier.marketName,
       stock: data.item.stock,
-      openStatus: data.supplier.openStatus ? "OPEN" : "CLOSED",
+      openStatus: data.supplier.openStatus,
       categoryName: data.item.commodity?.category?.name,
       commodityName: data.item.commodity?.name,
     };

@@ -14,8 +14,6 @@ export function SupplierOrderTable({
   onViewDetail,
   onUpdateStatus,
 }: SupplierOrderTableProps) {
-  const showEstimasiTiba = process.env.NEXT_PUBLIC_DEMO_MODE !== "true";
-
   if (orders.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
@@ -51,16 +49,14 @@ export function SupplierOrderTable({
             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
               Detail Barang
             </th>
-
-            {/* Header Estimasi Tiba (Hanya muncul di Development dan Production) */}
-            {showEstimasiTiba && (
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Estimasi Tiba
-              </th>
-            )}
-
+            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              Jumlah Item
+            </th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
               Status
+            </th>
+            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              Total
             </th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
               Aksi

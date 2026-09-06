@@ -63,6 +63,7 @@ export function MarketFilterBar({
   const [loadingMarkets, setLoadingMarkets] = useState(false);
 
   const [categoryId, setCategoryId] = useState("");
+  const [commodityId, setCommodityId] = useState("");
   const [commodityName, setCommodityName] = useState("");
 
   useEffect(() => {
@@ -162,8 +163,11 @@ export function MarketFilterBar({
   const handleCategoryChange = useCallback(
     (value: string) => {
       setCategoryId(value);
+      setCommodityId("");
       setCommodityName("");
       handleChange("item", "");
+      handleChange("categoryId", value);
+      handleChange("commodityId", "");
     },
     [handleChange],
   );
@@ -172,8 +176,10 @@ export function MarketFilterBar({
     (value: string) => {
       const commodity = commodities.find((c) => c.id === value);
       const name = commodity?.name || "";
+      setCommodityId(value);
       setCommodityName(name);
       handleChange("item", name);
+      handleChange("commodityId", value);
     },
     [commodities, handleChange],
   );

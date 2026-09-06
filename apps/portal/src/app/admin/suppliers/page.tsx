@@ -22,10 +22,10 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 const ITEMS_PER_PAGE = 5;
 
 function getSortPriority(order: SupplierOrder): number {
-  if (order.status === OrderStatus.CONFIRMED && !order.paidAt) return 1;
-  if (order.status === OrderStatus.DELIVERED) return 2;
+  if (order.status === OrderStatus.DELIVERED && !order.paidAt) return 1;
+  if (order.status === OrderStatus.DELIVERED && order.paidAt) return 2;
   if (order.status === OrderStatus.PENDING) return 3;
-  if (order.status === OrderStatus.CONFIRMED && order.paidAt) return 4;
+  if (order.status === OrderStatus.CONFIRMED) return 4;
   if (order.status === OrderStatus.COMPLETED) return 5;
   if (order.status === "CANCELLED") return 6;
   return 7;
@@ -51,6 +51,8 @@ function mapApiOrderToSupplierOrder(raw: any): SupplierOrder {
       unit: i.item?.unit || "",
       unitPrice: i.unitPrice,
       subtotal: i.subtotal,
+      commodityName: i.item?.commodity?.name || null,
+      categoryName: i.item?.commodity?.category?.name || null,
     })),
     createdAt: raw.createdAt,
   };
@@ -180,8 +182,8 @@ export default function SupplierIntegrationPage() {
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     const order = orders.find((o) => o.id === orderId);
 
-    // CONFIRMED → "PAY": confirm payment via API
-    if (order?.status === OrderStatus.CONFIRMED && newStatus === "PAY") {
+    // DELIVERED → "PAY": confirm payment via API (sets paidAt, status stays DELIVERED)
+    if (order?.status === OrderStatus.DELIVERED && newStatus === "PAY") {
       if (!token) return;
       try {
         const { confirmOrderPayment } = await import("@/lib/api");
@@ -189,10 +191,17 @@ export default function SupplierIntegrationPage() {
         setOrders((prev) =>
           prev.map((o) =>
             o.id === orderId
-              ? { ...o, status: "PAID" as any, paidAt: new Date().toISOString() }
+              ? { ...o, paidAt: new Date().toISOString() }
               : o,
           ),
         );
+        if (selectedOrder?.id === orderId) {
+          setSelectedOrder((prev) =>
+            prev
+              ? { ...prev, paidAt: new Date().toISOString() }
+              : null,
+          );
+        }
       } catch (err: any) {
         console.error("Failed to confirm payment:", err);
         alert(err.message || "Gagal konfirmasi pembayaran");
@@ -200,12 +209,31 @@ export default function SupplierIntegrationPage() {
       return;
     }
 
-    // DELIVERED → COMPLETED: show confirm, then call API
+    // DELIVERED + paidAt → COMPLETED: show confirm modal
     if (
       order?.status === OrderStatus.DELIVERED &&
+      order.paidAt &&
       newStatus === OrderStatus.COMPLETED
     ) {
       setConfirmState({ orderId, status: newStatus, label: "Selesai" });
+      return;
+    }
+
+    // CONFIRMED → "CANCEL_ORDER": open confirm modal for reason
+    if (
+      order?.status === OrderStatus.CONFIRMED &&
+      newStatus === "CANCEL_ORDER"
+    ) {
+      setConfirmState({ orderId, status: "CANCELLED", label: "Batalkan" });
+      return;
+    }
+
+    // DELIVERED → "CANCEL_ORDER": open confirm modal for reason
+    if (
+      order?.status === OrderStatus.DELIVERED &&
+      newStatus === "CANCEL_ORDER"
+    ) {
+      setConfirmState({ orderId, status: "CANCELLED", label: "Batalkan" });
       return;
     }
 
@@ -234,14 +262,14 @@ export default function SupplierIntegrationPage() {
     }
   };
 
-  const handleConfirmAction = async () => {
+  const handleConfirmAction = async (reason?: string) => {
     if (!confirmState || !token) return;
 
     const { orderId, status } = confirmState;
 
     // Other confirmed actions: call API
     try {
-      const response = await updateOrderStatus(token, orderId, status);
+      const response = await updateOrderStatus(token, orderId, status, reason);
       if (response.success) {
         setOrders((prev) =>
           prev.map((o) =>
@@ -378,11 +406,17 @@ export default function SupplierIntegrationPage() {
       {/* Confirm Modal */}
       <ConfirmModal
         isOpen={confirmState !== null}
-        title="Konfirmasi Selesai"
-        message="Pesanan akan ditandai sebagai selesai. Tindakan ini tidak dapat dibatalkan."
-        confirmLabel="Ya, Selesai"
-        variant="success"
-        onConfirm={handleConfirmAction}
+        title={confirmState?.label === "Batalkan" ? "Konfirmasi Pembatalan" : "Konfirmasi Selesai"}
+        message={
+          confirmState?.label === "Batalkan"
+            ? "Pesanan akan dibatalkan. Tindakan ini tidak dapat dibatalkan."
+            : "Pesanan akan ditandai sebagai selesai. Tindakan ini tidak dapat dibatalkan."
+        }
+        confirmLabel={confirmState?.label === "Batalkan" ? "Ya, Batalkan" : "Ya, Selesai"}
+        variant={confirmState?.label === "Batalkan" ? "danger" : "success"}
+        requireReason={confirmState?.label === "Batalkan"}
+        onConfirm={() => handleConfirmAction()}
+        onConfirmWithReason={(reason) => handleConfirmAction(reason)}
         onClose={() => setConfirmState(null)}
       />
     </div>

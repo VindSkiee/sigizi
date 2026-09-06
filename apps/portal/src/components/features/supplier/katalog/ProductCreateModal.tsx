@@ -4,7 +4,11 @@ import { useState, useEffect } from "react";
 import { X, Package, Loader2 } from "lucide-react";
 import { UNIT_OPTIONS } from "@sigizi/shared";
 import { useAuth } from "@/contexts/AuthContext";
-import { getItemCategories, getItemCommodities } from "@/lib/api";
+import {
+  getSupplierTaxonomy,
+  TaxonomyCategory,
+  TaxonomyCommodity,
+} from "@/lib/api";
 import { FileUpload } from "@/components/ui/FileUpload";
 
 interface ProductCreateModalProps {
@@ -25,16 +29,6 @@ export interface CreateProductData {
   commodityId?: string;
 }
 
-interface Category {
-  id: string;
-  name: string;
-}
-
-interface Commodity {
-  id: string;
-  name: string;
-}
-
 export function ProductCreateModal({
   isOpen,
   onClose,
@@ -51,8 +45,7 @@ export function ProductCreateModal({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [categoryId, setCategoryId] = useState("");
   const [commodityId, setCommodityId] = useState("");
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [commodities, setCommodities] = useState<Commodity[]>([]);
+  const [categories, setCategories] = useState<TaxonomyCategory[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -74,21 +67,17 @@ export function ProductCreateModal({
 
   useEffect(() => {
     if (!token || !isOpen) return;
-    getItemCategories(token).then((res) => {
-      if (res.success) setCategories((res.data as any) || []);
+    getSupplierTaxonomy(token).then((res) => {
+      if (res.success) setCategories(res.data?.categories || []);
     }).catch(() => {});
   }, [token, isOpen]);
 
-  useEffect(() => {
-    if (!token || !categoryId) {
-      setCommodities([]);
-      setCommodityId("");
-      return;
-    }
-    getItemCommodities(token, categoryId).then((res) => {
-      if (res.success) setCommodities((res.data as any) || []);
-    }).catch(() => {});
-  }, [token, categoryId]);
+  const commodities: TaxonomyCommodity[] = (() => {
+    const cat = categories.find((c) => c.id === categoryId);
+    return cat?.commodities || [];
+  })();
+
+  const selectedCommodity = commodities.find((c) => c.id === commodityId);
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -258,6 +247,16 @@ export function ProductCreateModal({
               </div>
             </div>
           </div>
+
+          {selectedCommodity && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg text-sm text-blue-700">
+              <span>Harga Acuan Nasional:</span>
+              <span className="font-semibold">
+                Rp {selectedCommodity.referencePrice.toLocaleString("id-ID")}
+              </span>
+              <span className="text-blue-500">/ satuan</span>
+            </div>
+          )}
 
           {/* Stock */}
           <div>

@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Package,
   Building2,
+  ReceiptText,
 } from "lucide-react";
 
 export interface NavItem {
@@ -42,7 +43,7 @@ export const adminNavigation: NavItem[] = [
   { name: "Beranda", href: "/admin", icon: Home },
   { name: "Keranjang Pesanan", href: "/admin/suppliers", icon: ShoppingCart },
   { name: "Pasar Bahan Baku", href: "/admin/market", icon: Store },
-  { name: "Laporan Keuangan", href: "/admin/reports", icon: FileText },
+  { name: "Riwayat Transaksi", href: "/admin/transactions", icon: ReceiptText },
   { name: "Profil", href: "/admin/profile", icon: UserCircle },
 ];
 
@@ -60,12 +61,8 @@ const allSupplierNavigation: NavItem[] = [
   { name: "Dashboard", href: "/supplier", icon: LayoutDashboard },
   { name: "Katalog Produk", href: "/supplier/katalog", icon: Package },
   { name: "Pesanan Masuk", href: "/supplier/pesanan", icon: ShoppingCart },
-  {
-    name: "MoU & Kontrak",
-    href: "/supplier/mou",
-    icon: FileText,
-    devOnly: true,
-  },
+  { name: "Riwayat Transaksi", href: "/supplier/transactions", icon: ReceiptText },
+  { name: "MoU & Kontrak", href: "/supplier/mou", icon: FileText, devOnly: true },
   { name: "Profil", href: "/supplier/profil", icon: Building2 },
 ];
 

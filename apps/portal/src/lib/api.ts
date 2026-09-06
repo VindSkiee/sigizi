@@ -446,7 +446,7 @@ function appendMarketLocationParams(
 }
 
 export async function getSupplierRegions(token: string) {
-  return fetchApi(`/api/market/regions`, {
+  return fetchApi(`/api/market/regions?page=1&limit=100`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -496,100 +496,7 @@ export async function getHETSuggestion(
   });
 }
 
-// ============================================================================
-// Reports API
-// ============================================================================
-export async function getDailyReport(
-  token: string,
-  date: string,
-  sppgId?: string,
-) {
-  const params = new URLSearchParams({ date });
-  if (sppgId) params.append("sppgId", sppgId);
-  return fetchApi(`/api/reports/daily?${params.toString()}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-}
 
-export async function getWeeklyReport(
-  token: string,
-  week: string,
-  sppgId?: string,
-) {
-  const params = new URLSearchParams({ week });
-  if (sppgId) params.append("sppgId", sppgId);
-  return fetchApi(`/api/reports/weekly?${params.toString()}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-}
-
-export async function getExpenseBreakdown(
-  token: string,
-  params: {
-    source?: "COGS" | "PROCUREMENT" | "OPEX" | "ALL";
-    startDate: string;
-    endDate: string;
-  },
-) {
-  const searchParams = new URLSearchParams();
-  if (params.source) searchParams.append("source", params.source);
-  searchParams.append("startDate", params.startDate);
-  searchParams.append("endDate", params.endDate);
-  return fetchApi(`/api/reports/expenses?${searchParams.toString()}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-}
-
-export async function createOperationalExpense(
-  token: string,
-  data: {
-    category: string;
-    amount: number;
-    expenseDate: string;
-    description?: string;
-    evidenceUrl?: string;
-    notes?: string;
-  },
-) {
-  return fetchApi("/api/reports/operational-expenses", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-}
-
-export async function listOperationalExpenses(
-  token: string,
-  params?: {
-    category?: string;
-    startDate?: string;
-    endDate?: string;
-    page?: number;
-    limit?: number;
-  },
-) {
-  const searchParams = new URLSearchParams();
-  if (params?.category) searchParams.append("category", params.category);
-  if (params?.startDate) searchParams.append("startDate", params.startDate);
-  if (params?.endDate) searchParams.append("endDate", params.endDate);
-  if (params?.page) searchParams.append("page", String(params.page));
-  if (params?.limit) searchParams.append("limit", String(params.limit));
-  const qs = searchParams.toString() ? `?${searchParams.toString()}` : "";
-  return fetchApi(`/api/reports/operational-expenses${qs}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-}
 
 // ============================================================================
 // MoU API
@@ -742,10 +649,12 @@ export async function getPublicSppgBatches(
 // ============================================================================
 export async function getMarketPrices(
   token: string,
-  params: { item: string } & MarketLocationParams,
+  params: { item: string; categoryId?: string; commodityId?: string } & MarketLocationParams,
 ) {
   const searchParams = new URLSearchParams();
   searchParams.append("item", params.item);
+  if (params.categoryId) searchParams.append("categoryId", params.categoryId);
+  if (params.commodityId) searchParams.append("commodityId", params.commodityId);
   appendMarketLocationParams(searchParams, params);
   return fetchApi(`/api/market/prices?${searchParams.toString()}`, {
     headers: {
@@ -810,8 +719,30 @@ export async function uploadProfileImage(token: string, file: File) {
 }
 
 // ============================================================================
-// Taxonomy API (P9)
+// Taxonomy API (P9 + P11)
 // ============================================================================
+
+export interface TaxonomyCommodity {
+  id: string;
+  name: string;
+  referencePrice: number;
+}
+
+export interface TaxonomyCategory {
+  id: string;
+  name: string;
+  commodities: TaxonomyCommodity[];
+}
+
+export async function getSupplierTaxonomy(token: string) {
+  return fetchApi<{ categories: TaxonomyCategory[] }>(
+    "/api/suppliers/taxonomy",
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
+}
+
 export async function getItemCategories(token: string) {
   return fetchApi("/api/categories", {
     headers: {
@@ -826,6 +757,74 @@ export async function getItemCommodities(
 ) {
   const params = categoryId ? `?categoryId=${categoryId}` : "";
   return fetchApi(`/api/commodities${params}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+// ============================================================================
+// Transaction History API (P7)
+// ============================================================================
+export interface TransactionListParams {
+  page?: number;
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
+}
+
+export async function getTransactions(
+  token: string,
+  params?: TransactionListParams,
+) {
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.append("page", String(params.page));
+  if (params?.limit) searchParams.append("limit", String(params.limit));
+  if (params?.startDate) searchParams.append("startDate", params.startDate);
+  if (params?.endDate) searchParams.append("endDate", params.endDate);
+  if (params?.status && params.status !== "ALL")
+    searchParams.append("status", params.status);
+  const qs = searchParams.toString() ? `?${searchParams.toString()}` : "";
+  return fetchApi(`/api/orders/transactions${qs}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function getTransactionById(token: string, id: string) {
+  return fetchApi(`/api/orders/transactions/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+// ============================================================================
+// Supplier Transaction History API (P8)
+// ============================================================================
+export async function getSupplierTransactions(
+  token: string,
+  params?: TransactionListParams,
+) {
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.append("page", String(params.page));
+  if (params?.limit) searchParams.append("limit", String(params.limit));
+  if (params?.startDate) searchParams.append("startDate", params.startDate);
+  if (params?.endDate) searchParams.append("endDate", params.endDate);
+  if (params?.status && params.status !== "ALL")
+    searchParams.append("status", params.status);
+  const qs = searchParams.toString() ? `?${searchParams.toString()}` : "";
+  return fetchApi(`/api/orders/supplier-transactions${qs}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function getSupplierTransactionById(token: string, id: string) {
+  return fetchApi(`/api/orders/supplier-transactions/${id}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

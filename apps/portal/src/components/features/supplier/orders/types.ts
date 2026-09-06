@@ -14,6 +14,14 @@ export interface OrderItem {
     name: string;
     unit: string;
     basePrice: number;
+    commodity?: {
+      id: string;
+      name: string;
+      category?: {
+        id: string;
+        name: string;
+      };
+    } | null;
   };
 }
 
@@ -71,6 +79,8 @@ export interface OrderViewModel {
     unit: string;
     unitPrice: number;
     subtotal: number;
+    commodityName?: string;
+    categoryName?: string;
   }[];
   total: number;
   status: OrderStatusWithCancel;

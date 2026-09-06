@@ -9,7 +9,6 @@ export interface SupplierOrder {
   status: OrderStatusWithCancel;
   total: number;
   notes?: string;
-  estimatedArrival?: string;
   paidAt?: string;
   supplier: {
     id: string;
@@ -23,6 +22,8 @@ export interface SupplierOrder {
     unit: string;
     unitPrice: number;
     subtotal: number;
+    commodityName?: string;
+    categoryName?: string;
   }[];
   sppg: {
     id: string;
@@ -42,32 +43,51 @@ export interface SupplierStats {
   totalActiveValue: number;
 }
 
+export type OrderDisplayStatus =
+  | OrderStatusWithCancel
+  | "DELIVERED_UNPAID"
+  | "DELIVERED_PAID";
+
 export const ORDER_STATUS_CONFIG: Record<
-  OrderStatusWithCancel,
+  OrderDisplayStatus,
   {
     label: string;
     color: string;
     nextAction?: string;
-    nextStatus?: OrderStatus;
+    nextStatus?: OrderStatus | "PAY" | "CANCEL_ORDER";
+    cancelAction?: string;
+    cancelStatus?: "CANCEL_ORDER";
   }
 > = {
   [OrderStatus.PENDING]: {
     label: "Menunggu Konfirmasi",
     color: "bg-yellow-100 text-yellow-800",
-    nextAction: "Konfirmasi",
-    nextStatus: OrderStatus.CONFIRMED,
   },
   [OrderStatus.CONFIRMED]: {
     label: "Dikonfirmasi",
     color: "bg-blue-100 text-blue-800",
-    nextAction: "Bayar",
-    nextStatus: "PAY" as OrderStatus,
+    cancelAction: "Batalkan",
+    cancelStatus: "CANCEL_ORDER",
   },
-  [OrderStatus.DELIVERED]: {
+  DELIVERED_UNPAID: {
+    label: "Dikirim",
+    color: "bg-purple-100 text-purple-800",
+    nextAction: "Konfirmasi Pembayaran",
+    nextStatus: "PAY",
+    cancelAction: "Batalkan",
+    cancelStatus: "CANCEL_ORDER",
+  },
+  DELIVERED_PAID: {
     label: "Dikirim",
     color: "bg-purple-100 text-purple-800",
     nextAction: "Selesai",
     nextStatus: OrderStatus.COMPLETED,
+    cancelAction: "Batalkan",
+    cancelStatus: "CANCEL_ORDER",
+  },
+  [OrderStatus.DELIVERED]: {
+    label: "Dikirim",
+    color: "bg-purple-100 text-purple-800",
   },
   [OrderStatus.COMPLETED]: {
     label: "Selesai",
@@ -78,3 +98,13 @@ export const ORDER_STATUS_CONFIG: Record<
     color: "bg-red-100 text-red-800",
   },
 };
+
+export function getDisplayStatus(
+  status: OrderStatusWithCancel,
+  paidAt?: string | null,
+): OrderDisplayStatus {
+  if (status === OrderStatus.DELIVERED) {
+    return paidAt ? "DELIVERED_PAID" : "DELIVERED_UNPAID";
+  }
+  return status;
+}

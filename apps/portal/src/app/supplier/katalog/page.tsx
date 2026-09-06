@@ -29,6 +29,9 @@ interface Product {
   image?: string;
   commodityId?: string;
   commodityName?: string;
+  categoryId?: string;
+  categoryName?: string;
+  referencePrice?: number;
 }
 
 export default function KatalogPage() {
@@ -137,6 +140,8 @@ export default function KatalogPage() {
       stock: product.stock,
       image: product.image,
       commodityId: product.commodityId,
+      categoryId: product.categoryId,
+      categoryName: product.categoryName,
     });
     setShowEditModal(true);
   };
@@ -214,6 +219,9 @@ export default function KatalogPage() {
                   Komoditas
                 </th>
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">
+                  Kategori
+                </th>
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">
                   Satuan
                 </th>
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3">
@@ -263,6 +271,11 @@ export default function KatalogPage() {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {product.commodityName || (
+                      <span className="text-gray-300">-</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {product.categoryName || (
                       <span className="text-gray-300">-</span>
                     )}
                   </td>
