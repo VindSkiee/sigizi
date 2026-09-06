@@ -79,11 +79,11 @@ export interface CreateSupplierItemData {
   orderStep?: number;
   isAvailable?: boolean;
   image?: string;
-  stock?: number;
+  stock: number;
   priceUpdatedAt?: Date;
   stockUpdatedAt?: Date;
   updatedAt?: Date;
-  commodityId?: string;
+  commodityId: string;
 }
 
 export interface UpdateSupplierItemData {

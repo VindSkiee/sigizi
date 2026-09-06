@@ -342,6 +342,8 @@ describe("PrismaSupplierRepository", () => {
         name: "Beras Premium",
         unit: "kg",
         basePrice: 12000,
+        stock: 50,
+        commodityId: "com-1",
       });
 
       expect(result.id).toBe("item-1");

@@ -195,7 +195,13 @@ describe("SupplierController", () => {
 
   describe("addItem", () => {
     it("should call addItem with supplier id and dto", async () => {
-      const dto = { name: "Beras", unit: "kg", basePrice: 12000 };
+      const dto = {
+        name: "Beras",
+        unit: "kg",
+        basePrice: 12000,
+        stock: 50,
+        commodityId: "com-1",
+      };
       const mockItem = { id: "item-1", name: "Beras" };
       service.addItem.mockResolvedValue(mockItem as any);
 
@@ -206,7 +212,13 @@ describe("SupplierController", () => {
     });
 
     it("should attach image when file is uploaded", async () => {
-      const dto = { name: "Beras", unit: "kg", basePrice: 12000 };
+      const dto = {
+        name: "Beras",
+        unit: "kg",
+        basePrice: 12000,
+        stock: 50,
+        commodityId: "com-1",
+      };
       const file = {
         filename: "1234567890-product.jpg",
       } as Express.Multer.File;
@@ -221,7 +233,13 @@ describe("SupplierController", () => {
     });
 
     it("should not set image when no file uploaded", async () => {
-      const dto = { name: "Beras", unit: "kg", basePrice: 12000 };
+      const dto = {
+        name: "Beras",
+        unit: "kg",
+        basePrice: 12000,
+        stock: 50,
+        commodityId: "com-1",
+      };
       service.addItem.mockResolvedValue({ id: "item-1" } as any);
 
       await controller.addItem("sup-1", dto, undefined);

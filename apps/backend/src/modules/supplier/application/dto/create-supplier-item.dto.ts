@@ -58,17 +58,14 @@ export class CreateSupplierItemDto {
   @IsString()
   image?: string;
 
-  @ApiPropertyOptional({ example: 100, description: "Stok saat ini" })
-  @IsOptional()
+  @ApiProperty({ example: 100, description: "Stok saat ini" })
   @Type(() => Number)
   @IsNumber()
   @Min(0)
-  stock?: number;
+  stock!: number;
 
-  @ApiPropertyOptional({
-    description: "ID komoditas (link ke taxonomy ItemCommodity)",
-  })
-  @IsOptional()
+  @ApiProperty({ description: "ID komoditas (link ke taxonomy ItemCommodity)" })
   @IsString()
-  commodityId?: string;
+  @IsNotEmpty()
+  commodityId!: string;
 }

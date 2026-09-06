@@ -318,7 +318,13 @@ describe("SupplierService", () => {
       repository.findById.mockResolvedValue(mockSupplier);
       repository.addItem.mockResolvedValue(mockItem as any);
 
-      const dto = { name: "Beras", unit: "kg", basePrice: 12000 };
+      const dto = {
+        name: "Beras",
+        unit: "kg",
+        basePrice: 12000,
+        stock: 50,
+        commodityId: "com-1",
+      };
       await service.addItem("sup-1", dto);
 
       expect(repository.addItem).toHaveBeenCalledWith(

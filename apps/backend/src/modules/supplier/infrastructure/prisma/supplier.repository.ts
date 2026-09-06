@@ -244,10 +244,10 @@ export class PrismaSupplierRepository implements SupplierRepository {
         orderStep: data.orderStep,
         isAvailable: data.isAvailable ?? true,
         image: data.image ?? null,
-        stock: data.stock ?? 0,
+        stock: data.stock,
         priceUpdatedAt: data.priceUpdatedAt ?? null,
         stockUpdatedAt: data.stockUpdatedAt ?? null,
-        commodityId: data.commodityId ?? null,
+        commodityId: data.commodityId,
         supplierId,
       },
       include: {
