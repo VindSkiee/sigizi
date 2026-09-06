@@ -449,37 +449,7 @@ export function DraftOrderModal({
                 {formatCurrency(total)}
               </p>
             </div>
-
-            {/* Additional Fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-              <div>
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-1">
-                  <Calendar className="w-3.5 h-3.5" />
-                  Tanggal Pengiriman yang Diharapkan
-                </label>
-                <input
-                  type="date"
-                  value={expectedDeliveryDate}
-                  onChange={(e) => setExpectedDeliveryDate(e.target.value)}
-                  min={new Date().toISOString().slice(0, 10)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div>
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-1">
-                  <StickyNote className="w-3.5 h-3.5" />
-                  Catatan (Opsional)
-                </label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={2}
-                  maxLength={500}
-                  placeholder="Contoh: Mohon kirim sebelum jam 10 pagi"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
-                />
-              </div>
-            </div>
+           
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-3">

@@ -1,8 +1,9 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { getSupplierById } from "@/lib/api";
 import { DashboardShell } from "./DashboardShell";
 import {
   supplierNavigation,
@@ -16,7 +17,31 @@ interface SupplierLayoutProps {
 
 export default function SupplierLayout({ children }: SupplierLayoutProps) {
   const router = useRouter();
-  const { user, isAuthenticated, isSupplier, isLoading } = useAuth();
+  const { user, token, isAuthenticated, isSupplier, isLoading } = useAuth();
+  const [profileImage, setProfileImage] = useState(user?.supplier?.profileImage);
+
+  useEffect(() => {
+    if (!token || !user?.supplierId) return;
+
+    const loadProfileImage = () => {
+      getSupplierById(token, user.supplierId!)
+        .then((response) => {
+          if (response.success) {
+            setProfileImage(
+              (response.data as { profileImage?: string }).profileImage,
+            );
+          }
+        })
+        .catch(() => {
+          setProfileImage(user.supplier?.profileImage);
+        });
+    };
+
+    loadProfileImage();
+    window.addEventListener("supplier-profile-updated", loadProfileImage);
+    return () =>
+      window.removeEventListener("supplier-profile-updated", loadProfileImage);
+  }, [token, user?.supplierId, user?.supplier?.profileImage]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -35,7 +60,11 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
     <DashboardShell
       navigation={supplierNavigation}
       theme={supplierTheme}
-      userCard={{ name, initials: getInitials(name) }}
+      userCard={{
+        name,
+        initials: getInitials(name),
+        profileImage,
+      }}
     >
       {children}
     </DashboardShell>

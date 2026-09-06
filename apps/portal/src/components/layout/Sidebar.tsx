@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getImageUrl } from "@/lib/utils";
 import type { NavItem, SidebarTheme, UserCard } from "./navigation";
 
 interface SidebarProps {
@@ -82,8 +82,16 @@ export function Sidebar({
           )}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-              <span className="font-semibold">{userCard.initials}</span>
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center overflow-hidden">
+              {userCard.profileImage ? (
+                <img
+                  src={getImageUrl(userCard.profileImage)}
+                  alt={userCard.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="font-semibold">{userCard.initials}</span>
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm truncate">{userCard.name}</p>

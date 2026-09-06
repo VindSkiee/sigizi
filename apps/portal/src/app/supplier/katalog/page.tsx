@@ -1,9 +1,12 @@
 "use client";
 
+import { getImageUrl } from "@/lib/utils";
+
 import { useState, useEffect, useCallback } from "react";
 import { Package, Plus, Search, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
+  getMediaUrl,
   getSupplierItems,
   addSupplierItem,
   updateSupplierItem,
@@ -64,7 +67,16 @@ export default function KatalogPage() {
     try {
       const response = await getSupplierItems(token, user.supplierId);
       if (response.success) {
-        setProducts((response.data as any) || []);
+        const rawItems = (response.data as any) || [];
+        const mapped = rawItems.map((item: any) => ({
+          ...item,
+          image: getMediaUrl(item.image),
+          commodityName: item.commodity?.name ?? null,
+          categoryId: item.commodity?.category?.id ?? null,
+          categoryName: item.commodity?.category?.name ?? null,
+          referencePrice: item.commodity?.referencePrice ?? null,
+        }));
+        setProducts(mapped);
       }
     } catch (err) {
       console.error("Failed to fetch products:", err);
@@ -142,6 +154,7 @@ export default function KatalogPage() {
       commodityId: product.commodityId,
       categoryId: product.categoryId,
       categoryName: product.categoryName,
+      referencePrice: product.referencePrice,
     });
     setShowEditModal(true);
   };
@@ -248,7 +261,7 @@ export default function KatalogPage() {
                     <div className="flex items-center gap-3">
                       {product.image ? (
                         <img
-                          src={product.image}
+                          src={getImageUrl(product.image)}
                           alt={product.name}
                           className="w-10 h-10 rounded-lg object-cover border border-gray-200"
                         />

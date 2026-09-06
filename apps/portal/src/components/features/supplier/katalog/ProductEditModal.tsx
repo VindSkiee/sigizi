@@ -25,6 +25,7 @@ export interface ProductData {
   commodityId?: string;
   categoryId?: string;
   categoryName?: string;
+  referencePrice?: number;
 }
 
 interface ProductEditModalProps {
@@ -91,7 +92,7 @@ export function ProductEditModal({
   useEffect(() => {
     if (!token || !isOpen) return;
     getSupplierTaxonomy(token).then((res) => {
-      if (res.success) setCategories(res.data?.categories || []);
+      if (res.success) setCategories(res.data || []);
     }).catch(() => {});
   }, [token, isOpen]);
 
@@ -121,6 +122,18 @@ export function ProductEditModal({
       setError("Harga per satuan wajib diisi dengan benar.");
       return;
     }
+    if (!categoryId) {
+      setError("Kategori wajib dipilih.");
+      return;
+    }
+    if (!commodityId) {
+      setError("Komoditas wajib dipilih.");
+      return;
+    }
+    if (!stock || Number(stock) < 0) {
+      setError("Stok wajib diisi dengan benar.");
+      return;
+    }
 
     setIsSaving(true);
     setError("");
@@ -134,7 +147,7 @@ export function ProductEditModal({
         minOrderQty: minOrderQty ? Number(minOrderQty) : undefined,
         orderStep: orderStep ? Number(orderStep) : undefined,
         isAvailable,
-        stock: stock ? Number(stock) : undefined,
+        stock: Number(stock),
         imageFile: imageFile || undefined,
         commodityId: commodityId || undefined,
       });
@@ -224,7 +237,7 @@ export function ProductEditModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Kategori <span className="text-gray-400 font-normal">(opsional)</span>
+                Kategori <span className="text-red-500">*</span>
               </label>
               <select
                 value={categoryId}
@@ -239,7 +252,7 @@ export function ProductEditModal({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Komoditas <span className="text-gray-400 font-normal">(opsional)</span>
+                Komoditas <span className="text-red-500">*</span>
               </label>
               <select
                 value={commodityId}
@@ -306,7 +319,7 @@ export function ProductEditModal({
           {/* Stock */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Stok <span className="text-gray-400 font-normal">(opsional)</span>
+              Stok <span className="text-red-500">*</span>
             </label>
             <input
               type="number"

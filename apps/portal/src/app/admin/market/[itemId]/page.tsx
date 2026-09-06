@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMarketItemDetail } from "@/lib/api";
 import { addDraftItem } from "@/lib/draft";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getImageUrl } from "@/lib/utils";
 import { OrderQuantityModal } from "@/components/features/admin/market/OrderQuantityModal";
 import { MarketSupplierItem } from "@/components/features/admin/market/types";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -215,12 +215,12 @@ export default function ItemDetailPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Image */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="self-start bg-white rounded-xl border border-gray-200 overflow-hidden">
           {item.image ? (
             <img
-              src={item.image}
+              src={getImageUrl(item.image)}
               alt={item.name}
-              className="w-full h-64 object-cover"
+              className="block max-h-[28rem] max-w-full w-auto mx-auto object-contain bg-gray-50 p-2"
             />
           ) : (
             <div className="w-full h-64 bg-gray-50 flex items-center justify-center">
@@ -326,7 +326,7 @@ export default function ItemDetailPage() {
         <div className="flex items-start gap-4">
           {supplier.profileImage ? (
             <img
-              src={supplier.profileImage}
+              src={getImageUrl(supplier.profileImage)}
               alt={supplier.name}
               className="w-14 h-14 rounded-full object-cover border border-gray-200"
             />

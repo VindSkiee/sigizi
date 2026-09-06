@@ -33,6 +33,7 @@ export interface UserCard {
   name: string;
   subtitle?: string;
   initials: string;
+  profileImage?: string;
 }
 
 // ============================================================================

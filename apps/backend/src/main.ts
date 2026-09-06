@@ -49,7 +49,7 @@ async function bootstrap() {
   });
 
   // 4b. Static file serving for uploads
-  app.useStaticAssets(join(__dirname, "..", "uploads"), { prefix: "/uploads" });
+  app.useStaticAssets(join(process.cwd(), "uploads"), { prefix: "/uploads" });
 
   // 5. Global prefix (Wajib SEBELUM app.listen)
   app.setGlobalPrefix("api");

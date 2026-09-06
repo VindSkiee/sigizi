@@ -1,7 +1,7 @@
 "use client";
 
 import { MarketSupplierItem } from "./types";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getImageUrl } from "@/lib/utils";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -96,7 +96,7 @@ export function MarketCard({
     <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow flex flex-col">
       {item.image ? (
         <img
-          src={item.image}
+          src={getImageUrl(item.image)}
           alt={item.itemName || ""}
           className="w-full h-36 object-cover rounded-lg mb-3"
         />
@@ -110,7 +110,7 @@ export function MarketCard({
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {item.profileImage ? (
             <img
-              src={item.profileImage}
+              src={getImageUrl(item.profileImage)}
               alt={item.supplierName}
               className="w-7 h-7 rounded-full object-cover border border-gray-200 flex-shrink-0"
             />

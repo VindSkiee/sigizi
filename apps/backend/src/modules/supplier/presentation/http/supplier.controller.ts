@@ -55,16 +55,7 @@ function imageFileFilter(
 
 function storageFor(subdir: string) {
   return diskStorage({
-    destination: join(
-      __dirname,
-      "..",
-      "..",
-      "..",
-      "..",
-      "..",
-      "uploads",
-      subdir,
-    ),
+    destination: join(process.cwd(), "uploads", subdir),
     filename: (_req, file, cb) => {
       const uniqueSuffix = `${Date.now()}-${randomBytes(8).toString("hex")}`;
       const ext = extname(file.originalname).toLowerCase();

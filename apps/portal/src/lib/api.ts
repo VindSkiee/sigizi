@@ -1,5 +1,11 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
+export function getMediaUrl(path?: string | null) {
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${API_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
 interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -735,7 +741,7 @@ export interface TaxonomyCategory {
 }
 
 export async function getSupplierTaxonomy(token: string) {
-  return fetchApi<{ categories: TaxonomyCategory[] }>(
+  return fetchApi<TaxonomyCategory[]>(
     "/api/suppliers/taxonomy",
     {
       headers: { Authorization: `Bearer ${token}` },

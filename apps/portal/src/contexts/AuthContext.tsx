@@ -32,6 +32,7 @@ interface User {
   supplierId?: string;
   sppgId?: string;
   sppg?: SppgData;
+  supplier?: { profileImage?: string; [key: string]: any };
 }
 
 interface AuthContextType {

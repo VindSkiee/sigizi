@@ -10,6 +10,7 @@ import {
   Matches,
 } from "class-validator";
 import { ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 
 export class UpdateSupplierProfileDto {
   @ApiPropertyOptional({ example: "UD. Sumber Rejeki Updated" })
@@ -56,6 +57,7 @@ export class UpdateSupplierProfileDto {
 
   @ApiPropertyOptional({ example: -6.5563 })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(-90)
   @Max(90)
@@ -63,6 +65,7 @@ export class UpdateSupplierProfileDto {
 
   @ApiPropertyOptional({ example: 107.4439 })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(-180)
   @Max(180)
@@ -70,6 +73,7 @@ export class UpdateSupplierProfileDto {
 
   @ApiPropertyOptional({ default: false })
   @IsOptional()
+  @Type(() => Boolean)
   @IsBoolean()
   isMarketSeller?: boolean;
 
@@ -94,6 +98,7 @@ export class UpdateSupplierProfileDto {
 
   @ApiPropertyOptional({ default: true, description: "Status buka/tutup toko" })
   @IsOptional()
+  @Type(() => Boolean)
   @IsBoolean()
   openStatus?: boolean;
 }

@@ -1,23 +1,37 @@
 "use client";
 
+import { getImageUrl } from "@/lib/utils";
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSupplierById, updateSupplierProfile } from "@/lib/api";
+import {
+  getMediaUrl,
+  getSupplierById,
+  updateSupplierProfile,
+} from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { FileUpload } from "@/components/ui/FileUpload";
 import {
-  Building2,
   ArrowLeft,
   Save,
   Navigation,
   Loader2,
-  Store,
-  Image as ImageIcon,
+  Camera,
+  X,
+  Lock,
+  AlertTriangle,
 } from "lucide-react";
 import Link from "next/link";
 
 import { reverseGeocode, forwardGeocode } from "@/lib/geocoding";
+import { cn } from "@/lib/utils";
+
+function validCoordinate(value: unknown, min: number, max: number) {
+  const coordinate = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(coordinate) && coordinate >= min && coordinate <= max
+    ? coordinate
+    : null;
+}
 
 function SkeletonLine({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse bg-gray-200 rounded ${className}`} />;
@@ -48,6 +62,7 @@ export default function ProfilPage() {
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const profileImageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!token || !user?.supplierId) {
@@ -70,10 +85,10 @@ export default function ProfilPage() {
           setDistrict(data.district || "");
           setVillage(data.village || "");
           setPostalCode(data.postalCode || "");
-          setLatitude(data.latitude ?? null);
-          setLongitude(data.longitude ?? null);
+          setLatitude(validCoordinate(data.latitude, -90, 90));
+          setLongitude(validCoordinate(data.longitude, -180, 180));
           setOpenStatus(data.openStatus ?? true);
-          setExistingProfileImage(data.profileImage || "");
+          setExistingProfileImage(getMediaUrl(data.profileImage));
         }
       } catch (err) {
         console.error("Failed to fetch profile:", err);
@@ -175,6 +190,20 @@ export default function ProfilPage() {
       setError("Kecamatan wajib diisi.");
       return;
     }
+    if (
+      latitude != null &&
+      validCoordinate(latitude, -90, 90) == null
+    ) {
+      setError("Latitude harus berada di antara -90 dan 90.");
+      return;
+    }
+    if (
+      longitude != null &&
+      validCoordinate(longitude, -180, 180) == null
+    ) {
+      setError("Longitude harus berada di antara -180 dan 180.");
+      return;
+    }
 
     setSaving(true);
     setError("");
@@ -204,6 +233,7 @@ export default function ProfilPage() {
       }
 
       setSuccess("Profil berhasil disimpan!");
+      window.dispatchEvent(new Event("supplier-profile-updated"));
     } catch (err: any) {
       setError(err.message || "Gagal menyimpan profil. Silakan coba lagi.");
     } finally {
@@ -215,33 +245,21 @@ export default function ProfilPage() {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
         <SkeletonLine className="w-48 h-4" />
-        <div className="flex items-center gap-3">
-          <SkeletonLine className="w-10 h-10 rounded-lg" />
-          <div className="space-y-2">
-            <SkeletonLine className="w-48 h-6" />
-            <SkeletonLine className="w-64 h-4" />
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-          <SkeletonLine className="w-36 h-5" />
-          <SkeletonLine className="w-full h-10" />
-          <SkeletonLine className="w-full h-10" />
-          <SkeletonLine className="w-1/2 h-10" />
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-          <SkeletonLine className="w-36 h-5" />
-          <div className="grid grid-cols-2 gap-4">
-            <SkeletonLine className="w-full h-10" />
-            <SkeletonLine className="w-full h-10" />
-            <SkeletonLine className="w-full h-10" />
-            <SkeletonLine className="w-full h-10" />
-          </div>
-          <SkeletonLine className="w-32 h-10" />
-          <SkeletonLine className="w-full h-20" />
-        </div>
+        <SkeletonLine className="w-full h-40 rounded-xl" />
+        <SkeletonLine className="w-full h-64 rounded-xl" />
+        <SkeletonLine className="w-full h-20 rounded-xl" />
+        <SkeletonLine className="w-full h-80 rounded-xl" />
+        <SkeletonLine className="w-full h-12 rounded-lg" />
       </div>
     );
   }
+
+  const initials = name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -256,19 +274,12 @@ export default function ProfilPage() {
       </div>
 
       <div className="mb-8">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-            <Building2 className="w-5 h-5 text-green-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Profil Perusahaan
-            </h1>
-            <p className="text-sm text-gray-500">
-              Kelola informasi perusahaan dan lokasi Anda
-            </p>
-          </div>
-        </div>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Profil Perusahaan
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Kelola informasi perusahaan dan lokasi Anda
+        </p>
       </div>
 
       {error && (
@@ -283,36 +294,131 @@ export default function ProfilPage() {
       )}
 
       <div className="space-y-6">
+        {/* ── Card Profil Toko ── */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <input
+            ref={profileImageInputRef}
+            type="file"
+            accept=".jpg,.jpeg,.png,.webp"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0] || null;
+              setProfileImageFile(file);
+            }}
+          />
+
+          <div className="flex flex-col items-center">
+            {profileImageFile ? (
+              <div className="relative">
+                <img
+                  src={URL.createObjectURL(profileImageFile)}
+                  alt="Preview"
+                  className="w-20 h-20 rounded-full object-cover border-2 border-green-300"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileImageFile(null);
+                    if (profileImageInputRef.current)
+                      profileImageInputRef.current.value = "";
+                  }}
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ) : existingProfileImage ? (
+              <img
+                src={getImageUrl(existingProfileImage)}
+                alt="Profil"
+                className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+              />
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
+                {initials ? (
+                  <span className="text-2xl font-bold text-gray-400">
+                    {initials}
+                  </span>
+                ) : (
+                  <Camera className="w-8 h-8 text-gray-400" />
+                )}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => profileImageInputRef.current?.click()}
+              className="mt-2 text-xs text-primary-600 hover:text-primary-700 font-medium transition-colors"
+            >
+              Ganti foto
+            </button>
+          </div>
+
+          <div className="flex items-center justify-center gap-2 mt-3">
+            <h2 className="text-lg font-semibold text-gray-900">
+              {name || "Nama Toko"}
+            </h2>
+            <span
+              className={cn(
+                "text-xs px-2 py-0.5 rounded-full font-medium",
+                openStatus
+                  ? "bg-green-100 text-green-700"
+                  : "bg-gray-100 text-gray-500",
+              )}
+            >
+              {openStatus ? "Aktif" : "Nonaktif"}
+            </span>
+          </div>
+        </div>
+
+        {/* ── Card Data Perusahaan ── */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Data Perusahaan
+            Data perusahaan
           </h2>
           <div className="space-y-4">
             <Input
               id="name"
               type="text"
-              label="Nama Perusahaan"
-              placeholder="contoh: UD. Sumber Rejeki"
+              label="Nama perusahaan"
+              placeholder="contoh: Toko Berkah"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
             />
-            <Input
-              id="nib"
-              type="text"
-              label="NIB (Nomor Induk Berusaha)"
-              value={nib}
-              readOnly
-              className="bg-gray-50"
-            />
+
+            <div>
+              <Input
+                id="nib"
+                type="text"
+                label="NIB (nomor induk berusaha)"
+                value={nib}
+                readOnly
+                placeholder="Masukkan nomor NIB"
+                className={cn(
+                  "bg-white",
+                  !nib &&
+                    "border-amber-400 focus:ring-amber-400 focus:border-amber-400",
+                )}
+              />
+              {!nib && (
+                <p className="mt-1.5 text-xs text-amber-600 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Belum diisi, lengkapi untuk verifikasi toko
+                </p>
+              )}
+            </div>
+
             <Input
               id="email"
               type="email"
               label="Email"
               value={email}
               readOnly
-              className="bg-gray-50"
+              suffix={<Lock className="w-4 h-4" />}
+              className="bg-gray-50 cursor-not-allowed"
             />
+
             <Input
               id="phone"
               type="tel"
@@ -321,53 +427,39 @@ export default function ProfilPage() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
-            <div className="flex items-center justify-between py-3 border-t border-gray-100 mt-2">
-              <div>
-                <p className="text-sm font-medium text-gray-700">
-                  Status Toko
-                </p>
-                <p className="text-xs text-gray-500">
-                  {openStatus
-                    ? "Toko terlihat oleh pembeli"
-                    : "Sembunyikan dari pencarian"}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setOpenStatus(!openStatus)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  openStatus ? "bg-green-600" : "bg-gray-300"
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    openStatus ? "translate-x-6" : "translate-x-1"
-                  }`}
-                />
-              </button>
-            </div>
-            <div className="border-t border-gray-100 pt-4 mt-2">
-              {existingProfileImage && !profileImageFile && (
-                <div className="mb-3">
-                  <p className="text-xs text-gray-500 mb-1.5">Gambar saat ini</p>
-                  <img
-                    src={existingProfileImage}
-                    alt="Profil"
-                    className="w-20 h-20 rounded-full object-cover border border-gray-200"
-                  />
-                </div>
-              )}
-              <FileUpload
-                accept=".jpg,.jpeg,.png,.webp"
-                maxSize={5}
-                onFileSelect={(file) => setProfileImageFile(file)}
-                label="Foto Profil"
-                helperText="Upload foto profil toko (opsional)"
-              />
-            </div>
           </div>
         </div>
 
+        {/* ── Card Status Toko ── */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-900">Status toko</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {openStatus
+                  ? "Toko terlihat oleh pembeli"
+                  : "Sembunyikan dari pencarian"}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setOpenStatus(!openStatus)}
+              className={cn(
+                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                openStatus ? "bg-green-600" : "bg-gray-300",
+              )}
+            >
+              <span
+                className={cn(
+                  "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                  openStatus ? "translate-x-6" : "translate-x-1",
+                )}
+              />
+            </button>
+          </div>
+        </div>
+
+        {/* ── Card Alamat & Lokasi ── */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-1">
             <h2 className="text-lg font-semibold text-gray-900">
@@ -456,29 +548,18 @@ export default function ProfilPage() {
           )}
         </div>
 
-        <div className="flex gap-3">
-          <Link href="/supplier" className="flex-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="w-full"
-            >
-              Batal
-            </Button>
-          </Link>
-          <Button
-            type="button"
-            variant="primary"
-            size="lg"
-            isLoading={saving}
-            onClick={handleSave}
-            className="flex-1"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            Simpan Perubahan
-          </Button>
-        </div>
+        {/* ── Tombol Simpan ── */}
+        <Button
+          type="button"
+          variant="primary"
+          size="lg"
+          isLoading={saving}
+          onClick={handleSave}
+          className="w-full"
+        >
+          <Save className="w-4 h-4 mr-2" />
+          Simpan perubahan
+        </Button>
       </div>
     </div>
   );

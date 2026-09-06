@@ -8,7 +8,14 @@ import {
   MaxLength,
 } from "class-validator";
 import { Type } from "class-transformer";
+import { Transform } from "class-transformer";
 import { ApiPropertyOptional } from "@nestjs/swagger";
+
+const transformMultipartBoolean = ({ value }: { value: unknown }) => {
+  if (value === true || value === "true") return true;
+  if (value === false || value === "false") return false;
+  return value;
+};
 
 export class UpdateSupplierItemDto {
   @ApiPropertyOptional({ example: "Beras Premium Updated" })
@@ -54,6 +61,7 @@ export class UpdateSupplierItemDto {
     description: "Status ketersediaan stok",
   })
   @IsOptional()
+  @Transform(transformMultipartBoolean)
   @IsBoolean()
   isAvailable?: boolean;
 

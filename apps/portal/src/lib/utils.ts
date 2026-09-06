@@ -1,6 +1,20 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+/**
+ * Convert a relative upload path (e.g. /uploads/profiles/xxx.png) to a full backend URL.
+ * Already-absolute URLs are returned as-is. Empty/null values return undefined.
+ */
+export function getImageUrl(
+  path: string | null | undefined,
+): string | undefined {
+  if (!path) return undefined;
+  if (path.startsWith("http")) return path;
+  return `${API_URL}${path}`;
+}
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
