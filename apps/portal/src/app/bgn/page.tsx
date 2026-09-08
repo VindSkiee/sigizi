@@ -277,46 +277,36 @@ export default function BgnOverviewPage() {
       {/* Attention Signals */}
       <div
         className="rounded-lg p-5"
-        style={{ background: "var(--card)", border: "1px solid var(--border)" }}
+        style={{
+          background: "var(--card)",
+          border: "1px solid var(--border)",
+        }}
       >
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div>
-              <div
-                className="font-semibold text-sm flex items-center gap-2"
-                style={{
-                  color: "var(--text-primary)",
-                  fontFamily: "var(--font-display)",
-                }}
+        <div className="flex items-center gap-3 mb-4">
+          <div>
+            <div
+              className="font-semibold text-sm flex items-center gap-2"
+              style={{
+                color: "var(--text-primary)",
+                fontFamily: "var(--font-display)",
+              }}
+            >
+              <span
+                className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                style={{ background: "var(--red)" }}
               >
-                <span
-                  className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                  style={{ background: "var(--red)" }}
-                >
-                  {totalAttention}
-                </span>
-                Sinyal Perhatian
-              </div>
-              <div
-                className="text-xs mt-0.5"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                Pola pengadaan yang memerlukan tinjauan lebih lanjut
-              </div>
+                {totalAttention}
+              </span>
+              Sinyal Perhatian
+            </div>
+
+            <div
+              className="text-xs mt-0.5"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Pola pengadaan yang memerlukan tinjauan lebih lanjut
             </div>
           </div>
-          <button
-            onClick={() => router.push("/bgn/anomaly")}
-            className="text-xs font-semibold px-3 py-1.5 rounded-md transition-colors"
-            style={{
-              color: "var(--accent)",
-              border: "1px solid var(--accent)",
-              background: "var(--accent-light)",
-              fontFamily: "var(--font-body)",
-            }}
-          >
-            Lihat Semua &rarr;
-          </button>
         </div>
 
         <div className="grid grid-cols-4 gap-3">
@@ -346,25 +336,32 @@ export default function BgnOverviewPage() {
               bg: "#EFF6FF",
             },
           ].map((sig) => (
-            <button
+            <div
               key={sig.label}
-              onClick={() => router.push("/bgn/anomaly")}
-              className="rounded-md p-4 text-left transition-opacity hover:opacity-80"
-              style={{ background: sig.bg, border: `1px solid ${sig.color}30` }}
+              className="rounded-md p-4 opacity-60 cursor-not-allowed"
+              style={{
+                background: sig.bg,
+                border: `1px solid ${sig.color}30`,
+              }}
+              aria-disabled="true"
             >
               <div
                 className="text-2xl font-bold"
-                style={{ color: sig.color, fontFamily: "var(--font-mono)" }}
+                style={{
+                  color: sig.color,
+                  fontFamily: "var(--font-mono)",
+                }}
               >
                 {sig.count}
               </div>
+
               <div
                 className="text-xs font-medium mt-1"
                 style={{ color: "var(--text-primary)" }}
               >
                 {sig.label}
               </div>
-            </button>
+            </div>
           ))}
         </div>
       </div>

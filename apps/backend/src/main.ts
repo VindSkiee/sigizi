@@ -35,18 +35,26 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ResponseTransformInterceptor());
 
   // 4. CORS configuration (whitelist dari env, bukan semua origin)
-  const corsOrigins = (
-    process.env.CORS_ORIGIN || "http://localhost:3002,http://localhost:3000"
-  )
-    .split(",")
-    .map((o) => o.trim())
-    .filter(Boolean);
+  const isProduction = process.env.NODE_ENV === "production";
+
+if (isProduction) {
   app.enableCors({
-    origin: corsOrigins,
+    origin: [
+      "https://domain-frontend-kamu.com",
+      "https://www.domain-frontend-kamu.com",
+    ],
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     credentials: true,
     allowedHeaders: "Content-Type, Accept, Authorization",
   });
+} else {
+  app.enableCors({
+    origin: true,
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+    credentials: true,
+    allowedHeaders: "Content-Type, Accept, Authorization",
+  });
+}
 
   // 4b. Static file serving for uploads
   app.useStaticAssets(join(process.cwd(), "uploads"), { prefix: "/uploads" });

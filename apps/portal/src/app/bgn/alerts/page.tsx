@@ -398,8 +398,8 @@ export default function BgnAnomalyCenterPage() {
                   style={{ borderColor: "var(--border)" }}
                 >
                   <button
-                    onClick={() => openDetail(a.id)}
-                    className="text-xs font-semibold px-3 py-2 rounded-md transition-colors"
+                    disabled
+                    className="text-xs font-semibold px-3 py-2 rounded-md cursor-not-allowed opacity-50"
                     style={{
                       background: "var(--accent)",
                       color: "#fff",
