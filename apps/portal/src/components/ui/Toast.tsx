@@ -43,53 +43,54 @@ export function Toast({ message, isVisible, onClose, action }: ToastProps) {
             initial={{ y: 40, opacity: 0, scale: 0.95 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 20, opacity: 0, scale: 0.95 }}
-            transition={{ 
-              type: "spring", 
-              damping: 25, 
+            transition={{
+              type: "spring",
+              damping: 25,
               stiffness: 400,
-              mass: 0.8
+              mass: 0.8,
             }}
             className="pointer-events-auto"
           >
-            {/* Pill shaped container with Glassmorphism */}
-            <div className="flex items-center gap-3 bg-white/85 backdrop-blur-xl border border-gray-200/50 shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-full pl-3 pr-2 py-2 min-w-[320px] max-w-md">
-              
+            {/* Pill shaped container */}
+            <div className="flex items-center gap-3 bg-amber-500 shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-full pl-3 pr-2 py-2 min-w-[320px] max-w-md">
               {/* Minimalist Icon */}
               <div className="flex-shrink-0 flex items-center justify-center p-1">
-                <CheckCircle2 className="w-5 h-5 text-green-500" strokeWidth={2.5} />
+                <CheckCircle2
+                  className="w-5 h-5 text-white"
+                  strokeWidth={2.5}
+                />
               </div>
-              
+
               {/* Message */}
-              <p className="text-[14px] font-medium text-gray-700 flex-1 leading-snug truncate">
+              <p className="text-[14px] font-medium text-white flex-1 leading-snug truncate">
                 {message}
               </p>
-              
+
               {/* Action Button */}
               {action && (
                 <>
                   <button
                     onClick={(e) => {
-                      e.stopPropagation(); // Mencegah bubbling jika diperlukan
+                      e.stopPropagation();
                       action.onClick();
                     }}
-                    className="text-[13px] font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50/80 px-3 py-1.5 rounded-full transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    className="text-[13px] font-semibold text-white hover:text-white/80 hover:bg-amber-600 px-3 py-1.5 rounded-full transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-white/30"
                   >
                     {action.label}
                   </button>
                   {/* Subtle Separator */}
-                  <div className="w-[1px] h-4 bg-gray-200" />
+                  <div className="w-[1px] h-4 bg-amber-400/50" />
                 </>
               )}
-              
+
               {/* Close Button */}
               <button
                 onClick={onClose}
-                className="flex-shrink-0 text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-100 transition-colors focus:outline-none"
+                className="flex-shrink-0 text-white/70 hover:text-white p-1.5 rounded-full hover:bg-amber-600 transition-colors focus:outline-none"
                 aria-label="Tutup notifikasi"
               >
                 <X className="w-4 h-4" />
               </button>
-              
             </div>
           </motion.div>
         </div>

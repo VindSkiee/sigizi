@@ -131,7 +131,7 @@ export default function ItemDetailPage() {
       });
 
       setShowQtyModal(false);
-      router.push("/admin/market");
+      router.push("/admin/market?toast=draft_added");
     },
     [data, router],
   );
@@ -194,7 +194,9 @@ export default function ItemDetailPage() {
         </Link>
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <AlertTriangle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 text-sm">{error || "Item tidak ditemukan"}</p>
+          <p className="text-gray-500 text-sm">
+            {error || "Item tidak ditemukan"}
+          </p>
         </div>
       </div>
     );
@@ -249,13 +251,15 @@ export default function ItemDetailPage() {
           </div>
 
           <div className="bg-primary-50 rounded-xl p-4">
-            <p className="text-xs text-gray-500 mb-0.5">Harga per {item.unit}</p>
+            <p className="text-xs text-gray-500 mb-0.5">
+              Harga per {item.unit}
+            </p>
             <p className="text-3xl font-bold text-primary-600">
               {formatCurrency(item.basePrice)}
             </p>
             {item.commodity?.referencePrice && (
               <p className="text-xs text-gray-500 mt-1">
-                HET Nasional: {formatCurrency(item.commodity.referencePrice)}
+                Harga Acuan Nasional: {formatCurrency(item.commodity.referencePrice)}
               </p>
             )}
           </div>
@@ -266,13 +270,15 @@ export default function ItemDetailPage() {
                 <Box className="w-3.5 h-3.5 text-gray-400" />
                 <span className="text-xs text-gray-500">Stok</span>
               </div>
-              <p className={`text-lg font-bold ${
-                (item.stock ?? 0) === 0
-                  ? "text-red-600"
-                  : (item.stock ?? 0) < 10
-                    ? "text-amber-600"
-                    : "text-green-600"
-              }`}>
+              <p
+                className={`text-lg font-bold ${
+                  (item.stock ?? 0) === 0
+                    ? "text-red-600"
+                    : (item.stock ?? 0) < 10
+                      ? "text-amber-600"
+                      : "text-green-600"
+                }`}
+              >
                 {item.stock != null ? `${item.stock} ${item.unit}` : "N/A"}
               </p>
               {item.stockUpdatedAt && (
@@ -307,7 +313,9 @@ export default function ItemDetailPage() {
 
           <button
             onClick={() => setShowQtyModal(true)}
-            disabled={!item.isAvailable || (item.stock != null && item.stock === 0)}
+            disabled={
+              !item.isAvailable || (item.stock != null && item.stock === 0)
+            }
             className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-medium text-white bg-primary-600 rounded-xl hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
           >
             <ShoppingCart className="w-5 h-5" />
@@ -322,7 +330,9 @@ export default function ItemDetailPage() {
 
       {/* Supplier Info */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Profil Supplier</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          Profil Supplier
+        </h2>
         <div className="flex items-start gap-4">
           {supplier.profileImage ? (
             <img
@@ -337,7 +347,9 @@ export default function ItemDetailPage() {
           )}
           <div className="flex-1 space-y-2">
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-semibold text-gray-900">{supplier.name}</h3>
+              <h3 className="text-base font-semibold text-gray-900">
+                {supplier.name}
+              </h3>
               {supplier.openStatus ? (
                 <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
                   🟢 Buka
@@ -374,7 +386,9 @@ export default function ItemDetailPage() {
                 <p className="text-sm text-gray-600 group-hover:text-primary-600 underline decoration-dotted underline-offset-2">
                   {supplier.address}
                   {supplier.address && locationParts.length > 0 && (
-                    <span className="text-gray-400">, {locationParts.join(", ")}</span>
+                    <span className="text-gray-400">
+                      , {locationParts.join(", ")}
+                    </span>
                   )}
                   {!supplier.address && locationParts.length > 0 && (
                     <span>{locationParts.join(", ")}</span>
@@ -399,8 +413,12 @@ export default function ItemDetailPage() {
       {/* Description */}
       {item.description && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 mt-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Deskripsi</h2>
-          <p className="text-sm text-gray-600 leading-relaxed">{item.description}</p>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">
+            Deskripsi
+          </h2>
+          <p className="text-sm text-gray-600 leading-relaxed">
+            {item.description}
+          </p>
         </div>
       )}
 

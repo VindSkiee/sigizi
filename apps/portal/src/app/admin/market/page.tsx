@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   MarketFilter,
@@ -40,6 +40,7 @@ const ITEMS_PER_PAGE = 9;
 
 export default function MarketPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
 
   const {
@@ -79,6 +80,14 @@ export default function MarketPage() {
     setDraftItems(getDraftItems());
     setHetReferences(getHETReferences());
   }, []);
+
+  useEffect(() => {
+    const toastParam = searchParams.get("toast");
+    if (toastParam === "draft_added") {
+      setToastState({ message: "Berhasil ditambahkan ke draft" });
+      router.replace("/admin/market", { scroll: false });
+    }
+  }, [searchParams, router]);
 
   const persistMarketState = useCallback(
     (overrides: Partial<Parameters<typeof saveMarketState>[0]> = {}) => {
@@ -460,7 +469,7 @@ export default function MarketPage() {
         // 1. Tambah w-14 h-14 untuk mobile (membuatnya bulat sempurna)
         // 2. sm:w-auto sm:h-auto sm:px-5 sm:py-2.5 untuk kembali menjadi pil di desktop
         // 3. gap-0 sm:gap-2 untuk menghilangkan jarak di mobile
-        className="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 sm:w-auto sm:h-auto sm:px-5 sm:py-3 gap-0 sm:gap-2 mb-10 sm:mb-0 bg-primary-600 text-white text-sm font-medium rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+        className="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 sm:w-auto sm:h-auto sm:px-5 sm:py-3 gap-0 sm:gap-2 mb-10 sm:mb-0 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
       >
         <svg
           // Ikon sedikit diperbesar di mobile (w-6 h-6) agar proporsional dengan w-14, lalu normal di desktop (sm:w-5 sm:h-5)
@@ -498,7 +507,7 @@ export default function MarketPage() {
               exit={{ scale: 0, opacity: 0 }}
               // Badge dibuat melayang (absolute) di pojok kanan atas pada mobile
               // Di desktop (sm), dikembalikan posisinya sejajar (static)
-              className="absolute -top-1.5 -right-1.5 sm:static flex items-center justify-center w-6 h-6 text-xs font-bold bg-white text-primary-600 rounded-full shadow-sm sm:shadow-none"
+              className="absolute -top-1.5 -right-1.5 sm:static flex items-center justify-center w-6 h-6 text-xs font-bold bg-white text-amber-600 rounded-full shadow-sm sm:shadow-none"
             >
               {draftItems.length}
             </motion.span>
