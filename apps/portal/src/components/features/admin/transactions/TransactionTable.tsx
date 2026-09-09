@@ -1,8 +1,17 @@
 import { TransactionRow } from "./TransactionRow";
-import type { Transaction } from "./types";
+import { type TransactionDisplayStatus } from "./types";
 
 interface TransactionTableProps {
-  transactions: Transaction[];
+  transactions: Array<{
+    id: string;
+    createdAt: string;
+    status: any;
+    total: number;
+    supplier: { id: string; name: string };
+    itemCount: number;
+    paidAt: string | null;
+    displayStatus: TransactionDisplayStatus;
+  }>;
   onRowClick: (id: string) => void;
 }
 

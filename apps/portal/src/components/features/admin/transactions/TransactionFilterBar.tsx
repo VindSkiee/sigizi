@@ -1,7 +1,11 @@
 "use client";
 
 import { Calendar } from "lucide-react";
-import { STATUS_FILTER_OPTIONS, type TransactionFilter } from "./types";
+import {
+  STATUS_FILTER_OPTIONS,
+  type TransactionFilter,
+  type TransactionDisplayStatus,
+} from "./types";
 
 interface TransactionFilterBarProps {
   filter: TransactionFilter;
@@ -34,7 +38,11 @@ export function TransactionFilterBar({
 
         <select
           value={filter.status}
-          onChange={(e) => onFilterChange({ status: e.target.value })}
+          onChange={(e) =>
+            onFilterChange({
+              status: e.target.value as TransactionDisplayStatus | "ALL",
+            })
+          }
           className="w-full sm:w-48 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
         >
           {STATUS_FILTER_OPTIONS.map((opt) => (

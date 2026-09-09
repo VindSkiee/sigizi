@@ -82,6 +82,18 @@ export const TRANSACTION_STATUS_CONFIG: Record<
   },
 };
 
+export const RAW_STATUS_LABELS: Record<string, string> = {
+  PENDING: "Menunggu Konfirmasi",
+  CONFIRMED: "Dikonfirmasi",
+  DELIVERED: "Dikirim",
+  COMPLETED: "Selesai",
+  CANCELLED: "Dibatalkan",
+};
+
+export function getRawStatusLabel(status: string): string {
+  return RAW_STATUS_LABELS[status] ?? status;
+}
+
 export const STATUS_FILTER_OPTIONS = [
   { value: "ALL", label: "Semua Status" },
   { value: "DIBAYAR", label: "Dibayar" },

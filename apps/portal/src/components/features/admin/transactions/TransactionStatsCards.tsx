@@ -1,10 +1,7 @@
-import { ShoppingCart, CheckCircle, Clock, XCircle } from "lucide-react";
-import {
-  AdminStatsCard,
-  AdminStatsGrid,
-} from "@/components/ui/AdminStatsCard";
+import { CheckCircle, Clock, XCircle } from "lucide-react";
+import { AdminStatsCard, AdminStatsGrid } from "@/components/ui/AdminStatsCard";
 import { formatCurrency } from "@/lib/utils";
-import type { Transaction } from "./types";
+import { getDisplayStatus, type Transaction } from "./types";
 
 interface TransactionStatsCardsProps {
   transactions: Transaction[];
@@ -15,43 +12,35 @@ export function TransactionStatsCards({
   transactions,
   loading,
 }: TransactionStatsCardsProps) {
-  const total = transactions.length;
-  const completedCount = transactions.filter(
-    (t) => t.status === "COMPLETED",
+  const dibayarCount = transactions.filter(
+    (t) => getDisplayStatus(t.status, t.paidAt) === "DIBAYAR",
   ).length;
-  const activeCount = transactions.filter(
-    (t) => t.status === "PENDING" || t.status === "CONFIRMED" || t.status === "DELIVERED",
+  const belumBayarCount = transactions.filter(
+    (t) => getDisplayStatus(t.status, t.paidAt) === "BELUM_BAYAR",
   ).length;
-  const cancelledCount = transactions.filter(
-    (t) => t.status === "CANCELLED",
+  const dibatalkanCount = transactions.filter(
+    (t) => getDisplayStatus(t.status, t.paidAt) === "CANCELLED",
   ).length;
 
   return (
-    <AdminStatsGrid columns={4}>
+    <AdminStatsGrid columns={3}>
       <AdminStatsCard
-        title="Total Transaksi"
-        value={total}
-        icon={<ShoppingCart className="h-5 w-5" />}
-        color="blue"
-        loading={loading}
-      />
-      <AdminStatsCard
-        title="Selesai"
-        value={completedCount}
+        title="Dibayar"
+        value={dibayarCount}
         icon={<CheckCircle className="h-5 w-5" />}
         color="green"
         loading={loading}
       />
       <AdminStatsCard
-        title="Dalam Proses"
-        value={activeCount}
+        title="Belum Bayar"
+        value={belumBayarCount}
         icon={<Clock className="h-5 w-5" />}
         color="yellow"
         loading={loading}
       />
       <AdminStatsCard
         title="Dibatalkan"
-        value={cancelledCount}
+        value={dibatalkanCount}
         icon={<XCircle className="h-5 w-5" />}
         color="red"
         loading={loading}

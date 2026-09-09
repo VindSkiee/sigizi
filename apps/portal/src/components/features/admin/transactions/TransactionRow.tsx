@@ -1,8 +1,21 @@
 import { formatCurrency, formatDateTime } from "@/lib/utils";
-import { getStatusLabel, getStatusColor, type Transaction } from "./types";
+import {
+  getStatusLabel,
+  getStatusColor,
+  type TransactionDisplayStatus,
+} from "./types";
 
 interface TransactionRowProps {
-  transaction: Transaction;
+  transaction: {
+    id: string;
+    createdAt: string;
+    status: any;
+    total: number;
+    supplier: { id: string; name: string };
+    itemCount: number;
+    paidAt: string | null;
+    displayStatus: TransactionDisplayStatus;
+  };
   onClick: (id: string) => void;
 }
 
@@ -26,9 +39,9 @@ export function TransactionRow({ transaction, onClick }: TransactionRowProps) {
       </td>
       <td className="px-4 py-3 whitespace-nowrap">
         <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(transaction.status)}`}
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(transaction.displayStatus)}`}
         >
-          {getStatusLabel(transaction.status)}
+          {getStatusLabel(transaction.displayStatus)}
         </span>
       </td>
       <td className="px-4 py-3 whitespace-nowrap">

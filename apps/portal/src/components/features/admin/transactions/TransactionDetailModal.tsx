@@ -1,10 +1,19 @@
 "use client";
 
-import { X, Package, Store, Clock, CreditCard, AlertTriangle } from "lucide-react";
+import {
+  X,
+  Package,
+  Store,
+  Clock,
+  CreditCard,
+  AlertTriangle,
+} from "lucide-react";
 import { formatCurrency, formatDateTime, formatDate } from "@/lib/utils";
 import {
+  getDisplayStatus,
   getStatusLabel,
   getStatusColor,
+  getRawStatusLabel,
   type TransactionDetail,
   type StatusHistoryEntry,
 } from "./types";
@@ -20,6 +29,12 @@ const STATUS_ICONS: Record<string, string> = {
   CONFIRMED: "bg-blue-400",
   DELIVERED: "bg-purple-400",
   COMPLETED: "bg-green-400",
+  CANCELLED: "bg-red-400",
+};
+
+const DISPLAY_STATUS_ICONS: Record<string, string> = {
+  DIBAYAR: "bg-green-400",
+  BELUM_BAYAR: "bg-gray-400",
   CANCELLED: "bg-red-400",
 };
 
@@ -39,7 +54,7 @@ function StatusTimeline({ history }: { history: StatusHistoryEntry[] }) {
             </div>
             <div className={`pb-4 ${isLast ? "" : ""}`}>
               <p className="text-sm font-medium text-gray-900">
-                {getStatusLabel(entry.toStatus as any)}
+                {getRawStatusLabel(entry.toStatus)}
               </p>
               <p className="text-xs text-gray-500">
                 {formatDateTime(entry.createdAt)}
@@ -64,9 +79,14 @@ export function TransactionDetailModal({
 }: TransactionDetailModalProps) {
   if (!isOpen || !transaction) return null;
 
+  const displayStatus = getDisplayStatus(
+    transaction.status,
+    transaction.paidAt,
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
@@ -90,9 +110,9 @@ export function TransactionDetailModal({
           {/* Status Badge */}
           <div className="flex items-center gap-3">
             <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(transaction.status)}`}
+              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(displayStatus)}`}
             >
-              {getStatusLabel(transaction.status)}
+              {getStatusLabel(displayStatus)}
             </span>
             {transaction.paidAt && (
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
