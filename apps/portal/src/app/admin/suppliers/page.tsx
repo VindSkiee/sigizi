@@ -18,6 +18,7 @@ import { SupplierOrderDetailModal } from "@/components/features/admin/supplier-i
 import { Pagination } from "@/components/ui/Pagination";
 import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { PaymentGatewayMock } from "@/components/features/admin/payments";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -74,6 +75,8 @@ export default function SupplierIntegrationPage() {
     status: string;
     label: string;
   } | null>(null);
+  const [paymentGatewayOrder, setPaymentGatewayOrder] =
+    useState<SupplierOrder | null>(null);
 
   useEffect(() => {
     async function fetchOrders() {
@@ -182,40 +185,9 @@ export default function SupplierIntegrationPage() {
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     const order = orders.find((o) => o.id === orderId);
 
-    // DELIVERED → "PAY": confirm payment via API (sets paidAt, status stays DELIVERED)
+    // DELIVERED → "PAY": show PaymentGatewayMock modal
     if (order?.status === OrderStatus.DELIVERED && newStatus === "PAY") {
-      if (!token) return;
-      try {
-        const { confirmOrderPayment } = await import("@/lib/api");
-        await confirmOrderPayment(token, orderId);
-        setOrders((prev) =>
-          prev.map((o) =>
-            o.id === orderId
-              ? { ...o, paidAt: new Date().toISOString() }
-              : o,
-          ),
-        );
-        if (selectedOrder?.id === orderId) {
-          setSelectedOrder((prev) =>
-            prev
-              ? { ...prev, paidAt: new Date().toISOString() }
-              : null,
-          );
-        }
-      } catch (err: any) {
-        console.error("Failed to confirm payment:", err);
-        alert(err.message || "Gagal konfirmasi pembayaran");
-      }
-      return;
-    }
-
-    // DELIVERED + paidAt → COMPLETED: show confirm modal
-    if (
-      order?.status === OrderStatus.DELIVERED &&
-      order.paidAt &&
-      newStatus === OrderStatus.COMPLETED
-    ) {
-      setConfirmState({ orderId, status: newStatus, label: "Selesai" });
+      setPaymentGatewayOrder(order);
       return;
     }
 
@@ -301,6 +273,47 @@ export default function SupplierIntegrationPage() {
     router.refresh();
   };
 
+  const handlePaymentGatewaySuccess = async () => {
+    if (!paymentGatewayOrder || !token) return;
+    try {
+      const { confirmOrderPayment } = await import("@/lib/api");
+      await confirmOrderPayment(token, paymentGatewayOrder.id);
+      const response = await updateOrderStatus(
+        token,
+        paymentGatewayOrder.id,
+        OrderStatus.COMPLETED,
+      );
+      if (response.success) {
+        setOrders((prev) =>
+          prev.map((o) =>
+            o.id === paymentGatewayOrder.id
+              ? {
+                  ...o,
+                  status: OrderStatus.COMPLETED,
+                  paidAt: new Date().toISOString(),
+                }
+              : o,
+          ),
+        );
+        if (selectedOrder?.id === paymentGatewayOrder.id) {
+          setSelectedOrder((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  status: OrderStatus.COMPLETED,
+                  paidAt: new Date().toISOString(),
+                }
+              : null,
+          );
+        }
+      }
+      setPaymentGatewayOrder(null);
+    } catch (err: any) {
+      console.error("Failed to confirm payment:", err);
+      alert(err.message || "Gagal konfirmasi pembayaran");
+    }
+  };
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto">
@@ -351,8 +364,7 @@ export default function SupplierIntegrationPage() {
           Daftar Pesanan Bahan Baku
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          Pantau pesanan dan kelola tagihan
-          supplier di satu tempat.
+          Pantau pesanan dan kelola tagihan supplier di satu tempat.
         </p>
       </div>
 
@@ -406,19 +418,38 @@ export default function SupplierIntegrationPage() {
       {/* Confirm Modal */}
       <ConfirmModal
         isOpen={confirmState !== null}
-        title={confirmState?.label === "Batalkan" ? "Konfirmasi Pembatalan" : "Konfirmasi Selesai"}
+        title={
+          confirmState?.label === "Batalkan"
+            ? "Konfirmasi Pembatalan"
+            : "Konfirmasi Selesai"
+        }
         message={
           confirmState?.label === "Batalkan"
             ? "Pesanan akan dibatalkan. Tindakan ini tidak dapat dibatalkan."
             : "Pesanan akan ditandai sebagai selesai. Tindakan ini tidak dapat dibatalkan."
         }
-        confirmLabel={confirmState?.label === "Batalkan" ? "Ya, Batalkan" : "Ya, Selesai"}
+        confirmLabel={
+          confirmState?.label === "Batalkan" ? "Ya, Batalkan" : "Ya, Selesai"
+        }
         variant={confirmState?.label === "Batalkan" ? "danger" : "success"}
         requireReason={confirmState?.label === "Batalkan"}
         onConfirm={() => handleConfirmAction()}
         onConfirmWithReason={(reason) => handleConfirmAction(reason)}
         onClose={() => setConfirmState(null)}
       />
+
+      {/* Payment Gateway Mock */}
+      {paymentGatewayOrder && (
+        <PaymentGatewayMock
+          orderId={paymentGatewayOrder.id}
+          orderNumber={`PO-${paymentGatewayOrder.id.slice(-4).toUpperCase()}`}
+          supplierName={paymentGatewayOrder.supplier?.name || "-"}
+          totalAmount={paymentGatewayOrder.total}
+          items={paymentGatewayOrder.items}
+          onSuccess={handlePaymentGatewaySuccess}
+          onCancel={() => setPaymentGatewayOrder(null)}
+        />
+      )}
     </div>
   );
 }

@@ -1,11 +1,11 @@
 import { OrderStatus } from "@sigizi/shared";
 
-export type TransactionStatus = OrderStatus | "CANCELLED";
+export type TransactionDisplayStatus = "DIBAYAR" | "BELUM_BAYAR" | "CANCELLED";
 
 export interface Transaction {
   id: string;
   createdAt: string;
-  status: TransactionStatus;
+  status: OrderStatus;
   total: number;
   supplier: { id: string; name: string };
   itemCount: number;
@@ -33,7 +33,13 @@ export interface TransactionDetail extends Transaction {
 
 export interface TransactionItem {
   id: string;
-  item: { id: string; name: string; unit: string; commodityName?: string; categoryName?: string };
+  item: {
+    id: string;
+    name: string;
+    unit: string;
+    commodityName?: string;
+    categoryName?: string;
+  };
   quantity: number;
   unitPrice: number;
   subtotal: number;
@@ -55,28 +61,20 @@ export interface TransactionFilter {
   limit: number;
   startDate: string;
   endDate: string;
-  status: string;
+  status: TransactionDisplayStatus | "ALL";
 }
 
 export const TRANSACTION_STATUS_CONFIG: Record<
-  TransactionStatus,
+  TransactionDisplayStatus,
   { label: string; color: string }
 > = {
-  [OrderStatus.PENDING]: {
-    label: "Menunggu",
-    color: "bg-yellow-100 text-yellow-800",
-  },
-  [OrderStatus.CONFIRMED]: {
-    label: "Dikonfirmasi",
-    color: "bg-blue-100 text-blue-800",
-  },
-  [OrderStatus.DELIVERED]: {
-    label: "Dikirim",
-    color: "bg-purple-100 text-purple-800",
-  },
-  [OrderStatus.COMPLETED]: {
-    label: "Selesai",
+  DIBAYAR: {
+    label: "Dibayar",
     color: "bg-green-100 text-green-800",
+  },
+  BELUM_BAYAR: {
+    label: "Belum Bayar",
+    color: "bg-gray-100 text-gray-600",
   },
   CANCELLED: {
     label: "Dibatalkan",
@@ -86,20 +84,28 @@ export const TRANSACTION_STATUS_CONFIG: Record<
 
 export const STATUS_FILTER_OPTIONS = [
   { value: "ALL", label: "Semua Status" },
-  { value: OrderStatus.PENDING, label: "Menunggu" },
-  { value: OrderStatus.CONFIRMED, label: "Dikonfirmasi" },
-  { value: OrderStatus.DELIVERED, label: "Dikirim" },
-  { value: OrderStatus.COMPLETED, label: "Selesai" },
+  { value: "DIBAYAR", label: "Dibayar" },
+  { value: "BELUM_BAYAR", label: "Belum Bayar" },
   { value: "CANCELLED", label: "Dibatalkan" },
 ] as const;
 
 export const ITEMS_PER_PAGE = 10;
 
-export function getStatusLabel(status: TransactionStatus): string {
+export function getDisplayStatus(
+  status: OrderStatus,
+  paidAt: string | null,
+): TransactionDisplayStatus {
+  if (status === "COMPLETED" && paidAt) return "DIBAYAR";
+  if (status === "DELIVERED" && !paidAt) return "BELUM_BAYAR";
+  if (status === "CANCELLED") return "CANCELLED";
+  return "BELUM_BAYAR";
+}
+
+export function getStatusLabel(status: TransactionDisplayStatus): string {
   return TRANSACTION_STATUS_CONFIG[status]?.label ?? status;
 }
 
-export function getStatusColor(status: TransactionStatus): string {
+export function getStatusColor(status: TransactionDisplayStatus): string {
   return (
     TRANSACTION_STATUS_CONFIG[status]?.color ?? "bg-gray-100 text-gray-800"
   );

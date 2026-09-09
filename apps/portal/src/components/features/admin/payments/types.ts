@@ -4,6 +4,8 @@
 
 export type InvoiceStatus = "PENDING" | "OVERDUE" | "VERIFYING" | "PAID";
 
+export type PaymentMethod = "VA" | "CREDIT_CARD" | "EWALLET";
+
 export interface Invoice {
   id: string;
   invoiceNumber: string;

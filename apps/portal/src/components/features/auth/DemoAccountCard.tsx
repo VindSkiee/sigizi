@@ -23,16 +23,7 @@ const sppgAccounts: DemoAccount[] = [
     email: "admin-cirebon-utara@sigizi.go.id",
     password: PASSWORD,
   },
-  {
-    name: "Siti Nurhaliza",
-    email: "admin-cirebon-selatan@sigizi.go.id",
-    password: PASSWORD,
-  },
-  {
-    name: "Dedi Mulyadi",
-    email: "admin-cirebon-barat@sigizi.go.id",
-    password: PASSWORD,
-  },
+
 ];
 
 const supplierAccounts: DemoAccount[] = [
@@ -41,22 +32,7 @@ const supplierAccounts: DemoAccount[] = [
     email: "supplier-01@sigizi.go.id",
     password: PASSWORD,
   },
-  {
-    name: "UD. Segar Makmur",
-    email: "supplier-02@sigizi.go.id",
-    password: PASSWORD,
-  },
-  {
-    name: "Sumber Rejeki",
-    email: "supplier-03@sigizi.go.id",
-    password: PASSWORD,
-  },
-  { name: "Tani Jaya", email: "supplier-04@sigizi.go.id", password: PASSWORD },
-  {
-    name: "Berkah Tani",
-    email: "supplier-05@sigizi.go.id",
-    password: PASSWORD,
-  },
+  
 ];
 
 const bgnAccounts: DemoAccount[] = [

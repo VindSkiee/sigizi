@@ -44,9 +44,7 @@ export interface SupplierStats {
 }
 
 export type OrderDisplayStatus =
-  | OrderStatusWithCancel
-  | "DELIVERED_UNPAID"
-  | "DELIVERED_PAID";
+  OrderStatusWithCancel | "DELIVERED_UNPAID" | "DELIVERED_PAID";
 
 export const ORDER_STATUS_CONFIG: Record<
   OrderDisplayStatus,
@@ -80,8 +78,6 @@ export const ORDER_STATUS_CONFIG: Record<
   DELIVERED_PAID: {
     label: "Dikirim",
     color: "bg-purple-100 text-purple-800",
-    nextAction: "Selesai",
-    nextStatus: OrderStatus.COMPLETED,
     cancelAction: "Batalkan",
     cancelStatus: "CANCEL_ORDER",
   },
