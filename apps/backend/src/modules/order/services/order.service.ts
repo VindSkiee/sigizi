@@ -598,8 +598,6 @@ export class OrderService {
       );
     }
 
-    const currentStatus = order.status as OrderStatus;
-
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
       const result = await tx.order.update({
         where: { id: orderId },
@@ -607,16 +605,6 @@ export class OrderService {
           paidAt: new Date(),
           paidById: userId,
           updatedById: userId,
-        },
-      });
-
-      await tx.orderStatusHistory.create({
-        data: {
-          orderId: orderId,
-          fromStatus: currentStatus,
-          toStatus: currentStatus,
-          changedById: userId,
-          notes: "Pembayaran dikonfirmasi oleh SPPG",
         },
       });
 

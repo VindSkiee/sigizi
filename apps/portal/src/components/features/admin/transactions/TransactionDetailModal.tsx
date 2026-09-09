@@ -39,9 +39,10 @@ const DISPLAY_STATUS_ICONS: Record<string, string> = {
 };
 
 function StatusTimeline({ history }: { history: StatusHistoryEntry[] }) {
+  const filtered = history.filter((e) => e.fromStatus !== e.toStatus);
   return (
     <div className="space-y-0">
-      {history.map((entry, idx) => {
+      {filtered.map((entry, idx) => {
         const isLast = idx === history.length - 1;
         const dotColor = STATUS_ICONS[entry.toStatus] ?? "bg-gray-400";
         return (

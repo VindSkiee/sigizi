@@ -90,8 +90,11 @@ export default function TransactionsPage() {
 
   const filteredTransactions = useMemo(() => {
     const visible = rawTransactions.filter((t) => {
-      const ds = getDisplayStatus(t.status, t.paidAt);
-      return ds === "DIBAYAR" || ds === "BELUM_BAYAR" || ds === "CANCELLED";
+      return (
+        t.status === "COMPLETED" ||
+        t.status === "DELIVERED" ||
+        t.status === "CANCELLED"
+      );
     });
 
     if (filter.status === "ALL") return visible;
